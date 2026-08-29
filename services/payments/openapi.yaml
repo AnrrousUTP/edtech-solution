@@ -1,0 +1,71 @@
+openapi: 3.0.3
+info:
+  title: payments-service
+  version: 0.1.0
+  description: >
+    Órdenes, capturas y reembolsos con PayPal. El webhook es público y se
+    autentica por firma verificada sobre el cuerpo crudo (doc 09 §3).
+servers:
+  - url: /api/payments
+paths:
+  /ordenes:
+    post:
+      summary: Crear una orden de compra (monto congelado desde la proyección de precios)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cursoId]
+              properties:
+                cursoId: { type: string, format: uuid }
+                urlRetorno: { type: string }
+                urlCancelacion: { type: string }
+      responses:
+        '201':
+          description: '{ordenId, urlAprobacion, monto, moneda, reutilizada}'
+        '409': { description: Curso gratuito o ya comprado }
+        '404': { description: Curso no publicado }
+        '502': { description: La pasarela no respondió }
+  /ordenes/{id}/capturar:
+    post:
+      summary: Capturar el pago tras la aprobación del usuario (idempotente)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: '{estado, capturaId, yaEstabaCapturada}' }
+        '403': { description: La orden es de otro usuario }
+        '409': { description: Orden expirada o no capturable }
+  /ordenes/{id}:
+    get:
+      summary: Estado de la orden (el frontend hace polling honesto acá)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: '{estado, monto, comision, neto}' }
+        '403': { description: La orden es de otro usuario }
+  /mis-ordenes:
+    get:
+      summary: Órdenes del usuario con bruto, comisión y neto separados
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista }
+  /webhook:
+    post:
+      summary: Webhook de PayPal — PÚBLICO, autenticado por firma
+      description: >
+        Se monta con express.raw ANTES del express.json global: la firma se
+        verifica sobre el cuerpo crudo byte por byte. Responde siempre 200
+        (un 400 le confirmaría a un atacante que su sonda llegó) y procesa por
+        cola interna con reintentos y DLQ.
+      parameters:
+        - { name: paypal-transmission-id, in: header, required: true, schema: { type: string } }
+        - { name: paypal-transmission-time, in: header, required: true, schema: { type: string } }
+        - { name: paypal-transmission-sig, in: header, required: true, schema: { type: string } }
+        - { name: paypal-cert-url, in: header, required: true, schema: { type: string } }
+        - { name: paypal-auth-algo, in: header, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Recibido (procesado o descartado por firma inválida) }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
