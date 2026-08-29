@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: flashcards-service
+  version: 0.1.0
+  description: >
+    Mazos de flashcards generados por IA con revisión humana obligatoria (HITL).
+    I-8: ninguna tarjeta llega al estudiante sin pasar por PUBLICADA, y el
+    filtro está en el repositorio, no en el controlador.
+servers:
+  - url: /api/flashcards
+paths:
+  /tomos/{tomoId}:
+    get:
+      summary: Tarjetas PUBLICADAS del tomo (estudiante)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: tomoId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Solo tarjetas aprobadas; vacío si el mazo sigue en revisión
+        '401': { description: Sin token }
+  /admin/tomos/{tomoId}:
+    get:
+      summary: Panel de revisión — todos los mazos y estados del tomo (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Mazos con sus tarjetas, estado, modeloUsado y motivos de rechazo }
+        '403': { description: Requiere admin }
+  /admin/mazos/{mazoId}/tarjetas/{tarjetaId}/aprobar:
+    post:
+      summary: Aprobar una tarjeta, opcionalmente editando su texto (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anverso: { type: string, maxLength: 120 }
+                reverso: { type: string, maxLength: 400 }
+      responses:
+        '200': { description: '{estadoMazo, publicadas}' }
+        '404': { description: Mazo o tarjeta inexistente }
+  /admin/mazos/{mazoId}/tarjetas/{tarjetaId}/rechazar:
+    post:
+      summary: Rechazar una tarjeta (el motivo es obligatorio — doc 10 §6)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties: { motivo: { type: string, minLength: 1 } }
+      responses:
+        '200': { description: Rechazada }
+        '400': { description: Falta el motivo }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

@@ -1,0 +1,392 @@
+{
+  "id": "a69bc147-cd51-4453-ae2f-ecfbe8e93b73",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "flashcards.mazos": {
+      "name": "mazos",
+      "schema": "flashcards",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curso_id": {
+          "name": "curso_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "contenido_hash": {
+          "name": "contenido_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_mazo",
+          "typeSchema": "flashcards",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'GENERANDO'"
+        },
+        "modelo_usado": {
+          "name": "modelo_usado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "intentos": {
+          "name": "intentos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "lecciones_fuente": {
+          "name": "lecciones_fuente",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "generado_at": {
+          "name": "generado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "publicado_at": {
+          "name": "publicado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "mazos_tomo_version": {
+          "name": "mazos_tomo_version",
+          "columns": [
+            {
+              "expression": "tomo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "mazos_tomo_hash": {
+          "name": "mazos_tomo_hash",
+          "columns": [
+            {
+              "expression": "tomo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contenido_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "flashcards.processed_events": {
+      "name": "processed_events",
+      "schema": "flashcards",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resultado": {
+          "name": "resultado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "flashcards.repasos": {
+      "name": "repasos",
+      "schema": "flashcards",
+      "columns": {
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tarjeta_id": {
+          "name": "tarjeta_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visto_at": {
+          "name": "visto_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "acerto": {
+          "name": "acerto",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "repasos_pk": {
+          "name": "repasos_pk",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tarjeta_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visto_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repasos_tarjeta_id_tarjetas_id_fk": {
+          "name": "repasos_tarjeta_id_tarjetas_id_fk",
+          "tableFrom": "repasos",
+          "tableTo": "tarjetas",
+          "schemaTo": "flashcards",
+          "columnsFrom": ["tarjeta_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "flashcards.tarjetas": {
+      "name": "tarjetas",
+      "schema": "flashcards",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "mazo_id": {
+          "name": "mazo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "anverso": {
+          "name": "anverso",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reverso": {
+          "name": "reverso",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_tarjeta",
+          "typeSchema": "flashcards",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDIENTE_REVISION'"
+        },
+        "revisada_por": {
+          "name": "revisada_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revisada_at": {
+          "name": "revisada_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo_rechazo": {
+          "name": "motivo_rechazo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editada": {
+          "name": "editada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "tarjetas_mazo_orden": {
+          "name": "tarjetas_mazo_orden",
+          "columns": [
+            {
+              "expression": "mazo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tarjetas_mazo_id_mazos_id_fk": {
+          "name": "tarjetas_mazo_id_mazos_id_fk",
+          "tableFrom": "tarjetas",
+          "tableTo": "mazos",
+          "schemaTo": "flashcards",
+          "columnsFrom": ["mazo_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "flashcards.estado_mazo": {
+      "name": "estado_mazo",
+      "schema": "flashcards",
+      "values": ["GENERANDO", "EN_REVISION", "PUBLICADO", "FALLIDO"]
+    },
+    "flashcards.estado_tarjeta": {
+      "name": "estado_tarjeta",
+      "schema": "flashcards",
+      "values": ["PENDIENTE_REVISION", "PUBLICADA", "RECHAZADA"]
+    }
+  },
+  "schemas": {
+    "flashcards": "flashcards"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

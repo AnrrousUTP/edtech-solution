@@ -68,6 +68,25 @@
         "drizzle-kit": "^0.28.0",
       },
     },
+    "services/flashcards": {
+      "name": "@edtech-svc/flashcards",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aws-sdk/client-bedrock-agent-runtime": "^3.658.0",
+        "@aws-sdk/client-s3": "^3.658.0",
+        "@aws-sdk/client-sqs": "^3.658.0",
+        "@aws-sdk/rds-signer": "^3.658.0",
+        "@edtech/shared-kernel": "workspace:*",
+        "drizzle-orm": "^0.36.0",
+        "express": "^4.21.0",
+        "pg": "^8.13.0",
+      },
+      "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/pg": "^8.11.0",
+        "drizzle-kit": "^0.28.0",
+      },
+    },
     "services/gamification": {
       "name": "@edtech-svc/gamification",
       "version": "0.1.0",
@@ -106,6 +125,8 @@
   },
   "packages": {
     "@aws-sdk/checksums": ["@aws-sdk/checksums@3.1000.29", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/types": "^3.974.5", "@smithy/core": "^3.33.3", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-Dtu0gr4dnATZAPwEYbpCsG+MpLM7OAliy2gTepEFQwl1vZ6DL3QMH2FveMa3HLvPsOdhJsPRB3KtxVhph9T75A=="],
+
+    "@aws-sdk/client-bedrock-agent-runtime": ["@aws-sdk/client-bedrock-agent-runtime@3.1121.0", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/credential-provider-node": "^3.972.81", "@aws-sdk/types": "^3.974.5", "@smithy/core": "^3.33.3", "@smithy/fetch-http-handler": "^5.7.2", "@smithy/node-http-handler": "^4.11.3", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-adxnRQCZvTKukgnpS4kTcOq2eG0xakt9cqORoVIhlVxMb8Omx06k10UYwXIuiKJshlIvKH00sgWXZ9JNZqSS/w=="],
 
     "@aws-sdk/client-eventbridge": ["@aws-sdk/client-eventbridge@3.1121.0", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/credential-provider-node": "^3.972.81", "@aws-sdk/signature-v4-multi-region": "^3.996.46", "@aws-sdk/types": "^3.974.5", "@smithy/core": "^3.33.3", "@smithy/fetch-http-handler": "^5.7.2", "@smithy/node-http-handler": "^4.11.3", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-+zT6z91ZxHozsKGWf5wOJfxEebht3GmPBoXedlWoumHeAvzAueM1KwbWkzClLWjpi76HXuCIx7R3x4pvSVGqIw=="],
 
@@ -162,6 +183,8 @@
     "@edtech-svc/catalog": ["@edtech-svc/catalog@workspace:services/catalog"],
 
     "@edtech-svc/enrollment-progress": ["@edtech-svc/enrollment-progress@workspace:services/enrollment-progress"],
+
+    "@edtech-svc/flashcards": ["@edtech-svc/flashcards@workspace:services/flashcards"],
 
     "@edtech-svc/gamification": ["@edtech-svc/gamification@workspace:services/gamification"],
 

@@ -78,6 +78,28 @@ services:
       localstack: { condition: service_started }
       jwt-local: { condition: service_started }
 
+  flashcards:
+    build: { context: ., dockerfile: services/flashcards/Dockerfile }
+    profiles: ["contenido", "full"]
+    ports: ["3006:3000"]
+    mem_limit: 512m
+    environment:
+      DATABASE_URL: postgres://svc_flashcards:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      EVENT_BUS_NAME: edtech-domain-events
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-flashcards
+      QUEUE_GENERACION_URL: http://localstack:4566/000000000000/edtech-dev-flashcards-generacion
+      GENERADOR_FLASHCARDS: fake
+      COGNITO_ISSUER: http://jwt-local:4599
+      LOG_LEVEL: debug
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_started }
+      jwt-local: { condition: service_started }
+
   gamification:
     build: { context: ., dockerfile: services/gamification/Dockerfile }
     profiles: ["full"]
