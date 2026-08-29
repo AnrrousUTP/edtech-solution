@@ -12,9 +12,10 @@ coverage/
 
 # Terraform
 .terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
+!infra/bootstrap/terraform.tfstate
 *.tfvars
 !*example.tfvars
+tfplan
 crash.log
