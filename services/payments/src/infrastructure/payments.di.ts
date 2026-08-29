@@ -11,6 +11,7 @@ import {
   log,
   noEncontradoMiddleware,
   requestContextMiddleware,
+  xrayMiddleware,
 } from '@edtech/shared-kernel'
 import express, { type Express } from 'express'
 import { CapturarPagoHandler } from '../application/capturar-pago/capturar-pago.handler'
@@ -90,6 +91,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
 
   const http = express()
   http.use(requestContextMiddleware)
+  http.use(xrayMiddleware('payments'))
   http.get('/health', (_req, res) => {
     res.json({ ok: true, servicio: 'payments', paypal: credenciales.env })
   })

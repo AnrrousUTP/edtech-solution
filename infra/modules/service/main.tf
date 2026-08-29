@@ -32,6 +32,11 @@ variable "permisos" {
     resources = list(string)
   }))
 }
+variable "xray" {
+  description = "Sidecar del daemon de X-Ray + permiso para subir segmentos (doc 07 §8)"
+  type        = bool
+  default     = true
+}
 variable "health_check_path" {
   type    = string
   default = "/ready"
@@ -67,6 +72,11 @@ resource "aws_iam_role_policy" "task" {
         Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.servicio.arn}:*"
       }],
+      var.xray ? [{
+        Effect   = "Allow"
+        Action   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"]
+        Resource = "*" # la API de X-Ray no admite recursos concretos
+      }] : [],
       [for p in var.permisos : {
         Effect   = "Allow"
         Action   = p.actions
@@ -85,14 +95,19 @@ resource "aws_ecs_task_definition" "servicio" {
   execution_role_arn       = var.rol_execution_arn
   task_role_arn            = aws_iam_role.task.arn
 
-  container_definitions = jsonencode([
+  container_definitions = jsonencode(concat([
     {
       name        = var.nombre
       image       = var.imagen
       essential   = true
       stopTimeout = 30
       portMappings = [{ containerPort = 3000, protocol = "tcp" }]
-      environment = [for k, v in var.env : { name = k, value = v }]
+      environment = concat(
+        [for k, v in var.env : { name = k, value = v }],
+        # El daemon escucha en el localhost de la task (network mode awsvpc):
+        # sin esta variable el kernel no traza (doc 07 §8).
+        var.xray ? [{ name = "AWS_XRAY_DAEMON_ADDRESS", value = "127.0.0.1:2000" }] : []
+      )
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -101,8 +116,27 @@ resource "aws_ecs_task_definition" "servicio" {
           awslogs-stream-prefix = var.nombre
         }
       }
-    }
-  ])
+    },
+    ],
+    var.xray ? [{
+      # Sidecar oficial: recibe los segmentos por UDP y los sube a X-Ray. No es
+      # essential a proposito — que se caiga la traza no puede tumbar el servicio.
+      name         = "xray-daemon"
+      image        = "public.ecr.aws/xray/aws-xray-daemon:latest"
+      essential    = false
+      cpu          = 32
+      memory       = 256
+      portMappings = [{ containerPort = 2000, protocol = "udp" }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.servicio.name
+          awslogs-region        = "us-east-1"
+          awslogs-stream-prefix = "xray"
+        }
+      }
+    }] : []
+  )
 }
 
 resource "aws_lb_target_group" "servicio" {

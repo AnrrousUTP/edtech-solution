@@ -10,6 +10,7 @@ import {
   leerSecreto,
   noEncontradoMiddleware,
   requestContextMiddleware,
+  xrayMiddleware,
 } from '@edtech/shared-kernel'
 import express, { type Express } from 'express'
 import {
@@ -94,6 +95,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
 
   const http = express()
   http.use(requestContextMiddleware)
+  http.use(xrayMiddleware('enrollment-progress'))
   http.get('/health', (_req, res) => {
     res.json({ ok: true, servicio: 'enrollment-progress' })
   })
