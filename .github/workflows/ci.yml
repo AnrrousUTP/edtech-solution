@@ -1,0 +1,93 @@
+# Detecta qué cambió y despacha service.yml solo por lo afectado (doc 12 §8).
+# Un monorepo sin path filters vuelve a compilar los seis servicios porque
+# alguien tocó un README: el pipeline se vuelve lento y la gente lo ignora.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      identity-access: ${{ steps.filtro.outputs.identity-access }}
+      catalog: ${{ steps.filtro.outputs.catalog }}
+      enrollment-progress: ${{ steps.filtro.outputs.enrollment-progress }}
+      gamification: ${{ steps.filtro.outputs.gamification }}
+      flashcards: ${{ steps.filtro.outputs.flashcards }}
+      payments: ${{ steps.filtro.outputs.payments }}
+      web: ${{ steps.filtro.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          filters: |
+            comun: &comun
+              - 'packages/**'
+              - 'tools/**'
+              - 'bun.lock'
+              - 'package.json'
+              - '.github/workflows/**'
+              - 'infra/modules/service/**'
+            identity-access:
+              - 'services/identity-access/**'
+              - *comun
+            catalog:
+              - 'services/catalog/**'
+              - *comun
+            enrollment-progress:
+              - 'services/enrollment-progress/**'
+              - *comun
+            gamification:
+              - 'services/gamification/**'
+              - *comun
+            flashcards:
+              - 'services/flashcards/**'
+              - *comun
+            payments:
+              - 'services/payments/**'
+              - *comun
+            web:
+              - 'apps/web/**'
+              - '.github/workflows/**'
+
+  # El harness completo corre SIEMPRE, aunque no cambie ningún servicio: las
+  # reglas de arquitectura son del repositorio entero (doc 12 §9).
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run arch
+      - run: bun run estructura
+      - run: bun run convenciones
+      - run: bun test
+
+  servicio:
+    needs: [cambios, harness]
+    strategy:
+      fail-fast: false
+      matrix:
+        servicio:
+          - identity-access
+          - catalog
+          - enrollment-progress
+          - gamification
+          - flashcards
+          - payments
+          - web
+    uses: ./.github/workflows/service.yml
+    with:
+      servicio: ${{ matrix.servicio }}
+      afectado: ${{ needs.cambios.outputs[matrix.servicio] == 'true' }}
+    secrets: inherit

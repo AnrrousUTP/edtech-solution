@@ -1,3 +1,8 @@
+// R19: igual que el seed, publicar cursos de mentira fuera de dev no puede pasar.
+if (process.env.NODE_ENV === 'production' || process.env.ENTORNO === 'prod') {
+  console.error('Publicar el seed es solo para dev.')
+  process.exit(1)
+}
 // Publica los 3 cursos del seed vía la API de admin (emite los eventos reales).
 // Local:  bun run tools/seed/publicar-cursos.ts               (usa jwt-local)
 // AWS:    BASE_URL=<alb> ADMIN_TOKEN=<access token> bun run tools/seed/publicar-cursos.ts

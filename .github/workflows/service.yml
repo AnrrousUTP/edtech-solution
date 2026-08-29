@@ -1,0 +1,136 @@
+# Verificar, construir la imagen y desplegar UN servicio (doc 12 §8).
+#
+# No negociables:
+#   - OIDC, nunca AWS_ACCESS_KEY_ID en secrets.
+#   - El rol de CI despliega dev y nada más; prod exige credenciales que el
+#     pipeline no tiene (D16).
+#   - El tag de imagen es el SHA del commit, nunca `latest`: con `latest` no se
+#     sabe qué está corriendo ni se puede volver atrás.
+name: Servicio
+
+on:
+  workflow_call:
+    inputs:
+      servicio:
+        type: string
+        required: true
+      afectado:
+        type: string
+        required: true
+
+env:
+  AWS_REGION: us-east-1
+  ECR: ${{ vars.ECR_REGISTRO }}
+
+jobs:
+  verificar:
+    if: inputs.afectado == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: edtech
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+
+      # El frontend no es hexagonal: no le aplican arch ni los tests de servicio
+      - if: inputs.servicio != 'web'
+        run: bun test services/${{ inputs.servicio }} packages/shared-kernel
+      - if: inputs.servicio != 'web'
+        run: bunx tsc --noEmit -p services/${{ inputs.servicio }}
+      - if: inputs.servicio == 'web'
+        run: bunx tsc --noEmit -p apps/web
+
+  imagen:
+    needs: verificar
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC, sin claves largas
+      contents: read
+    outputs:
+      tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_CI }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Ruta del Dockerfile
+        id: ruta
+        run: |
+          if [ "${{ inputs.servicio }}" = "web" ]; then
+            echo "dockerfile=apps/web/Dockerfile" >> "$GITHUB_OUTPUT"
+          else
+            echo "dockerfile=services/${{ inputs.servicio }}/Dockerfile" >> "$GITHUB_OUTPUT"
+          fi
+      - run: |
+          docker build -f ${{ steps.ruta.outputs.dockerfile }} \
+            -t $ECR/edtech/${{ inputs.servicio }}:${{ github.sha }} .
+      - run: docker push $ECR/edtech/${{ inputs.servicio }}:${{ github.sha }}
+
+  desplegar-dev:
+    needs: imagen
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_CI }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Aplicar el state del servicio
+        run: |
+          # La infra de cada servicio vive junto a su código (doc 06 §5.3),
+          # con state propio: desplegar uno no puede tocar a otro.
+          if [ "${{ inputs.servicio }}" = "web" ]; then
+            cd apps/web/infra
+          else
+            cd services/${{ inputs.servicio }}/infra
+          fi
+          terraform init -input=false
+          terraform apply -input=false -auto-approve -var image_tag=${{ github.sha }}
+
+  plan-prod:
+    needs: imagen
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_CI }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Plan de prod (nunca apply)
+        run: |
+          # prod todavía no existe (D16: no se aplica en este alcance). Cuando
+          # exista, esto publica el diff; el apply sigue siendo manual y gateado.
+          if [ ! -d "infra/envs/prod" ]; then
+            echo "infra/envs/prod no existe todavia: nada que planificar."
+            exit 0
+          fi
+          cd infra/envs/prod
+          terraform init -input=false
+          terraform plan -input=false

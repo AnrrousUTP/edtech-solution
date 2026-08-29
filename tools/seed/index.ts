@@ -6,6 +6,14 @@
 import { Signer } from '@aws-sdk/rds-signer'
 import pg from 'pg'
 
+// R19: un `db:seed` apuntando al lugar equivocado llena producción de cursos de
+// mentira. Es un comando aparte (nunca corre al arrancar el contenedor) y además
+// se niega a correr fuera de dev.
+if (process.env.NODE_ENV === 'production' || process.env.ENTORNO === 'prod') {
+  console.error('El seed es solo para dev: NODE_ENV=production / ENTORNO=prod lo bloquea.')
+  process.exit(1)
+}
+
 const det = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 
 const sha256 = async (texto: string): Promise<string> => {

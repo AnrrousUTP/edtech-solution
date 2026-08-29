@@ -13,7 +13,51 @@ variable "logout_urls" {
   default = ["http://localhost:3000/"]
 }
 
+# Federación con Google (doc 08 §1). Las credenciales son de una app de Google
+# Cloud del operador, así que no pueden salir de Terraform ni de un default:
+# llegan del secreto `edtech/<entorno>/google-oidc` cuando exista. Sin él, el
+# IdP no se crea y el Hosted UI solo ofrece usuario y contraseña.
+variable "habilitar_google" {
+  description = "true cuando edtech/<entorno>/google-oidc tenga client_id y client_secret"
+  type        = bool
+  default     = false
+}
+
 data "aws_caller_identity" "actual" {}
+
+locals {
+  proveedores = var.habilitar_google ? ["COGNITO", "Google"] : ["COGNITO"]
+}
+
+# El secreto lo crea el operador con las credenciales de su app de Google; acá
+# solo se lee. Nunca se escribe una credencial en el .tf (D17).
+data "aws_secretsmanager_secret_version" "google" {
+  count     = var.habilitar_google ? 1 : 0
+  secret_id = "edtech/${var.entorno}/google-oidc"
+}
+
+resource "aws_cognito_identity_provider" "google" {
+  count         = var.habilitar_google ? 1 : 0
+  user_pool_id  = aws_cognito_user_pool.principal.id
+  provider_name = "Google"
+  provider_type = "Google"
+
+  provider_details = {
+    client_id                     = jsondecode(data.aws_secretsmanager_secret_version.google[0].secret_string).client_id
+    client_secret                 = jsondecode(data.aws_secretsmanager_secret_version.google[0].secret_string).client_secret
+    authorize_scopes              = "openid email profile"
+    attributes_url_add_attributes = "true"
+  }
+
+  # El post-confirmation espera el email: sin este mapeo, un alta por Google
+  # llegaría sin correo y el perfil de identity nacería incompleto.
+  attribute_mapping = {
+    email          = "email"
+    email_verified = "email_verified"
+    name           = "name"
+    username       = "sub"
+  }
+}
 
 # ── Lambdas ──────────────────────────────────────────────────────────────────
 data "archive_file" "post_confirmation" {
@@ -182,8 +226,11 @@ resource "aws_cognito_user_pool_client" "web" {
   allowed_oauth_scopes                 = ["openid", "profile", "email"]
   callback_urls                        = var.callback_urls
   logout_urls                          = var.logout_urls
-  supported_identity_providers         = ["COGNITO"]
-  explicit_auth_flows                  = ["ALLOW_REFRESH_TOKEN_AUTH"]
+  supported_identity_providers         = local.proveedores
+  # Con la rotación activada, Cognito PROHIBE ALLOW_REFRESH_TOKEN_AUTH: el
+  # refresh pasa por el endpoint de token del Hosted UI, que es justo por donde
+  # lo hace el Route Handler del servidor (doc 08 §7).
+  explicit_auth_flows                  = []
 
   access_token_validity  = 60
   id_token_validity      = 60
@@ -193,6 +240,15 @@ resource "aws_cognito_user_pool_client" "web" {
     id_token      = "minutes"
     refresh_token = "days"
   }
+
+  # Rotación de refresh (doc 08 §5): cada uso devuelve un refresh nuevo y
+  # invalida el anterior, así que un refresh robado sirve una sola vez —y su
+  # reutilización delata el robo. La gracia de 60 s evita que una petición que
+  # se reintenta por un corte de red deje al usuario fuera.
+  refresh_token_rotation {
+    feature                     = "ENABLED"
+    retry_grace_period_seconds  = 60
+  }
 }
 
 # Client SOLO para verificación automatizada (A-16): admin-initiate-auth requiere
@@ -201,7 +257,14 @@ resource "aws_cognito_user_pool_client" "pruebas" {
   name                = "edtech-${var.entorno}-pruebas"
   user_pool_id        = aws_cognito_user_pool.principal.id
   generate_secret     = false
-  explicit_auth_flows = ["ALLOW_ADMIN_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+  explicit_auth_flows = ["ALLOW_ADMIN_USER_PASSWORD_AUTH"]
+
+  # El cliente de pruebas rota igual: si no, la verificación de F12 estaría
+  # comprobando un comportamiento que el cliente real no tiene.
+  refresh_token_rotation {
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 60
+  }
 }
 
 output "user_pool_id" { value = aws_cognito_user_pool.principal.id }
