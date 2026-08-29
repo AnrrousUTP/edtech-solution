@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: catalog-service
+  version: 0.1.0
+  description: >
+    Carreras, cursos, tomos, lecciones, bancos de preguntas y precios.
+    Invariante I-5: respuesta_correcta y solucion_esperada NUNCA aparecen en
+    ninguna respuesta pública.
+servers:
+  - url: /api/catalog
+paths:
+  /cursos:
+    get:
+      summary: Cursos publicados (público, sin cuenta)
+      responses:
+        '200': { description: Lista de cursos }
+  /cursos/{slugOId}:
+    get:
+      summary: Detalle de un curso publicado con su estructura (público)
+      parameters:
+        - { name: slugOId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Curso con tomos y lecciones (sin contenido) }
+        '404': { description: No existe o no está publicado }
+  /carreras:
+    get:
+      summary: Carreras publicadas (público)
+      responses:
+        '200': { description: Lista }
+  /nivelacion:
+    get:
+      summary: Test de nivelación (público, preguntas sin respuestas — I-5)
+      responses:
+        '200': { description: Banco de nivelación sin respuestas ni niveles }
+  /lecciones/{id}:
+    get:
+      summary: Contenido de una lección (autenticado; gating de matrícula A-18)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Bloques y ejercicios (sin solucion_esperada — I-5) }
+        '401': { description: Sin token }
+  /tomos/{id}/evaluacion:
+    get:
+      summary: Evaluación del tomo (autenticado, sin respuesta_correcta — I-5)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Preguntas sin respuestas }
+  /interno/bancos/{id}/respuestas:
+    get:
+      summary: Respuestas de un banco (INTERNO, solo enrollment con x-interno-token — A-19)
+      parameters:
+        - { name: x-interno-token, in: header, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Preguntas con respuestaCorrecta, puntaje y nivel }
+        '401': { description: Token interno inválido }
+  /admin/cursos:
+    get: { summary: Todos los cursos (admin), responses: { '200': { description: Lista } } }
+    post: { summary: Crear curso (admin), responses: { '201': { description: Creado } } }
+  /admin/cursos/{id}:
+    put: { summary: Actualizar metadata/precio (admin), responses: { '200': { description: OK } } }
+  /admin/cursos/{id}/contenido:
+    put:
+      summary: Reemplazar tomos/lecciones/bloques/ejercicios (admin)
+      responses: { '200': { description: Estructura con ids asignados } }
+  /admin/cursos/{id}/publicar:
+    post: { summary: Publicar (admin), responses: { '200': { description: Publicado } } }
+  /admin/cursos/{id}/despublicar:
+    post: { summary: Despublicar (admin), responses: { '200': { description: Despublicado } } }
+  /admin/carreras:
+    get: { summary: Listar (admin), responses: { '200': { description: Lista } } }
+    post: { summary: Crear (admin), responses: { '201': { description: Creada } } }
+  /admin/carreras/{id}:
+    put: { summary: Actualizar (admin), responses: { '200': { description: OK } } }
+  /admin/bancos:
+    post: { summary: Crear banco de preguntas (admin), responses: { '201': { description: Creado } } }
+  /admin/bancos/{id}:
+    put: { summary: Reemplazar preguntas (admin), responses: { '200': { description: OK } } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

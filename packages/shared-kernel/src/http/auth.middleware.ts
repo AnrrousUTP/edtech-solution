@@ -8,6 +8,9 @@ import { asignarIdentidad } from './request-context'
 type AuthConfig = {
   issuer: string
   clientId?: string
+  /** Solo para tests desde el host contra jwt-local: el issuer lógico del token
+   *  y la URL física del JWKS pueden diferir (localhost vs nombre del compose). */
+  jwksUri?: string
 }
 
 type Middleware = (req: Request, res: Response, next: NextFunction) => void
@@ -15,11 +18,12 @@ type Middleware = (req: Request, res: Response, next: NextFunction) => void
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null
 let jwksIssuer = ''
 
-const obtenerJwks = (issuer: string) => {
-  // jose cachea las claves y las refresca solo; recrear el set únicamente si cambia el issuer
-  if (!jwks || jwksIssuer !== issuer) {
-    jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`))
-    jwksIssuer = issuer
+const obtenerJwks = (issuer: string, jwksUri?: string) => {
+  const uri = jwksUri ?? `${issuer}/.well-known/jwks.json`
+  // jose cachea las claves y las refresca solo; recrear el set únicamente si cambia la URI
+  if (!jwks || jwksIssuer !== uri) {
+    jwks = createRemoteJWKSet(new URL(uri))
+    jwksIssuer = uri
   }
   return jwks
 }
@@ -40,7 +44,7 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
     if (!cabecera?.startsWith('Bearer ')) return noAutorizado(res, 'Falta el token')
     const token = cabecera.slice('Bearer '.length)
 
-    jwtVerify(token, obtenerJwks(config.issuer), {
+    jwtVerify(token, obtenerJwks(config.issuer, config.jwksUri), {
       issuer: config.issuer,
       clockTolerance: 60,
     })

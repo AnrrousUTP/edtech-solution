@@ -1,0 +1,745 @@
+{
+  "id": "aaba54c5-4469-4833-b8da-c82049d35bc7",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "catalog.bancos_pregunta": {
+      "name": "bancos_pregunta",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "uso": {
+          "name": "uso",
+          "type": "uso_banco",
+          "typeSchema": "catalog",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bancos_pregunta_tomo_id_tomos_id_fk": {
+          "name": "bancos_pregunta_tomo_id_tomos_id_fk",
+          "tableFrom": "bancos_pregunta",
+          "tableTo": "tomos",
+          "schemaTo": "catalog",
+          "columnsFrom": ["tomo_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.bloques": {
+      "name": "bloques",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "leccion_id": {
+          "name": "leccion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_bloque",
+          "typeSchema": "catalog",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bloques_leccion_id_lecciones_id_fk": {
+          "name": "bloques_leccion_id_lecciones_id_fk",
+          "tableFrom": "bloques",
+          "tableTo": "lecciones",
+          "schemaTo": "catalog",
+          "columnsFrom": ["leccion_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.carrera_cursos": {
+      "name": "carrera_cursos",
+      "schema": "catalog",
+      "columns": {
+        "carrera_id": {
+          "name": "carrera_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curso_id": {
+          "name": "curso_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "carrera_cursos_pk": {
+          "name": "carrera_cursos_pk",
+          "columns": [
+            {
+              "expression": "carrera_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "curso_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "carrera_cursos_carrera_id_carreras_id_fk": {
+          "name": "carrera_cursos_carrera_id_carreras_id_fk",
+          "tableFrom": "carrera_cursos",
+          "tableTo": "carreras",
+          "schemaTo": "catalog",
+          "columnsFrom": ["carrera_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "carrera_cursos_curso_id_cursos_id_fk": {
+          "name": "carrera_cursos_curso_id_cursos_id_fk",
+          "tableFrom": "carrera_cursos",
+          "tableTo": "cursos",
+          "schemaTo": "catalog",
+          "columnsFrom": ["curso_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.carreras": {
+      "name": "carreras",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "imagen_url": {
+          "name": "imagen_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_pub",
+          "typeSchema": "catalog",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BORRADOR'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "carreras_slug_unique": {
+          "name": "carreras_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.cursos": {
+      "name": "cursos",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tecnologia": {
+          "name": "tecnologia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nivel_min": {
+          "name": "nivel_min",
+          "type": "char(1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nivel_max": {
+          "name": "nivel_max",
+          "type": "char(1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precio": {
+          "name": "precio",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USD'"
+        },
+        "version_precio": {
+          "name": "version_precio",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "imagen_url": {
+          "name": "imagen_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_pub",
+          "typeSchema": "catalog",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'BORRADOR'"
+        },
+        "publicado_at": {
+          "name": "publicado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cursos_slug_unique": {
+          "name": "cursos_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.ejercicios": {
+      "name": "ejercicios",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "leccion_id": {
+          "name": "leccion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enunciado": {
+          "name": "enunciado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "solucion_esperada": {
+          "name": "solucion_esperada",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pistas": {
+          "name": "pistas",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ejercicios_leccion_id_lecciones_id_fk": {
+          "name": "ejercicios_leccion_id_lecciones_id_fk",
+          "tableFrom": "ejercicios",
+          "tableTo": "lecciones",
+          "schemaTo": "catalog",
+          "columnsFrom": ["leccion_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.lecciones": {
+      "name": "lecciones",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duracion_min": {
+          "name": "duracion_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "contenido_hash": {
+          "name": "contenido_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lecciones_tomo_id_tomos_id_fk": {
+          "name": "lecciones_tomo_id_tomos_id_fk",
+          "tableFrom": "lecciones",
+          "tableTo": "tomos",
+          "schemaTo": "catalog",
+          "columnsFrom": ["tomo_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.preguntas": {
+      "name": "preguntas",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "banco_id": {
+          "name": "banco_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_pregunta",
+          "typeSchema": "catalog",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nivel": {
+          "name": "nivel",
+          "type": "char(1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enunciado": {
+          "name": "enunciado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opciones": {
+          "name": "opciones",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "respuesta_correcta": {
+          "name": "respuesta_correcta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "puntaje": {
+          "name": "puntaje",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "preguntas_banco_id_bancos_pregunta_id_fk": {
+          "name": "preguntas_banco_id_bancos_pregunta_id_fk",
+          "tableFrom": "preguntas",
+          "tableTo": "bancos_pregunta",
+          "schemaTo": "catalog",
+          "columnsFrom": ["banco_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.processed_events": {
+      "name": "processed_events",
+      "schema": "catalog",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resultado": {
+          "name": "resultado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "catalog.tomos": {
+      "name": "tomos",
+      "schema": "catalog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "curso_id": {
+          "name": "curso_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "umbral_aprobacion": {
+          "name": "umbral_aprobacion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 70
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tomos_curso_id_cursos_id_fk": {
+          "name": "tomos_curso_id_cursos_id_fk",
+          "tableFrom": "tomos",
+          "tableTo": "cursos",
+          "schemaTo": "catalog",
+          "columnsFrom": ["curso_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "catalog.estado_pub": {
+      "name": "estado_pub",
+      "schema": "catalog",
+      "values": ["BORRADOR", "PUBLICADO", "DESPUBLICADO"]
+    },
+    "catalog.tipo_bloque": {
+      "name": "tipo_bloque",
+      "schema": "catalog",
+      "values": ["TEXTO", "CODIGO", "VIDEO", "IMAGEN", "CALLOUT"]
+    },
+    "catalog.tipo_pregunta": {
+      "name": "tipo_pregunta",
+      "schema": "catalog",
+      "values": ["OPCION_UNICA", "OPCION_MULTIPLE", "CODIGO", "VERDADERO_FALSO"]
+    },
+    "catalog.uso_banco": {
+      "name": "uso_banco",
+      "schema": "catalog",
+      "values": ["NIVELACION", "EVALUACION_TOMO", "DIAGNOSTICO_PREVIO"]
+    }
+  },
+  "schemas": {
+    "catalog": "catalog"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
