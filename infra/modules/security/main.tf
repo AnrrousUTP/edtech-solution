@@ -107,6 +107,22 @@ resource "aws_security_group" "aurora" {
   }
 }
 
+# ── Token interno catalog↔enrollment (A-19) ─────────────────────────────────
+resource "random_password" "interno" {
+  length  = 40
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "interno" {
+  name                    = "edtech/${var.entorno}/interno"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "interno" {
+  secret_id     = aws_secretsmanager_secret.interno.id
+  secret_string = jsonencode({ token = random_password.interno.result })
+}
+
 # ── Rol de EJECUCIÓN de tareas (pull de imagen, logs, secretos del arranque) ──
 resource "aws_iam_role" "ecs_execution" {
   name = "edtech-${var.entorno}-ecs-execution"
@@ -153,3 +169,4 @@ output "sg_alb_id" { value = aws_security_group.alb.id }
 output "sg_ecs_tasks_id" { value = aws_security_group.ecs_tasks.id }
 output "sg_aurora_id" { value = aws_security_group.aurora.id }
 output "rol_ecs_execution_arn" { value = aws_iam_role.ecs_execution.arn }
+output "secreto_interno_arn" { value = aws_secretsmanager_secret.interno.arn }

@@ -1,7 +1,8 @@
 terraform {
   required_version = ">= 1.5"
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 6.0" }
+    aws    = { source = "hashicorp/aws", version = "~> 6.0" }
+    random = { source = "hashicorp/random", version = "~> 3.6" }
   }
   backend "s3" {
     bucket         = "edtech-tfstate-047600599757"
@@ -41,3 +42,4 @@ output "sg_alb_id" { value = module.security.sg_alb_id }
 output "sg_ecs_tasks_id" { value = module.security.sg_ecs_tasks_id }
 output "sg_aurora_id" { value = module.security.sg_aurora_id }
 output "rol_ecs_execution_arn" { value = module.security.rol_ecs_execution_arn }
+output "secreto_interno_arn" { value = module.security.secreto_interno_arn }
