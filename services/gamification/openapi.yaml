@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: gamification-service
+  version: 0.1.0
+  description: >
+    Insignias, certificados, puntos y racha. La verificación de certificado es
+    pública (sin cuenta) y nunca expone el usuarioId.
+servers:
+  - url: /api/gamification
+paths:
+  /mi-perfil:
+    get:
+      summary: Puntos, racha, insignias y certificados del usuario
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Perfil de gamificación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      puntos: { type: integer }
+                      rachaActual: { type: integer }
+                      rachaMaxima: { type: integer }
+                      insignias: { type: array, items: { type: object } }
+                      certificados: { type: array, items: { type: object } }
+        '401': { description: Sin token }
+  /certificados/{codigo}:
+    get:
+      summary: Verificación PÚBLICA de un certificado por su código
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema: { type: string, pattern: '^EDT-[A-Z2-9]{4}-[A-Z2-9]{4}$' }
+      responses:
+        '200':
+          description: Certificado válido (tipo, título, titular, fecha y URL firmada del PDF)
+        '400': { description: Código con formato inválido }
+        '404': { description: No existe }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

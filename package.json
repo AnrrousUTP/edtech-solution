@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@aws-sdk/rds-signer": "^3.1121.0",
+    "@aws-sdk/s3-request-presigner": "^3.1121.0",
     "@types/bun": "^1.1.0",
     "@types/pg": "^8.23.1",
     "dependency-cruiser": "^16.6.0",

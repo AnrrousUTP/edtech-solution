@@ -6,6 +6,7 @@
       "name": "edtech-solution",
       "devDependencies": {
         "@aws-sdk/rds-signer": "^3.1121.0",
+        "@aws-sdk/s3-request-presigner": "^3.1121.0",
         "@types/bun": "^1.1.0",
         "@types/pg": "^8.23.1",
         "dependency-cruiser": "^16.6.0",
@@ -56,6 +57,25 @@
       "version": "0.1.0",
       "dependencies": {
         "@aws-sdk/rds-signer": "^3.658.0",
+        "@edtech/shared-kernel": "workspace:*",
+        "drizzle-orm": "^0.36.0",
+        "express": "^4.21.0",
+        "pg": "^8.13.0",
+      },
+      "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/pg": "^8.11.0",
+        "drizzle-kit": "^0.28.0",
+      },
+    },
+    "services/gamification": {
+      "name": "@edtech-svc/gamification",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aws-sdk/client-s3": "^3.658.0",
+        "@aws-sdk/client-sqs": "^3.658.0",
+        "@aws-sdk/rds-signer": "^3.658.0",
+        "@aws-sdk/s3-request-presigner": "^3.658.0",
         "@edtech/shared-kernel": "workspace:*",
         "drizzle-orm": "^0.36.0",
         "express": "^4.21.0",
@@ -125,6 +145,8 @@
 
     "@aws-sdk/rds-signer": ["@aws-sdk/rds-signer@3.1121.0", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/credential-providers": "3.1121.0", "@smithy/core": "^3.33.3", "@smithy/signature-v4": "^5.6.12", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-GHerTWtnb/K9uJ+5j+wdrHaaC5q3cJpPw9AV+90OD++2XVelj2Gu+ND5BUTkpacdRMaMmcF3DRyellPlI025cQ=="],
 
+    "@aws-sdk/s3-request-presigner": ["@aws-sdk/s3-request-presigner@3.1121.0", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/signature-v4-multi-region": "^3.996.46", "@aws-sdk/types": "^3.974.5", "@smithy/core": "^3.33.3", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-uudb+S0RTbdmBd2ChRCnDbjK1lbZsBwNtFeCnC1lusWUYpZJ12cYzf7E0HhJzhPV4W83RQgxFNDAh2ZNhuGSJw=="],
+
     "@aws-sdk/signature-v4-multi-region": ["@aws-sdk/signature-v4-multi-region@3.996.46", "", { "dependencies": { "@aws-sdk/types": "^3.974.5", "@smithy/signature-v4": "^5.6.12", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-L+2xZTye/2T96f3lwCws0Zw6GG2JHZW9e8FpVgGBeeExSKyeoZ6CWRpBml/7DNiK/O26jrgPM9F+Ay8VkgzUWQ=="],
 
     "@aws-sdk/token-providers": ["@aws-sdk/token-providers@3.1116.0", "", { "dependencies": { "@aws-sdk/core": "^3.977.9", "@aws-sdk/nested-clients": "^3.997.44", "@aws-sdk/types": "^3.974.5", "@smithy/core": "^3.33.3", "@smithy/types": "^4.17.2", "tslib": "^2.6.2" } }, "sha512-ygIivKqh8aHzNkucOCXHyIBgBpLPfrSI0mCqXF+vLBsPTUKqj0VSqAY0GFPe7lQl4HntjOcQ+KSyS7oUV2C54Q=="],
@@ -140,6 +162,8 @@
     "@edtech-svc/catalog": ["@edtech-svc/catalog@workspace:services/catalog"],
 
     "@edtech-svc/enrollment-progress": ["@edtech-svc/enrollment-progress@workspace:services/enrollment-progress"],
+
+    "@edtech-svc/gamification": ["@edtech-svc/gamification@workspace:services/gamification"],
 
     "@edtech-svc/identity-access": ["@edtech-svc/identity-access@workspace:services/identity-access"],
 

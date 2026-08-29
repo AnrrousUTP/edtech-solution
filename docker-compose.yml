@@ -78,6 +78,28 @@ services:
       localstack: { condition: service_started }
       jwt-local: { condition: service_started }
 
+  gamification:
+    build: { context: ., dockerfile: services/gamification/Dockerfile }
+    profiles: ["full"]
+    ports: ["3005:3000"]
+    mem_limit: 512m
+    environment:
+      DATABASE_URL: postgres://svc_gamification:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      EVENT_BUS_NAME: edtech-domain-events
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-gamification
+      QUEUE_CERTIFICADOS_URL: http://localstack:4566/000000000000/edtech-dev-gamification-certificados
+      BUCKET_MEDIA: edtech-dev-media
+      COGNITO_ISSUER: http://jwt-local:4599
+      LOG_LEVEL: debug
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_started }
+      jwt-local: { condition: service_started }
+
   catalog:
     build: { context: ., dockerfile: services/catalog/Dockerfile }
     profiles: ["contenido", "pagos", "full"]
