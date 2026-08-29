@@ -38,7 +38,11 @@ export function verificarConvenciones(raiz: string): string[] {
     const enDomain = rel.includes('/src/domain/')
     const enApplication = rel.includes('/src/application/')
     const enEntities = rel.includes('/src/domain/entities/')
-    const enConfig = rel.includes('/infrastructure/config/')
+    // El equivalente del `infrastructure/config/` de un servicio en la app
+    // Next es `src/lib/config.ts` (A-39): no es hexagonal, pero la regla que
+    // importa —un SOLO lugar que lee el entorno— se cumple igual.
+    const enConfig =
+      rel.includes('/infrastructure/config/') || /\/apps\/[^/]+\/src\/lib\/config\.ts$/.test(rel)
     const contenido = readFileSync(archivo, 'utf8')
     const sf = ts.createSourceFile(archivo, contenido, ts.ScriptTarget.Latest, true)
 

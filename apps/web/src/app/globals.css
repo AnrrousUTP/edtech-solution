@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+  code,
+  pre {
+    @apply font-mono;
+  }
+  /* Foco visible siempre: la navegación por teclado no es opcional (doc 11 §6) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-marca-600 ring-offset-2 ring-offset-slate-50;
+  }
+}
+
+@layer components {
+  /* D19: el hover cambia color, borde y opacidad — NUNCA transform/translate/scale.
+     Estas clases son el único lugar donde se define el hover del producto. */
+  .tarjeta {
+    @apply rounded-xl border border-slate-200 bg-white shadow-suave transition-colors;
+  }
+  .tarjeta-interactiva {
+    @apply tarjeta hover:border-marca-400 hover:bg-marca-50;
+  }
+  .boton {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+           text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .boton-primario {
+    @apply boton bg-marca-600 text-white hover:bg-marca-700;
+  }
+  .boton-secundario {
+    @apply boton border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-100;
+  }
+  .boton-exito {
+    @apply boton bg-exito-500 text-white hover:bg-exito-700;
+  }
+  .etiqueta {
+    @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold;
+  }
+}
+
+/* Toda animación respeta prefers-reduced-motion (doc 11 §3 y §6) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Transición de ENTRADA (permitida): no es respuesta al puntero */
+.aparece {
+  animation: aparecer 200ms ease-out;
+}

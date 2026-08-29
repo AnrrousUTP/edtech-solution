@@ -103,3 +103,26 @@ motivo, tal como exige el doc 17 §0.4.
 | Proyección de precios alimentada por eventos de catalog | 3 cursos con su precio y `publicado = true`                                  |
 
 **Pendiente de un paso manual del operador** (el doc 09 §6.3 ya lo anticipa: "la firma se prueba una vez, a mano, contra un pago sandbox de verdad"): aprobar un pago en el navegador con una cuenta de comprador sandbox para ver la cadena `captura → pago-confirmado → matrícula` con dinero real de sandbox. El resto del camino está verificado por tests y contra la API real.
+
+### F9 — web-app
+
+- **A-38** — `output: 'standalone'` en `next.config.mjs` se activa solo con `SALIDA_STANDALONE=1`, que se pone únicamente dentro del Dockerfile. _Motivo:_ el modo standalone crea symlinks al copiar `node_modules`, y en Windows eso exige privilegios que una sesión normal no tiene (`EPERM: operation not permitted, symlink`): el `bun run build` local fallaba mientras que el de la imagen —que corre en Linux— funciona. La alternativa era pedirle al desarrollador que abra la terminal como administrador o active el Modo Desarrollador, es decir, un requisito de entorno para algo que solo importa al construir la imagen.
+- **A-39** — El lint de convenciones acepta `process.env` también en `apps/*/src/lib/config.ts`, no solo en `infrastructure/config/`. _Motivo:_ la regla real (doc 12 §4) es que **un solo archivo** lea el entorno y el resto reciba valores ya validados; la app Next no es hexagonal y no tiene `infrastructure/config/`, pero su equivalente exacto es ese módulo. Se exceptúa la ruta concreta, no el patrón `config.ts` en general, para que la regla siga fallando si alguien lee el entorno desde un componente.
+- **A-40** — La imagen del frontend construye `apps/web` como **proyecto aislado** (`bun install` sobre su propio `package.json`), no como workspace del monorepo. _Motivo:_ instalando el workspace completo, bun deja los binarios en su store (`node_modules/.bun/next@…/node_modules/next`) sin enlazarlos en `node_modules/.bin`, así que `bun run build` termina en `next: not found` (exit 127); `bunx next build` empeora la cosa descargando una versión distinta de Next. La app no importa nada del monorepo —solo su propio alias `@/`—, así que aislarla no cruza ninguna frontera ni duplica código compartido.
+- **A-41** — El frontend habla con los servicios **siempre por el gateway** (`API_BASE`), nunca directo a un puerto de servicio, y en local ese gateway es el nginx de `tools/nginx.conf` que replica las listener rules del ALB. _Motivo:_ que las URLs sean idénticas en local y en AWS; si el frontend usara `http://catalog:3000` en local, un error de ruta solo aparecería al desplegar.
+- **A-42** — La pantalla 7 vive en `/aprender/[cursoSlug]/evaluacion/[tomoId]`, no en `/aprender/[cursoSlug]/[tomoId]/evaluacion` como dice el doc 11 §2. _Motivo:_ el App Router de Next no admite dos segmentos dinámicos con nombre distinto en la misma posición (`[leccionId]` y `[tomoId]` son hermanos), y falla en arranque con `You cannot use different slug names for the same dynamic path`. Poner `evaluacion` como segmento estático antes del id resuelve el choque sin perder legibilidad de la URL; los ids son UUID, así que nunca colisionan con la palabra `evaluacion`.
+
+**Verificación de F9 realizada contra `docker compose --profile full`** (guion `tools/e2e.ts`, reutilizable contra `dev` con `WEB_BASE`/`API_BASE`/`TOKEN`):
+
+| Comprobación                                   | Resultado                                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------------------------- |
+| Catálogo público sin autenticar                | 4 cursos; detalle con 2 tomos                                                   |
+| Nivelación pública → nivel                     | 20 preguntas, nivel `N` con 100 %                                               |
+| Matrícula gratuita (dos veces)                 | 201 y 201; **I-2**: una sola matrícula en `mis-matriculas`                      |
+| 8 lecciones + 2 evaluaciones de tomo           | 8/8 completadas, ambos tomos aprobados al 100 %                                 |
+| Insignias y certificado por eventos            | 4 insignias, 340 puntos, certificado `EDT-…` verificable sin sesión             |
+| **I-7** ninguna insignia repetida              | 4 claves `criterio:referencia` distintas                                        |
+| **I-5** en API y en el HTML servido            | sin `respuesta_correcta` en ninguna de las 10 pantallas ni en ninguna respuesta |
+| **I-8** flashcards a través del panel de admin | 0 tarjetas antes de aprobar; la tarjeta aprobada aparece en `/repasar/…`        |
+| **D19** sin `transform` en `:hover`            | ningún `hover:scale/translate/rotate/skew` en el HTML                           |
+| Pantallas 1–11 con sesión de navegador         | 200 todas; `/admin` sin rol devuelve la pantalla de permisos                    |
