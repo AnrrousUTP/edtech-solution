@@ -36,5 +36,25 @@ services:
     profiles: ["base", "pagos", "contenido", "full"]
     ports: ["4599:4599"]
 
+  identity-access:
+    build: { context: ., dockerfile: services/identity-access/Dockerfile }
+    profiles: ["full"]
+    ports: ["3001:3000"]
+    mem_limit: 512m
+    environment:
+      DATABASE_URL: postgres://svc_identity:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      EVENT_BUS_NAME: edtech-domain-events
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-identity
+      COGNITO_ISSUER: http://jwt-local:4599
+      LOG_LEVEL: debug
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_started }
+      jwt-local: { condition: service_started }
+
 volumes:
   pgdata: {}

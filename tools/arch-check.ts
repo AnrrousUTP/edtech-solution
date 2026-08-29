@@ -66,6 +66,7 @@ export function verificarArquitectura(raiz: string): string[] {
       const rel = normalizar(archivo)
       const contenido = readFileSync(archivo, 'utf8')
       const enDomain = rel.includes('/src/domain/')
+      const esTest = rel.endsWith('.test.ts')
 
       for (const spec of extraerImports(archivo, contenido)) {
         const esRelativo = spec.startsWith('.')
@@ -91,8 +92,9 @@ export function verificarArquitectura(raiz: string): string[] {
           ) {
             violaciones.push(`[A1] ${rel} (domain) importa hacia afuera: "${spec}"`)
           }
-          // A1: domain no importa frameworks ni SDKs — solo el shared-kernel
-          if (!esRelativo && spec !== '@edtech/shared-kernel') {
+          // A1: domain no importa frameworks ni SDKs — solo el shared-kernel.
+          // Los *.test.ts pueden importar bun:test y los dobles del kernel (A-06).
+          if (!esRelativo && spec !== '@edtech/shared-kernel' && !esTest) {
             violaciones.push(
               `[A1] ${rel} (domain) importa "${spec}" (solo se permite @edtech/shared-kernel)`,
             )

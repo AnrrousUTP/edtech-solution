@@ -5,6 +5,11 @@
   "type": "object",
   "required": ["matriculaId", "usuarioId", "cursoId", "cursoTitulo", "completadoAt"],
   "properties": {
+    "nivelMax": {
+      "type": "string",
+      "pattern": "^[A-N]$",
+      "description": "Campo opcional agregado (A-11): identity lo usa para subir el nivel (regla max, doc 02 §2) sin consultar a catalog"
+    },
     "matriculaId": {
       "type": "string",
       "format": "uuid"

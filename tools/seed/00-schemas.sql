@@ -19,5 +19,8 @@ BEGIN
     EXECUTE format('ALTER ROLE %I SET search_path = %I, public', 'svc_' || s, s);
     EXECUTE format('REVOKE ALL ON SCHEMA %I FROM PUBLIC', s);
     EXECUTE format('GRANT CONNECT ON DATABASE edtech TO %I', 'svc_' || s);
+    -- A-17: el migrador de Drizzle emite CREATE SCHEMA IF NOT EXISTS, y PG
+    -- chequea el ACL de la base antes de la existencia. No debilita I-4.
+    EXECUTE format('GRANT CREATE ON DATABASE edtech TO %I', 'svc_' || s);
   END LOOP;
 END $$;

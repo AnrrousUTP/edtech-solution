@@ -1,0 +1,22 @@
+{
+  "name": "@edtech-svc/identity-access",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "db:generate": "bunx drizzle-kit generate"
+  },
+  "dependencies": {
+    "@edtech/shared-kernel": "workspace:*",
+    "@aws-sdk/rds-signer": "^3.658.0",
+    "drizzle-orm": "^0.36.0",
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.28.0"
+  }
+}

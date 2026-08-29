@@ -13,6 +13,7 @@ TOKEN=$(aws rds generate-db-auth-token --hostname "$HOST" --port 5432 --username
 
 docker run --rm -i -e PGPASSWORD="$TOKEN" postgres:16-alpine \
   psql "host=$HOST port=5432 user=postgres dbname=edtech sslmode=require" -v ON_ERROR_STOP=1 <<'SQL'
+CREATE EXTENSION IF NOT EXISTS citext;
 REVOKE ALL ON DATABASE edtech FROM PUBLIC;
 
 DO $$
@@ -30,6 +31,10 @@ BEGIN
     EXECUTE format('ALTER ROLE %I SET search_path = %I, public', 'svc_' || s, s);
     EXECUTE format('REVOKE ALL ON SCHEMA %I FROM PUBLIC', s);
     EXECUTE format('GRANT CONNECT ON DATABASE edtech TO %I', 'svc_' || s);
+    -- A-17: CREATE SCHEMA IF NOT EXISTS (que emite el migrador de Drizzle)
+    -- chequea el ACL de la base ANTES de la existencia; sin esto la migración
+    -- falla aunque el schema ya exista. No debilita I-4.
+    EXECUTE format('GRANT CREATE ON DATABASE edtech TO %I', 'svc_' || s);
   END LOOP;
 END $$;
 SQL
