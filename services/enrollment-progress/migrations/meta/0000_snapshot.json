@@ -1,0 +1,556 @@
+{
+  "id": "90c497ac-98ba-40c0-89f3-fc168ea395f2",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "enrollment.cursos_proyeccion": {
+      "name": "cursos_proyeccion",
+      "schema": "enrollment",
+      "columns": {
+        "curso_id": {
+          "name": "curso_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "publicado": {
+          "name": "publicado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precio": {
+          "name": "precio",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "nivel_max": {
+          "name": "nivel_max",
+          "type": "char(1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estructura": {
+          "name": "estructura",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actualizado_at": {
+          "name": "actualizado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.intentos_evaluacion": {
+      "name": "intentos_evaluacion",
+      "schema": "enrollment",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_evaluacion",
+          "typeSchema": "enrollment",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "banco_id": {
+          "name": "banco_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matricula_id": {
+          "name": "matricula_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_intento",
+          "typeSchema": "enrollment",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'EN_CURSO'"
+        },
+        "puntaje": {
+          "name": "puntaje",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aprobado": {
+          "name": "aprobado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nivel_resultante": {
+          "name": "nivel_resultante",
+          "type": "char(1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iniciado_at": {
+          "name": "iniciado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "entregado_at": {
+          "name": "entregado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "intentos_evaluacion_matricula_id_matriculas_id_fk": {
+          "name": "intentos_evaluacion_matricula_id_matriculas_id_fk",
+          "tableFrom": "intentos_evaluacion",
+          "tableTo": "matriculas",
+          "schemaTo": "enrollment",
+          "columnsFrom": ["matricula_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.matriculas": {
+      "name": "matriculas",
+      "schema": "enrollment",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curso_id": {
+          "name": "curso_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_matricula",
+          "typeSchema": "enrollment",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVA'"
+        },
+        "origen": {
+          "name": "origen",
+          "type": "origen_matricula",
+          "typeSchema": "enrollment",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden_id": {
+          "name": "orden_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acceso_hasta": {
+          "name": "acceso_hasta",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "curso_completado_at": {
+          "name": "curso_completado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "matriculas_usuario_curso": {
+          "name": "matriculas_usuario_curso",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "curso_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.processed_events": {
+      "name": "processed_events",
+      "schema": "enrollment",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resultado": {
+          "name": "resultado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.progreso_lecciones": {
+      "name": "progreso_lecciones",
+      "schema": "enrollment",
+      "columns": {
+        "matricula_id": {
+          "name": "matricula_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "leccion_id": {
+          "name": "leccion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completada_at": {
+          "name": "completada_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "progreso_lecciones_pk": {
+          "name": "progreso_lecciones_pk",
+          "columns": [
+            {
+              "expression": "matricula_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "leccion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "progreso_lecciones_matricula_id_matriculas_id_fk": {
+          "name": "progreso_lecciones_matricula_id_matriculas_id_fk",
+          "tableFrom": "progreso_lecciones",
+          "tableTo": "matriculas",
+          "schemaTo": "enrollment",
+          "columnsFrom": ["matricula_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.progreso_tomos": {
+      "name": "progreso_tomos",
+      "schema": "enrollment",
+      "columns": {
+        "matricula_id": {
+          "name": "matricula_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tomo_id": {
+          "name": "tomo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completado_at": {
+          "name": "completado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mejor_puntaje": {
+          "name": "mejor_puntaje",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "progreso_tomos_pk": {
+          "name": "progreso_tomos_pk",
+          "columns": [
+            {
+              "expression": "matricula_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tomo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "progreso_tomos_matricula_id_matriculas_id_fk": {
+          "name": "progreso_tomos_matricula_id_matriculas_id_fk",
+          "tableFrom": "progreso_tomos",
+          "tableTo": "matriculas",
+          "schemaTo": "enrollment",
+          "columnsFrom": ["matricula_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "enrollment.respuestas_intento": {
+      "name": "respuestas_intento",
+      "schema": "enrollment",
+      "columns": {
+        "intento_id": {
+          "name": "intento_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pregunta_id": {
+          "name": "pregunta_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "respuesta": {
+          "name": "respuesta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "correcta": {
+          "name": "correcta",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "respuestas_intento_pk": {
+          "name": "respuestas_intento_pk",
+          "columns": [
+            {
+              "expression": "intento_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pregunta_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "respuestas_intento_intento_id_intentos_evaluacion_id_fk": {
+          "name": "respuestas_intento_intento_id_intentos_evaluacion_id_fk",
+          "tableFrom": "respuestas_intento",
+          "tableTo": "intentos_evaluacion",
+          "schemaTo": "enrollment",
+          "columnsFrom": ["intento_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "enrollment.estado_intento": {
+      "name": "estado_intento",
+      "schema": "enrollment",
+      "values": ["EN_CURSO", "ENTREGADO"]
+    },
+    "enrollment.estado_matricula": {
+      "name": "estado_matricula",
+      "schema": "enrollment",
+      "values": ["ACTIVA", "REVOCADA", "EXPIRADA"]
+    },
+    "enrollment.origen_matricula": {
+      "name": "origen_matricula",
+      "schema": "enrollment",
+      "values": ["PAGO", "ALTA_MANUAL", "GRATUITO"]
+    },
+    "enrollment.tipo_evaluacion": {
+      "name": "tipo_evaluacion",
+      "schema": "enrollment",
+      "values": ["NIVELACION", "TOMO", "DIAGNOSTICO_PREVIO"]
+    }
+  },
+  "schemas": {
+    "enrollment": "enrollment"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

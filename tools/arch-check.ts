@@ -54,6 +54,14 @@ const archivosDe = (dir: string, patron: string): string[] => {
   return [...new Glob(patron).scanSync(dir)].map(f => join(dir, f))
 }
 
+/** A5 se verifica sobre código, no sobre prosa: un comentario que menciona a
+ *  otro contexto ("se alimenta de eventos de catalog") no es acoplamiento.
+ *  Mismo criterio que el lint de convenciones (doc 12 §3). */
+const sinComentarios = (contenido: string, esSql: boolean): string =>
+  esSql
+    ? contenido.replace(/--[^\n]*/g, '')
+    : contenido.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+
 export function verificarArquitectura(raiz: string): string[] {
   const violaciones: string[] = []
 
@@ -129,7 +137,7 @@ export function verificarArquitectura(raiz: string): string[] {
       ...archivosDe(join(dirSvc, 'migrations'), '**/*.sql'),
     ]
     for (const archivo of archivosPersistencia) {
-      const contenido = readFileSync(archivo, 'utf8')
+      const contenido = sinComentarios(readFileSync(archivo, 'utf8'), archivo.endsWith('.sql'))
       for (const ajeno of schemasAjenos) {
         if (new RegExp(`\\b${ajeno}\\.`).test(contenido)) {
           violaciones.push(`[A5] ${normalizar(archivo)} menciona el schema ajeno "${ajeno}."`)

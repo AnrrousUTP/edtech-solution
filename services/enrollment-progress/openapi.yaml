@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: enrollment-progress-service
+  version: 0.1.0
+  description: >
+    Matrícula, progreso y evaluaciones (Assessment absorbido, D3). La matrícula
+    de pago NO se crea por esta API: llega por payments.pago-confirmado.v1.
+servers:
+  - url: /api/enrollment
+paths:
+  /matriculas:
+    post:
+      summary: Matricularse en un curso GRATUITO (los de pago van por checkout)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cursoId]
+              properties: { cursoId: { type: string, format: uuid } }
+      responses:
+        '201': { description: Matrícula creada (o ya existente) }
+        '402': { description: El curso no es gratuito }
+        '409': { description: Curso no publicado }
+  /admin/matriculas:
+    post:
+      summary: Alta manual (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Creada }
+        '403': { description: Requiere admin }
+  /mis-matriculas:
+    get:
+      summary: Matrículas del usuario con resumen de progreso
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Lista } }
+  /progreso/{cursoId}:
+    get:
+      summary: Progreso detallado por tomo y lección
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Progreso }
+        '403': { description: Sin matrícula }
+  /lecciones/{leccionId}/completar:
+    post:
+      summary: Marcar lección completada (idempotente); puede completar tomo/curso
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cursoId]
+              properties: { cursoId: { type: string, format: uuid } }
+      responses:
+        '200': { description: '{tomoCompletado, cursoCompletado}' }
+        '403': { description: Sin matrícula activa }
+  /intentos:
+    post:
+      summary: Iniciar intento (NIVELACION sin matrícula; TOMO la exige)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipo, bancoId]
+              properties:
+                tipo: { type: string, enum: [NIVELACION, TOMO, DIAGNOSTICO_PREVIO] }
+                bancoId: { type: string, format: uuid }
+                cursoId: { type: string, format: uuid }
+                tomoId: { type: string, format: uuid }
+      responses: { '201': { description: intentoId } }
+  /intentos/{id}/entregar:
+    post:
+      summary: Entregar y corregir (intento inmutable tras entregar)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [respuestas]
+              properties:
+                respuestas:
+                  type: array
+                  items:
+                    type: object
+                    required: [preguntaId, respuesta]
+                    properties:
+                      preguntaId: { type: string, format: uuid }
+                      respuesta: {}
+      responses:
+        '200': { description: '{puntaje, aprobado, nivelResultante?, tomoCompletado, cursoCompletado}' }
+        '409': { description: Ya entregado }
+        '503': { description: Corrección no disponible (A-19): reintenta }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

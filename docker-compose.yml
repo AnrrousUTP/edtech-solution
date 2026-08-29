@@ -56,9 +56,31 @@ services:
       localstack: { condition: service_started }
       jwt-local: { condition: service_started }
 
+  enrollment-progress:
+    build: { context: ., dockerfile: services/enrollment-progress/Dockerfile }
+    profiles: ["pagos", "full"]
+    ports: ["3003:3000"]
+    mem_limit: 512m
+    environment:
+      DATABASE_URL: postgres://svc_enrollment:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      EVENT_BUS_NAME: edtech-domain-events
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-enrollment
+      CATALOG_BASE_URL: http://gateway
+      COGNITO_ISSUER: http://jwt-local:4599
+      INTERNO_TOKEN: local-interno
+      LOG_LEVEL: debug
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_started }
+      jwt-local: { condition: service_started }
+
   catalog:
     build: { context: ., dockerfile: services/catalog/Dockerfile }
-    profiles: ["contenido", "full"]
+    profiles: ["contenido", "pagos", "full"]
     ports: ["3002:3000"]
     mem_limit: 512m
     environment:
