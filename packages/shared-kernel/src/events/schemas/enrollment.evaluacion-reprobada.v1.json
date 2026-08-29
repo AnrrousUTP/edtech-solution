@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.evaluacion-reprobada.v1.json",
+  "title": "enrollment.evaluacion-reprobada.v1",
+  "type": "object",
+  "required": ["usuarioId", "intentoId", "tomoId", "puntaje"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "intentoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "puntaje": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

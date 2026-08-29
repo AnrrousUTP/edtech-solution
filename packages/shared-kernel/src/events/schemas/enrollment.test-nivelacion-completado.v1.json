@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.test-nivelacion-completado.v1.json",
+  "title": "enrollment.test-nivelacion-completado.v1",
+  "type": "object",
+  "required": ["usuarioId", "intentoId", "nivelResultante", "puntaje"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "intentoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nivelResultante": {
+      "type": "string",
+      "pattern": "^[A-N]$"
+    },
+    "puntaje": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

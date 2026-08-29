@@ -1,0 +1,77 @@
+import type { NextFunction, Request, Response } from 'express'
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
+import { asignarIdentidad } from './request-context'
+
+// Validación del access token de Cognito (doc 08 §5). El mismo código valida
+// contra el emisor local (jwt-local) y contra el User Pool real: solo cambia
+// COGNITO_ISSUER.
+type AuthConfig = {
+  issuer: string
+  clientId?: string
+}
+
+type Middleware = (req: Request, res: Response, next: NextFunction) => void
+
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null
+let jwksIssuer = ''
+
+const obtenerJwks = (issuer: string) => {
+  // jose cachea las claves y las refresca solo; recrear el set únicamente si cambia el issuer
+  if (!jwks || jwksIssuer !== issuer) {
+    jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`))
+    jwksIssuer = issuer
+  }
+  return jwks
+}
+
+const noAutorizado = (res: Response, message: string): void => {
+  res.status(401).json({ error: { code: 'NO_AUTORIZADO', message } })
+}
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    auth?: { usuarioId: string; roles: string[] }
+  }
+}
+
+export const requiereAuth = (config: AuthConfig): Middleware => {
+  return (req, res, next) => {
+    const cabecera = req.headers.authorization
+    if (!cabecera?.startsWith('Bearer ')) return noAutorizado(res, 'Falta el token')
+    const token = cabecera.slice('Bearer '.length)
+
+    jwtVerify(token, obtenerJwks(config.issuer), {
+      issuer: config.issuer,
+      clockTolerance: 60,
+    })
+      .then(({ payload }) => {
+        // El error clásico: aceptar el id token. Se exige token_use = 'access'.
+        if (payload.token_use !== 'access') return noAutorizado(res, 'Se requiere un access token')
+        if (config.clientId && payload.client_id !== config.clientId)
+          return noAutorizado(res, 'client_id no reconocido')
+        if (typeof payload.sub !== 'string') return noAutorizado(res, 'Token sin sub')
+
+        const roles = extraerGrupos(payload)
+        req.auth = { usuarioId: payload.sub, roles }
+        asignarIdentidad(payload.sub, roles)
+        next()
+      })
+      .catch(() => noAutorizado(res, 'Token inválido o expirado'))
+  }
+}
+
+export const requiereRol = (rol: 'admin' | 'estudiante'): Middleware => {
+  return (req, res, next) => {
+    if (!req.auth) return noAutorizado(res, 'Falta el token')
+    if (!req.auth.roles.includes(rol)) {
+      res.status(403).json({ error: { code: 'ROL_INSUFICIENTE', message: `Requiere rol ${rol}` } })
+      return
+    }
+    next()
+  }
+}
+
+const extraerGrupos = (payload: JWTPayload): string[] => {
+  const grupos = payload['cognito:groups']
+  return Array.isArray(grupos) ? grupos.filter((g): g is string => typeof g === 'string') : []
+}

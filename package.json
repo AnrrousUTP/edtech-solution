@@ -1,0 +1,40 @@
+{
+  "name": "edtech-solution",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "docker compose --profile full up",
+    "test": "bun test",
+    "arch": "bun run tools/arch-check.ts && bunx depcruise --config .dependency-cruiser.cjs services packages",
+    "estructura": "bun run tools/check-structure.ts",
+    "convenciones": "bun run tools/lint-convenciones.ts",
+    "harness": "bun run arch && bun run estructura && bun run convenciones && bun test",
+    "db:migrate": "bun run tools/db-migrate.ts",
+    "db:seed": "bun run tools/seed/index.ts",
+    "gen:localstack": "bun run tools/gen-localstack-init.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "bunx eslint --fix"
+    ],
+    "*.{ts,tsx,json,md}": [
+      "bunx prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/bun": "^1.1.0",
+    "dependency-cruiser": "^16.6.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.3.0",
+    "eslint": "^9.12.0",
+    "typescript-eslint": "^8.8.0"
+  }
+}

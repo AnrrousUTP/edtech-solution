@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/catalog.curso-despublicado.v1.json",
+  "title": "catalog.curso-despublicado.v1",
+  "type": "object",
+  "required": ["cursoId", "motivo"],
+  "properties": {
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

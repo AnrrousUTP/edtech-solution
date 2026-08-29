@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/gamification.certificado-emitido.v1.json",
+  "title": "gamification.certificado-emitido.v1",
+  "type": "object",
+  "required": [
+    "certificadoId",
+    "usuarioId",
+    "tipo",
+    "referenciaId",
+    "titulo",
+    "codigoVerificacion"
+  ],
+  "properties": {
+    "certificadoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tipo": {
+      "enum": ["MENOR", "MAYOR"]
+    },
+    "referenciaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "codigoVerificacion": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

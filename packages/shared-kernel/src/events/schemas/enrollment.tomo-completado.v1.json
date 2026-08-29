@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.tomo-completado.v1.json",
+  "title": "enrollment.tomo-completado.v1",
+  "type": "object",
+  "required": ["matriculaId", "usuarioId", "cursoId", "tomoId", "puntaje"],
+  "properties": {
+    "matriculaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "puntaje": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

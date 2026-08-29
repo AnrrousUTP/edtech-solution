@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.matricula-creada.v1.json",
+  "title": "enrollment.matricula-creada.v1",
+  "type": "object",
+  "required": ["matriculaId", "usuarioId", "cursoId", "origen"],
+  "properties": {
+    "matriculaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "origen": {
+      "enum": ["PAGO", "ALTA_MANUAL", "GRATUITO"]
+    },
+    "ordenId": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

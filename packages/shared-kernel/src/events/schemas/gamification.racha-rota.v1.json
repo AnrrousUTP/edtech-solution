@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/gamification.racha-rota.v1.json",
+  "title": "gamification.racha-rota.v1",
+  "type": "object",
+  "required": ["usuarioId", "rachaPerdida"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "rachaPerdida": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

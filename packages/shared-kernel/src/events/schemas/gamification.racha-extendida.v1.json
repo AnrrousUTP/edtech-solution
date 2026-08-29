@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/gamification.racha-extendida.v1.json",
+  "title": "gamification.racha-extendida.v1",
+  "type": "object",
+  "required": ["usuarioId", "rachaActual"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "rachaActual": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

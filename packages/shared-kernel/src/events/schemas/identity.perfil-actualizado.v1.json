@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/identity.perfil-actualizado.v1.json",
+  "title": "identity.perfil-actualizado.v1",
+  "type": "object",
+  "required": ["usuarioId", "campos"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "campos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

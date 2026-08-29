@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.leccion-completada.v1.json",
+  "title": "enrollment.leccion-completada.v1",
+  "type": "object",
+  "required": ["matriculaId", "usuarioId", "cursoId", "tomoId", "leccionId", "completadaAt"],
+  "properties": {
+    "matriculaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "leccionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "completadaAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

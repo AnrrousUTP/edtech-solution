@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.curso-completado.v1.json",
+  "title": "enrollment.curso-completado.v1",
+  "type": "object",
+  "required": ["matriculaId", "usuarioId", "cursoId", "cursoTitulo", "completadoAt"],
+  "properties": {
+    "matriculaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoTitulo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "completadoAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

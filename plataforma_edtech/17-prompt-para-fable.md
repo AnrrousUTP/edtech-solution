@@ -5,6 +5,7 @@
 > de AWS ya activas.
 >
 > **Antes de pegarlo:**
+>
 > 1. Completa el bloque de credenciales de §9.1 siguiendo
 >    [`../CREDENCIALES-PAYPAL.md`](../CREDENCIALES-PAYPAL.md).
 > 2. Asegúrate de que Fable tenga acceso de lectura a **toda esta carpeta**
@@ -73,7 +74,7 @@ Todo el detalle está en el **doc 02**. Lo esencial:
 - Flujo del estudiante: doc 02 §3. Vistas admin/estudiante: doc 02 §4.
 - **Seis bounded contexts**, cada uno con sus agregados, invariantes y fronteras
   (doc 02 §5):
-  `identity-access` · `catalog` · `enrollment-progress` (absorbe *assessment*) ·
+  `identity-access` · `catalog` · `enrollment-progress` (absorbe _assessment_) ·
   `gamification` · `flashcards` · `payments`.
 - Lo explícitamente prohibido entre contextos: doc 02 §7.
 
@@ -81,25 +82,25 @@ Todo el detalle está en el **doc 02**. Lo esencial:
 
 ## 3. STACK
 
-| Pieza | Decisión | Ref |
-|---|---|---|
-| Lenguaje | TypeScript en todo el stack | |
-| Runtime y gestor | **Bun** (instalación, workspaces, scripts, `bun test`, imagen `oven/bun`) | D5 |
-| Repositorio | **Uno solo**, con Bun workspaces. Microservicios de verdad en runtime | D4, doc 06 |
-| ORM | **Drizzle** + `drizzle-kit` (compatible con Bun) | D9 |
-| Backend | Hexagonal + DDD, por servicio | doc 04 |
-| Frontend | **Next.js** App Router | doc 11 |
-| Base de datos | **Aurora PostgreSQL Serverless v2**, un schema + un rol por servicio | D1, doc 03 |
-| Identidad | **Amazon Cognito** (IdP) + `identity-access-service` (perfil y roles) | D2, doc 08 |
-| Mensajería | **EventBridge** (bus `edtech-domain-events`) + **SQS** con DLQ por consumidor | D12, doc 05 |
-| Contenedores | Docker → **ECR** (uno por servicio) → **ECS Fargate** (un servicio por microservicio) | doc 07 |
-| Entrada HTTP | **Un ALB** con listener rules por path. **No** API Gateway, **no** App Mesh | D10, D6, doc 07 §5 |
-| Estático | S3 + CloudFront con OAC, + Route53, ACM, WAF | doc 07 |
-| IaC | **Terraform**, backend S3 + DynamoDB, **un state por módulo y por servicio** | doc 07 §3 |
-| IA | **Amazon Bedrock** (agente nativo), invocado asíncronamente por SQS | doc 10 |
-| Pagos | **PayPal** (solo) | doc 09 |
-| Región | **`us-east-1`** | D15 |
-| Entornos | Solo **`dev`** se aplica. `prod` escrito, detrás de `apply_prod = false` | D16 |
+| Pieza            | Decisión                                                                              | Ref                |
+| ---------------- | ------------------------------------------------------------------------------------- | ------------------ |
+| Lenguaje         | TypeScript en todo el stack                                                           |                    |
+| Runtime y gestor | **Bun** (instalación, workspaces, scripts, `bun test`, imagen `oven/bun`)             | D5                 |
+| Repositorio      | **Uno solo**, con Bun workspaces. Microservicios de verdad en runtime                 | D4, doc 06         |
+| ORM              | **Drizzle** + `drizzle-kit` (compatible con Bun)                                      | D9                 |
+| Backend          | Hexagonal + DDD, por servicio                                                         | doc 04             |
+| Frontend         | **Next.js** App Router                                                                | doc 11             |
+| Base de datos    | **Aurora PostgreSQL Serverless v2**, un schema + un rol por servicio                  | D1, doc 03         |
+| Identidad        | **Amazon Cognito** (IdP) + `identity-access-service` (perfil y roles)                 | D2, doc 08         |
+| Mensajería       | **EventBridge** (bus `edtech-domain-events`) + **SQS** con DLQ por consumidor         | D12, doc 05        |
+| Contenedores     | Docker → **ECR** (uno por servicio) → **ECS Fargate** (un servicio por microservicio) | doc 07             |
+| Entrada HTTP     | **Un ALB** con listener rules por path. **No** API Gateway, **no** App Mesh           | D10, D6, doc 07 §5 |
+| Estático         | S3 + CloudFront con OAC, + Route53, ACM, WAF                                          | doc 07             |
+| IaC              | **Terraform**, backend S3 + DynamoDB, **un state por módulo y por servicio**          | doc 07 §3          |
+| IA               | **Amazon Bedrock** (agente nativo), invocado asíncronamente por SQS                   | doc 10             |
+| Pagos            | **PayPal** (solo)                                                                     | doc 09             |
+| Región           | **`us-east-1`**                                                                       | D15                |
+| Entornos         | Solo **`dev`** se aplica. `prod` escrito, detrás de `apply_prod = false`              | D16                |
 
 ---
 
@@ -173,9 +174,10 @@ separados (§3), ALB (§5), cómputo (§6), observabilidad (§8), NAT y endpoint
 seguridad (§10).
 
 Paridad local: doc 13. `docker compose` con Postgres + LocalStack + los 6 servicios + web
-+ un nginx que replica las listener rules del ALB, y un emisor JWT local que sustituye a
-Cognito. **Lee el doc 13 §7**: dice qué NO reproduce el entorno local, y es la razón de que
-F4-bis exista.
+
+- un nginx que replica las listener rules del ALB, y un emisor JWT local que sustituye a
+  Cognito. **Lee el doc 13 §7**: dice qué NO reproduce el entorno local, y es la razón de que
+  F4-bis exista.
 
 ---
 
@@ -227,12 +229,14 @@ Doc 09 completo. Lo crítico:
 
 ```
 PAYPAL_ENV=sandbox
-PAYPAL_CLIENT_ID=<PEGAR_AQUI>
-PAYPAL_CLIENT_SECRET=<PEGAR_AQUI>
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
 PAYPAL_WEBHOOK_ID=<VACIO_A_PROPOSITO — lo creas tú, ver abajo>
-PAYPAL_BUSINESS_EMAIL=<PEGAR_AQUI>
-MONEDA_DEFAULT=<USD_O_PEN>
+PAYPAL_BUSINESS_EMAIL=
+MONEDA_DEFAULT=USD
 ```
+
+Los datos están en `credentials.md` (raíz del repo).
 
 **Tu primera acción con estos valores:** subirlos a Secrets Manager como
 `edtech/dev/paypal` y **no volver a escribirlos en texto plano en ningún archivo** — ni en

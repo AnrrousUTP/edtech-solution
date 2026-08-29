@@ -14,29 +14,37 @@
 // domain/ports-out/pasarela-pago.port.ts
 export interface PasarelaPagoPort {
   crearOrden(input: {
-    ordenId: string          // nuestro id, viaja como custom_id → nos deja conciliar
+    ordenId: string // nuestro id, viaja como custom_id → nos deja conciliar
     monto: Dinero
     descripcion: string
     urlRetorno: string
     urlCancelacion: string
   }): Promise<Result<{ proveedorOrdenId: string; urlAprobacion: string }, PasarelaError>>
 
-  capturar(proveedorOrdenId: string): Promise<Result<{
-    capturaId: string
-    montoCapturado: Dinero
-    comision: Dinero
-    neto: Dinero
-    estado: 'COMPLETADA' | 'PENDIENTE' | 'DENEGADA'
-  }, PasarelaError>>
+  capturar(proveedorOrdenId: string): Promise<
+    Result<
+      {
+        capturaId: string
+        montoCapturado: Dinero
+        comision: Dinero
+        neto: Dinero
+        estado: 'COMPLETADA' | 'PENDIENTE' | 'DENEGADA'
+      },
+      PasarelaError
+    >
+  >
 
   verificarFirmaWebhook(headers: Record<string, string>, cuerpoCrudo: string): Promise<boolean>
 
-  reembolsar(capturaId: string, monto: Dinero, motivo: string):
-    Promise<Result<{ reembolsoId: string }, PasarelaError>>
+  reembolsar(
+    capturaId: string,
+    monto: Dinero,
+    motivo: string,
+  ): Promise<Result<{ reembolsoId: string }, PasarelaError>>
 }
 ```
 
-El dominio de `payments` conoce **esta interfaz y nada más**. No sabe qué es PayPal, ni que
+El dominio de `payments` conoce **esta interfaz y nada más**. No sabe qué es _PayPal_, ni que
 existe un webhook, ni que hay una cola. La implementación
 `infrastructure/out/paypal/paypal.gateway.ts` usa el SDK oficial de PayPal para TypeScript.
 
@@ -75,12 +83,12 @@ firma.
 
 Eventos suscritos:
 
-| Evento de PayPal | Efecto |
-|---|---|
-| `CHECKOUT.ORDER.APPROVED` | Marca la orden `APROBADA`. Si en 2 min no hubo captura por el flujo síncrono, captura desde el worker |
-| `PAYMENT.CAPTURE.COMPLETED` | Confirma la captura → `payments.pago-confirmado.v1` |
-| `PAYMENT.CAPTURE.DENIED` | `FALLIDA` → `payments.pago-fallido.v1` |
-| `PAYMENT.CAPTURE.REFUNDED` | `REEMBOLSADA` → `payments.pago-reembolsado.v1` → enrollment revoca |
+| Evento de PayPal            | Efecto                                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `CHECKOUT.ORDER.APPROVED`   | Marca la orden `APROBADA`. Si en 2 min no hubo captura por el flujo síncrono, captura desde el worker |
+| `PAYMENT.CAPTURE.COMPLETED` | Confirma la captura → `payments.pago-confirmado.v1`                                                   |
+| `PAYMENT.CAPTURE.DENIED`    | `FALLIDA` → `payments.pago-fallido.v1`                                                                |
+| `PAYMENT.CAPTURE.REFUNDED`  | `REEMBOLSADA` → `payments.pago-reembolsado.v1` → enrollment revoca                                    |
 
 **Verificación de firma — obligatoria, sin atajos.** Se llama a
 `POST /v1/notifications/verify-webhook-signature` con los headers `paypal-transmission-id`,
@@ -88,6 +96,7 @@ Eventos suscritos:
 el `webhook_id` y el **cuerpo crudo**.
 
 > Dos detalles que rompen esto en la práctica:
+>
 > 1. **El cuerpo tiene que ser el crudo, byte por byte.** Si Express ya lo parseó a JSON y
 >    se re-serializa, la firma **no valida** — el orden de las claves o el espaciado cambian.
 >    La ruta del webhook se monta con `express.raw({ type: 'application/json' })` **antes**
@@ -155,10 +164,10 @@ edtech/dev/paypal  →  {"env":"sandbox","clientId":"…","clientSecret":"…",
 URL pública, y `payments-service` no existe hasta F8: cualquier `WH-…` creado antes apunta
 a la nada.
 
-| Entorno | URL del webhook | Quién lo crea | Cuándo |
-|---|---|---|---|
-| AWS `dev` | `https://<alb>/api/payments/webhook` | Fable, por API | F8 |
-| Local | `https://<dominio-estatico>.ngrok-free.app/api/payments/webhook` | El operador, a mano | Solo si va a depurar en local |
+| Entorno   | URL del webhook                                                  | Quién lo crea       | Cuándo                        |
+| --------- | ---------------------------------------------------------------- | ------------------- | ----------------------------- |
+| AWS `dev` | `https://<alb>/api/payments/webhook`                             | Fable, por API      | F8                            |
+| Local     | `https://<dominio-estatico>.ngrok-free.app/api/payments/webhook` | El operador, a mano | Solo si va a depurar en local |
 
 Cada entorno tiene su propio `webhookId` en su secreto, igual que tiene su propia
 `DATABASE_URL`. El código lee el que le toca; el `PasarelaPagoPort` no sabe que existen dos.
@@ -212,13 +221,13 @@ Consecuencias que sí están en el diseño:
 
 ## 8. Casos borde que el diseño cubre
 
-| Caso | Qué pasa |
-|---|---|
-| El usuario cierra el navegador tras aprobar | El webhook `PAYMENT.CAPTURE.COMPLETED` completa la compra igual |
-| Doble clic en "Pagar" | La orden `PENDIENTE` existente para (usuario, curso) se reutiliza; no se crea otra |
-| El precio cambia entre crear y capturar | Se cobra el monto congelado en la orden. `version_precio` deja el rastro para conciliar |
-| Se compra un curso ya comprado | 409 antes de crear la orden, consultando `enrollment` (o la matrícula que payments ya conoce por el evento) |
-| La orden queda `PENDIENTE` para siempre | Job que expira a las 24 h |
-| Reembolso | Webhook → `pago-reembolsado.v1` → enrollment pone la matrícula en `REVOCADA`. **El progreso no se borra**: si vuelve a comprar, lo recupera |
-| PayPal responde 500 al capturar | `Err` de infraestructura → el frontend reintenta; la orden sigue `APROBADA` y el webhook la rescata |
-| Curso gratuito ($0) | No pasa por PayPal: `enrollment` crea la matrícula con `origen = GRATUITO`, y payments no se entera |
+| Caso                                        | Qué pasa                                                                                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| El usuario cierra el navegador tras aprobar | El webhook `PAYMENT.CAPTURE.COMPLETED` completa la compra igual                                                                             |
+| Doble clic en "Pagar"                       | La orden `PENDIENTE` existente para (usuario, curso) se reutiliza; no se crea otra                                                          |
+| El precio cambia entre crear y capturar     | Se cobra el monto congelado en la orden. `version_precio` deja el rastro para conciliar                                                     |
+| Se compra un curso ya comprado              | 409 antes de crear la orden, consultando `enrollment` (o la matrícula que payments ya conoce por el evento)                                 |
+| La orden queda `PENDIENTE` para siempre     | Job que expira a las 24 h                                                                                                                   |
+| Reembolso                                   | Webhook → `pago-reembolsado.v1` → enrollment pone la matrícula en `REVOCADA`. **El progreso no se borra**: si vuelve a comprar, lo recupera |
+| PayPal responde 500 al capturar             | `Err` de infraestructura → el frontend reintenta; la orden sigue `APROBADA` y el webhook la rescata                                         |
+| Curso gratuito ($0)                         | No pasa por PayPal: `enrollment` crea la matrícula con `origen = GRATUITO`, y payments no se entera                                         |

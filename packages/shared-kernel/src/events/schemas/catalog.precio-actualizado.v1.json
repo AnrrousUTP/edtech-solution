@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/catalog.precio-actualizado.v1.json",
+  "title": "catalog.precio-actualizado.v1",
+  "type": "object",
+  "required": ["cursoId", "montoAnterior", "montoNuevo", "moneda", "versionPrecio"],
+  "properties": {
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "montoAnterior": {
+      "type": "number"
+    },
+    "montoNuevo": {
+      "type": "number"
+    },
+    "moneda": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "versionPrecio": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

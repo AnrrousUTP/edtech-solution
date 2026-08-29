@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/catalog.curso-publicado.v1.json",
+  "title": "catalog.curso-publicado.v1",
+  "type": "object",
+  "required": [
+    "cursoId",
+    "slug",
+    "titulo",
+    "tecnologia",
+    "nivelMin",
+    "nivelMax",
+    "precio",
+    "moneda",
+    "versionPrecio",
+    "estructura"
+  ],
+  "properties": {
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tecnologia": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nivelMin": {
+      "type": "string",
+      "pattern": "^[A-N]$"
+    },
+    "nivelMax": {
+      "type": "string",
+      "pattern": "^[A-N]$"
+    },
+    "precio": {
+      "type": "number"
+    },
+    "moneda": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "versionPrecio": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "estructura": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tomoId", "orden", "titulo", "umbral", "lecciones"],
+        "properties": {
+          "tomoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "umbral": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "lecciones": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "orden", "titulo"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "orden": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "titulo": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

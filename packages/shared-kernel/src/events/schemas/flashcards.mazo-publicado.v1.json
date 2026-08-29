@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/flashcards.mazo-publicado.v1.json",
+  "title": "flashcards.mazo-publicado.v1",
+  "type": "object",
+  "required": ["mazoId", "tomoId", "cursoId", "version", "cantidadPublicadas"],
+  "properties": {
+    "mazoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cantidadPublicadas": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

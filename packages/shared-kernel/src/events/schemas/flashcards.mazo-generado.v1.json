@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/flashcards.mazo-generado.v1.json",
+  "title": "flashcards.mazo-generado.v1",
+  "type": "object",
+  "required": ["mazoId", "tomoId", "cursoId", "version", "cantidadTarjetas", "modeloUsado"],
+  "properties": {
+    "mazoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cantidadTarjetas": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "modeloUsado": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

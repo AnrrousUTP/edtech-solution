@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/payments.pago-reembolsado.v1.json",
+  "title": "payments.pago-reembolsado.v1",
+  "type": "object",
+  "required": ["ordenId", "usuarioId", "cursoId", "monto", "reembolsoId"],
+  "properties": {
+    "ordenId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "monto": {
+      "type": "number"
+    },
+    "reembolsoId": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

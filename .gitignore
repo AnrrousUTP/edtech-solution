@@ -1,0 +1,20 @@
+credentials.md
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+dist/
+out/
+coverage/
+*.log
+.DS_Store
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*example.tfvars
+crash.log

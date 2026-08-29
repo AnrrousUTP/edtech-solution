@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@edtech/shared-kernel": ["./packages/shared-kernel/src/index.ts"]
+    }
+  }
+}

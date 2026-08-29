@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/identity.nivel-actualizado.v1.json",
+  "title": "identity.nivel-actualizado.v1",
+  "type": "object",
+  "required": ["usuarioId", "nivelAnterior", "nivelNuevo", "origen"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nivelAnterior": {
+      "type": "string",
+      "pattern": "^[A-N]$"
+    },
+    "nivelNuevo": {
+      "type": "string",
+      "pattern": "^[A-N]$"
+    },
+    "origen": {
+      "enum": ["TEST", "AUTODECLARADO", "PROGRESION"]
+    }
+  }
+}

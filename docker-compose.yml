@@ -1,0 +1,40 @@
+name: edtech
+
+# Perfiles (doc 13 §6): base | pagos | contenido | full.
+# Docker Compose no arranca servicios con profile en un `up` sin flags, así que
+# "levantar todo" es `docker compose --profile full up` (anotado en DECISIONS.md, A-04).
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["base", "pagos", "contenido", "full"]
+    environment:
+      POSTGRES_DB: edtech
+      POSTGRES_PASSWORD: local
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./tools/seed/00-schemas.sql:/docker-entrypoint-initdb.d/00-schemas.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    mem_limit: 1g
+
+  localstack:
+    image: localstack/localstack:3
+    profiles: ["base", "pagos", "contenido", "full"]
+    environment:
+      SERVICES: events,sqs,s3,secretsmanager
+      DEBUG: 0
+    ports: ["4566:4566"]
+    volumes:
+      - ./tools/localstack-init:/etc/localstack/init/ready.d
+
+  jwt-local:
+    build: ./tools/jwt-local
+    profiles: ["base", "pagos", "contenido", "full"]
+    ports: ["4599:4599"]
+
+volumes:
+  pgdata: {}

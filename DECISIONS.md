@@ -1,0 +1,42 @@
+# DECISIONS.md
+
+Registro de decisiones. Las D1-D20 vienen del plan (`plataforma_edtech/00-resumen.md`) y
+no se renegocian. Las A-xx son supuestos tomados durante la ejecución por Fable, con su
+motivo, tal como exige el doc 17 §0.4.
+
+## Decisiones del plan (D1-D20)
+
+| #   | Decisión                                                                                                        |
+| --- | --------------------------------------------------------------------------------------------------------------- |
+| D1  | Aurora **PostgreSQL** Serverless v2; un schema + un rol por servicio                                            |
+| D2  | **Cognito** es el IdP; `identity-access-service` guarda perfil, roles y autorización de dominio                 |
+| D3  | **6 bounded contexts**; Assessment dentro de enrollment; Notification es cola + SES/SNS, no servicio            |
+| D4  | **Un repo, microservicios en runtime**: ECR/ECS/schema/state/CI por servicio; aislamiento por arch-check        |
+| D5  | **Bun** en instalación, workspaces, scripts, tests y runtime del contenedor                                     |
+| D6  | **App Mesh descartado** en Fase 1; ECS Service Connect si hace falta                                            |
+| D7  | **Solo web** en Fase 1; API preparada para móvil                                                                |
+| D8  | Model ID de Bedrock **resuelto por CLI en build**, no hardcodeado                                               |
+| D9  | ORM **Drizzle** (compatible con Bun) en vez de Prisma; migraciones con `drizzle-kit`                            |
+| D10 | **ALB único** con listener rules por path, no API Gateway por servicio                                          |
+| D11 | Escala de niveles **A-N = 14 niveles en 4 tramos**                                                              |
+| D12 | Un bus EventBridge único `edtech-domain-events`; una cola + DLQ por consumidor                                  |
+| D13 | **Idempotencia obligatoria** por `event_id` en tabla `processed_events` de cada schema consumidor               |
+| D14 | Datos ajenos por **proyección local alimentada por eventos**, nunca JOIN ni llamada síncrona en camino caliente |
+| D15 | Región **`us-east-1`**                                                                                          |
+| D16 | Solo entorno **`dev`**; `prod` escrito detrás de `apply_prod = false`                                           |
+| D17 | Secretos **siempre** en Secrets Manager; ningún `.env` con valores reales versionado                            |
+| D18 | Paridad local con **LocalStack** + Postgres en Docker                                                           |
+| D19 | **Sin hover con movimiento ni `transform`/`translate`** en toda la UI                                           |
+| D20 | El lado que instala es el lado que ejecuta (`bun install` y `docker compose` desde Windows)                     |
+
+## Supuestos de ejecución (A-xx)
+
+| #    | Supuesto                                                                                                                                                                             | Motivo                                                                                                                                                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A-01 | La sesión corre en **Windows nativo** (PowerShell), no en WSL. El escenario 9p del doc 13 no aplica; D20 se cumple trivialmente porque instalar y ejecutar ocurren en el mismo lado. | Entorno real de la máquina al iniciar la sesión (2026-08-28).                                                                                                                                                                    |
+| A-02 | Perfil AWS **`tic-aws-anrrous`** (cuenta 047600599757, us-east-1), fijado como `AWS_PROFILE` en el entorno de usuario.                                                               | Es el único perfil configurado en la máquina; el perfil `default` no tiene credenciales.                                                                                                                                         |
+| A-03 | Terraform **1.15.8** (instalado vía winget).                                                                                                                                         | Versión ya presente en la máquina.                                                                                                                                                                                               |
+| A-04 | Levantar _todo_ el compose es `docker compose --profile full up` (los servicios llevan lista de perfiles incluida `full`).                                                           | Docker Compose excluye del `up` sin flags a todo servicio que declare `profiles`; no hay herencia de perfiles, así que el esquema del doc 13 §6 se implementa con el perfil explícito `full`.                                    |
+| A-05 | `search_path` de cada rol de servicio = `<schema>, public` (el doc 03 §1 dice solo `<schema>`).                                                                                      | Los tipos de extensión (`citext`) viven en `public`; sin `public` en el path, todo uso no calificado del tipo falla. No debilita I-4: el aislamiento lo dan los GRANTs, no el search_path.                                       |
+| A-06 | Los `*.test.ts` quedan exentos de las reglas `new Date()`-en-domain y `try/catch`-en-application del lint de convenciones.                                                           | Las reglas existen por testabilidad e inyección; aplicarlas a los propios tests impediría, por ejemplo, construir un `FakeClock` con una fecha fija. El resto de reglas (Dto, setX, console.log, process.env) sí aplica a tests. |
+| A-07 | ESLint se configura mínimo (solo `no-explicit-any`); el resto de convenciones vive en `tools/lint-convenciones.ts`.                                                                  | Evita dos fuentes de verdad para la misma regla; el lint propio ya cubre por AST todo lo del doc 12 §3.                                                                                                                          |

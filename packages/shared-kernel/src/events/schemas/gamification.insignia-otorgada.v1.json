@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/gamification.insignia-otorgada.v1.json",
+  "title": "gamification.insignia-otorgada.v1",
+  "type": "object",
+  "required": ["usuarioId", "criterio", "referenciaId", "otorgadaAt"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "criterio": {
+      "enum": [
+        "CURSO_COMPLETADO",
+        "CARRERA_COMPLETADA",
+        "RACHA_7",
+        "RACHA_30",
+        "RACHA_100",
+        "PRIMER_CURSO",
+        "EVALUACION_PERFECTA",
+        "MADRUGADOR",
+        "MARATON"
+      ]
+    },
+    "referenciaId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "otorgadaAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

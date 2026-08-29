@@ -1,0 +1,5 @@
+bunx lint-staged
+bun run arch
+bun run estructura
+bun run convenciones
+bun test packages tools

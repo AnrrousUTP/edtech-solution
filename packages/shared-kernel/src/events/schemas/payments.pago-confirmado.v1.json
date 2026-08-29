@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/payments.pago-confirmado.v1.json",
+  "title": "payments.pago-confirmado.v1",
+  "type": "object",
+  "required": ["ordenId", "usuarioId", "cursoId", "monto", "moneda", "capturaId", "confirmadoAt"],
+  "properties": {
+    "ordenId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "monto": {
+      "type": "number"
+    },
+    "moneda": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "capturaId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirmadoAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

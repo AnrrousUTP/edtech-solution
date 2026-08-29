@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/catalog.contenido-actualizado.v1.json",
+  "title": "catalog.contenido-actualizado.v1",
+  "type": "object",
+  "required": ["cursoId", "tomoId", "contenidoHash", "lecciones"],
+  "properties": {
+    "cursoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contenidoHash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lecciones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "titulo", "bloquesS3Key"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bloquesS3Key": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "$comment": "Fuente única de la topología de mensajería (doc 05). De acá se generan el init de LocalStack (tools/gen-localstack-init.ts) y las reglas del módulo Terraform messaging/. No editar los dos lados por separado.",
+  "bus": "edtech-domain-events",
+  "colas": ["identity", "enrollment", "gamification", "flashcards", "payments", "notifications"],
+  "colasInternas": ["payments-webhooks", "gamification-certificados", "flashcards-generacion"],
+  "visibilidadPorCola": { "flashcards": 600, "flashcards-generacion": 600 },
+  "reglas": [
+    {
+      "nombre": "enrollment-desde-payments",
+      "detailTypes": ["payments.pago-confirmado.v1", "payments.pago-reembolsado.v1"],
+      "destino": "enrollment"
+    },
+    {
+      "nombre": "enrollment-desde-catalog",
+      "detailTypes": [
+        "catalog.curso-publicado.v1",
+        "catalog.curso-despublicado.v1",
+        "catalog.contenido-actualizado.v1"
+      ],
+      "destino": "enrollment"
+    },
+    {
+      "nombre": "gamification-desde-enrollment",
+      "detailTypes": [
+        "enrollment.leccion-completada.v1",
+        "enrollment.tomo-completado.v1",
+        "enrollment.curso-completado.v1",
+        "enrollment.carrera-completada.v1",
+        "enrollment.evaluacion-aprobada.v1"
+      ],
+      "destino": "gamification"
+    },
+    {
+      "nombre": "gamification-desde-identity",
+      "detailTypes": ["identity.usuario-registrado.v1"],
+      "destino": "gamification"
+    },
+    {
+      "nombre": "flashcards-desde-catalog",
+      "detailTypes": ["catalog.contenido-actualizado.v1"],
+      "destino": "flashcards"
+    },
+    {
+      "nombre": "identity-desde-enrollment",
+      "detailTypes": ["enrollment.curso-completado.v1", "enrollment.test-nivelacion-completado.v1"],
+      "destino": "identity"
+    },
+    {
+      "nombre": "payments-desde-catalog",
+      "detailTypes": [
+        "catalog.curso-publicado.v1",
+        "catalog.precio-actualizado.v1",
+        "catalog.curso-despublicado.v1"
+      ],
+      "destino": "payments"
+    },
+    {
+      "nombre": "notificaciones",
+      "prefijos": ["identity.", "enrollment.", "gamification.", "payments.", "flashcards."],
+      "destino": "notifications"
+    }
+  ],
+  "buckets": ["edtech-dev-media"]
+}

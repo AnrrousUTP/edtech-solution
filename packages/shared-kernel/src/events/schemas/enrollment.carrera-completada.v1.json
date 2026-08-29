@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/enrollment.carrera-completada.v1.json",
+  "title": "enrollment.carrera-completada.v1",
+  "type": "object",
+  "required": ["usuarioId", "carreraId", "carreraTitulo"],
+  "properties": {
+    "usuarioId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "carreraId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "carreraTitulo": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

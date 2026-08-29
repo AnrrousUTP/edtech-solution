@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edtech.solution/events/flashcards.generacion-fallida.v1.json",
+  "title": "flashcards.generacion-fallida.v1",
+  "type": "object",
+  "required": ["tomoId", "motivo", "intentos"],
+  "properties": {
+    "tomoId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intentos": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
