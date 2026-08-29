@@ -6,6 +6,7 @@
 //
 // Necesita credenciales de AWS con permiso de lectura sobre dev.
 import { $ } from 'bun'
+import { buscarSecretos } from './deteccion-secretos'
 
 const REGION = 'us-east-1'
 const CLUSTER = 'edtech-dev-cluster'
@@ -182,17 +183,33 @@ comprobar(
 // ─────────────────────────────────────────────────────────────────── Seguridad
 seccion('Seguridad')
 
-// I-12: ni un secreto en el historial
-const historial = await $`git log -p --all | grep -icE "client_secret|AQ[A-Za-z0-9]{20,}"`
-  .quiet()
-  .nothrow()
-const coincidencias = Number(historial.stdout.toString().trim() || '0')
-comprobar(
-  'Seguridad',
-  'I-12: sin secretos en el repositorio ni en su historial',
-  coincidencias === 0 ? 'ok' : 'falla',
-  coincidencias === 0 ? '' : `${coincidencias} coincidencias`,
-)
+// I-12: ni un secreto en el repositorio ni en su historial. La logica de
+// deteccion vive en tools/deteccion-secretos.ts y tiene su propio test: el grep
+// literal del doc 15 daba tantos falsos positivos que un positivo de verdad se
+// perdia entre ellos.
+//
+// Un fallo del comando NO puede leerse como "cero coincidencias": eso convertiria
+// la comprobacion de seguridad mas importante en un verde silencioso.
+const historia = await $`git log -p --all -- . ':(exclude)bun.lock'`.quiet().nothrow()
+
+if (historia.exitCode !== 0) {
+  comprobar(
+    'Seguridad',
+    'I-12: sin secretos en el repositorio ni en su historial',
+    'falla',
+    'no se pudo leer el historial de git',
+  )
+} else {
+  const hallazgos = buscarSecretos(historia.stdout.toString())
+  comprobar(
+    'Seguridad',
+    'I-12: sin secretos en el repositorio ni en su historial',
+    hallazgos.length === 0 ? 'ok' : 'falla',
+    hallazgos.length === 0
+      ? 'ningun valor con forma de credencial'
+      : hallazgos.map(h => `${h.tipo}: ${h.muestra}`).join(' | '),
+  )
+}
 
 // I-15: ninguna task definition con un secreto literal
 let literales = 0
