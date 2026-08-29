@@ -1,0 +1,58 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Contenido de las lecciones",
+    "version": "1.0.0",
+    "description": "Devuelve el texto de las lecciones de un tomo a partir de sus claves de contenido."
+  },
+  "paths": {
+    "/contenido": {
+      "post": {
+        "operationId": "obtenerContenidoDeLecciones",
+        "description": "Devuelve el texto de las lecciones indicadas. Es SOLO lectura: no modifica nada del catálogo. Úsalo cuando el mensaje te dé claves de contenido en lugar del texto.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["claves"],
+                "properties": {
+                  "claves": {
+                    "type": "array",
+                    "description": "Claves de contenido de las lecciones, en orden, con la forma s3://bucket/contenido/...",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texto de cada lección, en el mismo orden en que se pidieron.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lecciones": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "clave": { "type": "string" },
+                          "contenido": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

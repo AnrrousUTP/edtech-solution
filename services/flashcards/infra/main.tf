@@ -51,6 +51,11 @@ data "terraform_remote_state" "cognito" {
   backend = "s3"
   config  = merge(local.estado, { key = "dev/cognito/terraform.tfstate" })
 }
+data "terraform_remote_state" "ai" {
+  backend = "s3"
+  config  = merge(local.estado, { key = "dev/ai/terraform.tfstate" })
+}
+
 data "terraform_remote_state" "storage" {
   backend = "s3"
   config  = merge(local.estado, { key = "dev/storage/terraform.tfstate" })
@@ -80,13 +85,24 @@ module "servicio" {
     DB_SECRET_NAME       = "edtech/dev/db/flashcards"
     QUEUE_URL            = data.terraform_remote_state.messaging.outputs.colas["flashcards"].url
     QUEUE_GENERACION_URL = data.terraform_remote_state.messaging.outputs.colas["flashcards-generacion"].url
-    GENERADOR_FLASHCARDS = "fake"
+    # Cambia solo cuando el modulo ai/ esta habilitado (A-46): un `terraform apply`
+    # aca despues de que la cuenta tenga acceso al modelo, sin tocar codigo.
+    GENERADOR_FLASHCARDS   = data.terraform_remote_state.ai.outputs.habilitado ? "bedrock" : "fake"
+    BEDROCK_AGENT_ID       = data.terraform_remote_state.ai.outputs.agent_id
+    BEDROCK_AGENT_ALIAS_ID = data.terraform_remote_state.ai.outputs.agent_alias_id
+    BEDROCK_MODEL_ID       = data.terraform_remote_state.ai.outputs.modelo
     COGNITO_ISSUER       = data.terraform_remote_state.cognito.outputs.issuer
     LOG_LEVEL            = "info"
   }
 
   # Minimo privilegio (doc 07 s10): solo lo que flashcards usa
-  permisos = [
+  permisos = concat(
+    # Solo cuando el agente existe, y solo ESE agente
+    data.terraform_remote_state.ai.outputs.habilitado ? [{
+      actions   = ["bedrock:InvokeAgent"]
+      resources = ["arn:aws:bedrock:us-east-1:${local.cuenta}:agent-alias/${data.terraform_remote_state.ai.outputs.agent_id}/${data.terraform_remote_state.ai.outputs.agent_alias_id}"]
+    }] : [],
+    [
     {
       actions   = ["events:PutEvents"]
       resources = [data.terraform_remote_state.messaging.outputs.bus_arn]
@@ -119,7 +135,7 @@ module "servicio" {
       actions   = ["rds-db:connect"]
       resources = ["arn:aws:rds-db:us-east-1:${local.cuenta}:dbuser:${data.terraform_remote_state.database.outputs.cluster_resource_id}/svc_flashcards"]
     },
-  ]
+  ])
 }
 
 output "servicio" { value = module.servicio.servicio_nombre }
