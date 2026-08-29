@@ -126,3 +126,23 @@ motivo, tal como exige el doc 17 §0.4.
 | **I-8** flashcards a través del panel de admin | 0 tarjetas antes de aprobar; la tarjeta aprobada aparece en `/repasar/…`        |
 | **D19** sin `transform` en `:hover`            | ningún `hover:scale/translate/rotate/skew` en el HTML                           |
 | Pantallas 1–11 con sesión de navegador         | 200 todas; `/admin` sin rol devuelve la pantalla de permisos                    |
+
+### F10 — despliegue completo a dev
+
+- **A-43** — El frontend atiende `/*` detrás del **mismo ALB**, con la prioridad más alta en número (100), y no CloudFront→S3 como dice el doc 07 §5. _Motivo:_ CloudFront sigue bloqueado (A-34) y el frontend es SSR, no estático (doc 11 §1), así que S3 tampoco lo serviría. Poniéndolo detrás del ALB con la regla más débil, todo lo que matchea `/api/…` sigue yendo a su servicio y solo lo demás llega al Next. No cambia ninguna URL: local y AWS siguen siendo idénticos (A-41).
+- **A-44** — `COGNITO_CLIENT_ID` admite una **lista separada por comas**. _Motivo:_ el pool de dev tiene dos clientes legítimos —el web (PKCE, sin secreto) y el de pruebas (`ADMIN_USER_PASSWORD_AUTH`, el único con el que un guion puede sacar un token sin navegador)— y la comprobación del doc 08 §5 rechazaba el segundo. La alternativa era apagar la comprobación en dev, que es justo la que evita que un token de otra app del mismo pool valga aquí. Con lista vacía la regla sigue sin aplicarse (emisor local).
+- **A-45** — La traza de X-Ray se emite **hablando UDP directo con el daemon**, sin el SDK de AWS. _Motivo:_ el SDK parchea el runtime y pesa, y acá hace falta exactamente un segmento por petición con el `correlationId` como anotación (doc 07 §8). El middleware respeta el `X-Amzn-Trace-Id` que inyecta el ALB, así que la traza es una sola a lo largo del salto. El sidecar `aws-xray-daemon` va como **no esencial**: que se caiga la traza no puede tumbar el servicio.
+
+**Verificación de F10 realizada contra AWS `dev`:**
+
+| Comprobación                                              | Resultado                                                                                                                                |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Los 7 servicios en ECS Fargate detrás del ALB             | identity-access, catalog, enrollment-progress, gamification, flashcards, payments, web                                                   |
+| Flujo completo del doc 00 §DoD por HTTPS (`tools/e2e.ts`) | **E2E OK**: 3 cursos, nivelación, matrícula, 8 lecciones, 2 evaluaciones, 4 insignias, certificado `EDT-…` verificable, 10 pantallas SSR |
+| I-2 / I-5 / I-7 / I-8 / D19 contra `dev`                  | los cinco en verde, igual que en local                                                                                                   |
+| Mensaje malformado → DLQ                                  | `sobre inválido; el mensaje irá a DLQ por reintentos` ×5 → 1 mensaje en `edtech-dev-gamification-dlq`                                    |
+| La alarma avisa                                           | `edtech-dev-dlq-gamification` pasó a **ALARM** a los ~7 min ("5 datapoints were greater than the threshold")                             |
+| X-Ray con el `correlationId` como anotación               | trazas reales de `/api/catalog/cursos`, `/api/catalog/carreras` y `/ready` con su `req-…`                                                |
+| Dashboard único                                           | `edtech-dev-principal` con ALB, latencia p99, colas, tareas ECS, Aurora y DLQs                                                           |
+
+**Pendiente de un paso manual del operador:** confirmar la suscripción del topic `edtech-dev-alertas` desde el correo de AWS (queda en `PendingConfirmation` hasta que alguien haga clic; la alarma dispara igual, pero el email no sale).

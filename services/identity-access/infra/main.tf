@@ -76,7 +76,7 @@ module "servicio" {
     DB_SECRET_NAME    = "edtech/dev/db/identity"
     QUEUE_URL         = data.terraform_remote_state.messaging.outputs.colas["identity"].url
     COGNITO_ISSUER    = data.terraform_remote_state.cognito.outputs.issuer
-    COGNITO_CLIENT_ID = data.terraform_remote_state.cognito.outputs.client_web_id
+    COGNITO_CLIENT_ID = "${data.terraform_remote_state.cognito.outputs.client_web_id},${data.terraform_remote_state.cognito.outputs.client_pruebas_id}"
     LOG_LEVEL         = "info"
   }
 

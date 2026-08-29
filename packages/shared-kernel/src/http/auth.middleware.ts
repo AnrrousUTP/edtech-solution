@@ -7,6 +7,8 @@ import { asignarIdentidad } from './request-context'
 // COGNITO_ISSUER.
 type AuthConfig = {
   issuer: string
+  /** Uno o varios client_id separados por coma: en dev conviven el cliente web
+   *  y el de pruebas (el que usa tools/e2e.ts contra AWS). Vacío = no se revisa. */
   clientId?: string
   /** Solo para tests desde el host contra jwt-local: el issuer lógico del token
    *  y la URL física del JWKS pueden diferir (localhost vs nombre del compose). */
@@ -26,6 +28,19 @@ const obtenerJwks = (issuer: string, jwksUri?: string) => {
     jwksIssuer = uri
   }
   return jwks
+}
+
+/**
+ * En dev conviven varios clientes legítimos del mismo pool (el web y el de
+ * pruebas), así que la config admite una lista separada por comas. Vacía = no
+ * se revisa el client_id, que es lo correcto cuando el emisor es el local.
+ */
+export const clientIdPermitido = (configurados: string | undefined, delToken: unknown): boolean => {
+  const permitidos = (configurados ?? '')
+    .split(',')
+    .map(c => c.trim())
+    .filter(c => c !== '')
+  return permitidos.length === 0 || permitidos.includes(String(delToken))
 }
 
 const noAutorizado = (res: Response, message: string): void => {
@@ -51,7 +66,7 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
       .then(({ payload }) => {
         // El error clásico: aceptar el id token. Se exige token_use = 'access'.
         if (payload.token_use !== 'access') return noAutorizado(res, 'Se requiere un access token')
-        if (config.clientId && payload.client_id !== config.clientId)
+        if (!clientIdPermitido(config.clientId, payload.client_id))
           return noAutorizado(res, 'client_id no reconocido')
         if (typeof payload.sub !== 'string') return noAutorizado(res, 'Token sin sub')
 

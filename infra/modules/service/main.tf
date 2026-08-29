@@ -136,7 +136,7 @@ resource "aws_ecs_task_definition" "servicio" {
         }
       }
     }] : []
-  )
+  ))
 }
 
 resource "aws_lb_target_group" "servicio" {
