@@ -4,20 +4,27 @@ import { buscarSecretos } from './deteccion-secretos'
 // Una comprobación de seguridad que nadie probó puede estar dando verde sin mirar
 // nada — que es exactamente lo que pasaba con el grep original de I-12. Este test
 // existe para que el detector tenga que demostrar que detecta.
+//
+// Los valores de mentira se ARMAN acá en vez de escribirse enteros: si estuvieran
+// literales, el propio detector los encontraría al recorrer el historial y I-12
+// saldría en rojo por su archivo de pruebas. (Pasó: la primera versión de este
+// test hizo fallar el chequeo, que es la mejor demostración de que funciona.)
+const falso = (...partes: string[]): string => partes.join('')
+
 describe('detección de secretos (I-12)', () => {
   test('encuentra un secreto de PayPal en un .env commiteado', () => {
-    const h = buscarSecretos('+PAYPAL_CLIENT_SECRET=EJ7xK9mQ2vLp4nR8sT1wY6zA3bC5dF0gH')
-    expect(h.length).toBeGreaterThan(0)
+    const linea = falso('+PAYPAL_CLIENT_SECRET=', 'EJ7xK9mQ2vLp4nR8', 'sT1wY6zA3bC5dF0gH')
+    expect(buscarSecretos(linea).length).toBeGreaterThan(0)
   })
 
   test('encuentra un client_secret asignado en un .tf', () => {
-    const h = buscarSecretos('  client_secret = "AbCdEf1234567890XyZw"')
-    expect(h[0]?.tipo).toBe('asignacion')
+    const linea = falso('  client_secret = "', 'AbCdEf1234', '567890XyZw', '"')
+    expect(buscarSecretos(linea)[0]?.tipo).toBe('asignacion')
   })
 
   test('encuentra una access key de AWS', () => {
-    const h = buscarSecretos('export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE')
-    expect(h.some(x => x.tipo === 'token')).toBe(true)
+    const linea = falso('export AWS_ACCESS_KEY_ID=', 'AKIA', 'IOSFODNN7', 'EXAMPLE')
+    expect(buscarSecretos(linea).some(x => x.tipo === 'token')).toBe(true)
   })
 
   test('no se queja de la plantilla sin rellenar', () => {
@@ -35,16 +42,18 @@ describe('detección de secretos (I-12)', () => {
   })
 
   test('no se queja del alfabeto del código de certificado (A-29)', () => {
-    expect(buscarSecretos("const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'")).toEqual([])
+    const linea = falso("const ALFABETO = '", 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', "'")
+    expect(buscarSecretos(linea)).toEqual([])
   })
 
   test('no se queja del ID único de IAM que quedó en el state de bootstrap', () => {
-    expect(buscarSecretos('"user_id": "AIDAQWFJXQLGQAKHHDISB"')).toEqual([])
+    const linea = falso('"user_id": "', 'AIDA', 'QWFJXQLGQAKHHDISB', '"')
+    expect(buscarSecretos(linea)).toEqual([])
   })
 
   test('no revela el secreto encontrado en el propio hallazgo', () => {
-    const h = buscarSecretos('export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE')
-    const token = h.find(x => x.tipo === 'token')
+    const linea = falso('export AWS_ACCESS_KEY_ID=', 'AKIA', 'IOSFODNN7', 'EXAMPLE')
+    const token = buscarSecretos(linea).find(x => x.tipo === 'token')
     expect(token?.muestra).not.toContain('EXAMPLE')
   })
 })

@@ -190,7 +190,15 @@ seccion('Seguridad')
 //
 // Un fallo del comando NO puede leerse como "cero coincidencias": eso convertiria
 // la comprobacion de seguridad mas importante en un verde silencioso.
-const historia = await $`git log -p --all -- . ':(exclude)bun.lock'`.quiet().nothrow()
+// Se excluyen dos rutas, y solo dos: el lockfile (sus sha512 contienen
+// subcadenas con forma de token) y el test del propio detector, cuyo trabajo es
+// contener cadenas con forma de credencial. Hoy ese test las arma en tiempo de
+// ejecucion, pero siguen en el historial de commits anteriores. Excluir por RUTA
+// -y no por valor- deja la deteccion intacta en todo lo demas.
+const historia =
+  await $`git log -p --all -- . ':(exclude)bun.lock' ':(exclude)tools/deteccion-secretos.test.ts'`
+    .quiet()
+    .nothrow()
 
 if (historia.exitCode !== 0) {
   comprobar(
