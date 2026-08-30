@@ -83,6 +83,7 @@ module "servicio" {
     APP_URL              = trimsuffix(data.terraform_remote_state.edge.outputs.url, "/")
     COGNITO_DOMINIO      = data.terraform_remote_state.cognito.outputs.hosted_ui_dominio
     COGNITO_CLIENT_ID    = data.terraform_remote_state.cognito.outputs.client_web_id
+    COGNITO_REGION       = "us-east-1"
   }
 
   # El frontend no habla con AWS: todo lo hace a través de la API.

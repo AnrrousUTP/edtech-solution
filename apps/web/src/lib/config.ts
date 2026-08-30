@@ -6,6 +6,7 @@ export const config = {
   apiBasePublica: process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8080',
   appUrl: process.env.APP_URL ?? 'http://localhost:3000',
   cognito: {
+    region: process.env.COGNITO_REGION ?? 'us-east-1',
     dominio: process.env.COGNITO_DOMINIO ?? '',
     clientId: process.env.COGNITO_CLIENT_ID ?? '',
     /** Emisor local (jwt-local) cuando no hay Cognito: solo desarrollo. */

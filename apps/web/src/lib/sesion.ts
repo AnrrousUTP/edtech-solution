@@ -13,6 +13,8 @@ export type PerfilSesion = {
   email: string
   nombre: string
   roles: string[]
+  /** Lo pone la Lambda pre_token_generation: admin sin TOTP configurado (doc 08 §6). */
+  mfaPendiente?: boolean
 }
 
 export const accessToken = async (): Promise<string | null> => {
@@ -34,6 +36,15 @@ export const perfilSesion = async (): Promise<PerfilSesion | null> => {
 export const esAdmin = async (): Promise<boolean> => {
   const perfil = await perfilSesion()
   return perfil?.roles.includes('admin') ?? false
+}
+
+/** Admin que todavía no configuró su segundo factor. El panel no se le muestra
+ *  hasta que lo haga (doc 08 §6): es un bloqueo de UI, no una barrera
+ *  criptográfica — la barrera real es que el grupo `admin` se asigna a mano y
+ *  que cada servicio exige el rol en el servidor. */
+export const mfaPendiente = async (): Promise<boolean> => {
+  const perfil = await perfilSesion()
+  return (perfil?.roles.includes('admin') ?? false) && perfil?.mfaPendiente === true
 }
 
 /** Lee los claims sin verificar la firma: es SOLO para poblar la UI. La

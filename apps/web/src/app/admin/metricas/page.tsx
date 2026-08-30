@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
 import { paymentsApi } from '@/api/resto'
 import { ErrorConAccion, Vacio, precioTexto } from '@/componentes/base'
-import { esAdmin } from '@/lib/sesion'
+import { esAdmin, mfaPendiente } from '@/lib/sesion'
 
 // Pantalla 14: métricas. Muestra bruto, comisión y neto SEPARADOS: mostrar solo
 // el bruto es engañarse (doc 09 §7).
@@ -13,6 +13,16 @@ const Metricas = async (): Promise<JSX.Element> => {
         titulo="Necesitas permisos de administrador"
         detalle="Las métricas de ingresos son solo para administradores."
         accion={{ texto: 'Volver al inicio', href: '/' }}
+      />
+    )
+  }
+
+  if (await mfaPendiente()) {
+    return (
+      <ErrorConAccion
+        titulo="Configura tu segundo factor para entrar"
+        detalle="El panel de administración exige verificación en dos pasos (doc 08 §6). Toma un minuto."
+        accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
   }

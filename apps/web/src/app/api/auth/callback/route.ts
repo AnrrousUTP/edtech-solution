@@ -67,6 +67,9 @@ export const GET = async (peticion: Request): Promise<Response> => {
         email: String(claimsId.email ?? ''),
         nombre: String(claimsId.nombre_visible ?? claimsId.email ?? 'Estudiante'),
         roles: Array.isArray(grupos) ? grupos : [],
+        // El claim viaja en el ID token, no en el de acceso: pre_token_generation
+        // solo puede tocar el primero (doc 08 §6).
+        mfaPendiente: String(claimsId.mfa_pendiente ?? '') === 'true',
       }),
     ),
     { secure: true, sameSite: 'lax', path: '/', maxAge: tokens.expires_in },

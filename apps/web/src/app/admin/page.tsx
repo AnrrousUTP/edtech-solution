@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
 import { ErrorConAccion, Etiqueta, precioTexto } from '@/componentes/base'
-import { esAdmin } from '@/lib/sesion'
+import { esAdmin, mfaPendiente } from '@/lib/sesion'
 import { AccionesCurso } from './acciones-curso'
 
 // Pantalla 12: panel de admin. La autorización REAL la hace el servidor
@@ -13,6 +13,16 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
         titulo="Necesitas permisos de administrador"
         detalle="Esta sección es para gestionar el catálogo. Si crees que deberías tener acceso, pídeselo a quien administra la plataforma."
         accion={{ texto: 'Volver al inicio', href: '/' }}
+      />
+    )
+  }
+
+  if (await mfaPendiente()) {
+    return (
+      <ErrorConAccion
+        titulo="Configura tu segundo factor para entrar"
+        detalle="El panel de administración exige verificación en dos pasos (doc 08 §6). Toma un minuto."
+        accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
   }

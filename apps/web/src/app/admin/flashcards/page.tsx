@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
 import { flashcardsApi } from '@/api/resto'
 import { ErrorConAccion, Etiqueta, Vacio } from '@/componentes/base'
-import { esAdmin } from '@/lib/sesion'
+import { esAdmin, mfaPendiente } from '@/lib/sesion'
 import { RevisionMazo } from './revision'
 
 // Pantalla 13: cola de revisión HITL. Ninguna tarjeta llega al estudiante sin
@@ -16,6 +16,16 @@ const RevisionFlashcards = async ({ searchParams }: Props): Promise<JSX.Element>
         titulo="Necesitas permisos de administrador"
         detalle="La revisión de flashcards es la barrera que impide que material sin revisar llegue a los estudiantes."
         accion={{ texto: 'Volver al inicio', href: '/' }}
+      />
+    )
+  }
+
+  if (await mfaPendiente()) {
+    return (
+      <ErrorConAccion
+        titulo="Configura tu segundo factor para entrar"
+        detalle="El panel de administración exige verificación en dos pasos (doc 08 §6). Toma un minuto."
+        accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
   }
