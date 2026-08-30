@@ -21,9 +21,12 @@ export default {
         exito: { 100: '#d1fae5', 500: '#10b981', 700: '#047857' }, // completado, aprobado
         alerta: { 100: '#ffe4e6', 500: '#f43f5e', 700: '#be123c' }, // reprobado, error
       },
+      // Las variables las define next/font en el <html> (layout.tsx). Declarar
+      // aquí el nombre de la familia sin cargarla en ningún lado era el bug: la
+      // UI caía al system-ui de siempre y perdía toda la identidad del doc 11 §3.
       fontFamily: {
-        sans: ['Nunito', 'ui-rounded', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['var(--fuente-ui)', 'ui-rounded', 'system-ui', 'sans-serif'],
+        mono: ['var(--fuente-mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: { lg: '12px', xl: '16px' },
       boxShadow: {

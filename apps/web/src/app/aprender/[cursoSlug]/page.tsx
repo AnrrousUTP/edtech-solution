@@ -65,7 +65,10 @@ const MapaCurso = async ({
         />
       </div>
 
-      <ol className="mt-10 space-y-6" aria-label="Tomos del curso">
+      {/* Mapa de niveles (doc 11 §4): ruta VERTICAL con el estado de cada tomo
+          visible. El nodo actual se distingue por color y borde, nunca por
+          movimiento (D19). La línea que une los nodos es decorativa. */}
+      <ol className="relative mt-10" aria-label="Ruta del curso">
         {curso.tomos.map(tomo => {
           const estadoTomo = progreso.tomos.find(t => t.tomoId === tomo.id)
           const completado = estadoTomo?.completado ?? false
@@ -76,74 +79,96 @@ const MapaCurso = async ({
           return (
             <li
               key={tomo.id}
-              className={`tarjeta p-6 ${
-                completado
-                  ? 'border-exito-500/40 bg-exito-100/30'
-                  : esActual
-                    ? 'border-marca-600 border-2'
-                    : ''
-              }`}
+              className="relative pb-6 pl-14 last:pb-0"
               aria-current={esActual ? 'step' : undefined}
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-slate-900">
-                  Tomo {tomo.orden}: {tomo.titulo}
-                </h2>
-                {completado ? (
-                  <Etiqueta tono="exito">Completado</Etiqueta>
-                ) : esActual ? (
-                  <Etiqueta tono="marca">En curso</Etiqueta>
-                ) : (
-                  <Etiqueta>Pendiente</Etiqueta>
-                )}
-              </div>
+              {/* La línea de la ruta: no la dibuja el último nodo */}
+              <span
+                className="absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-0.5 bg-slate-200 last:hidden"
+                aria-hidden="true"
+              />
+              <span
+                className={`absolute left-0 top-0 grid h-10 w-10 place-items-center rounded-xl border-2 text-sm font-extrabold ${
+                  completado
+                    ? 'border-exito-500 bg-exito-500 text-white'
+                    : esActual
+                      ? 'border-marca-600 bg-white text-marca-600'
+                      : 'border-slate-200 bg-slate-100 text-slate-400'
+                }`}
+                aria-hidden="true"
+              >
+                {completado ? '✓' : tomo.orden}
+              </span>
 
-              <ul className="mt-4 space-y-1.5">
-                {tomo.lecciones.map(leccion => {
-                  const hecha = completadas.has(leccion.id)
-                  return (
-                    <li key={leccion.id}>
-                      <Link
-                        href={`/aprender/${cursoSlug}/${leccion.id}`}
-                        className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-100"
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                              hecha ? 'bg-exito-500 text-white' : 'bg-slate-200 text-slate-600'
-                            }`}
-                            aria-hidden="true"
-                          >
-                            {hecha ? '✓' : leccion.orden}
-                          </span>
-                          <span className={hecha ? 'text-slate-500' : 'text-slate-800'}>
-                            {leccion.titulo}
-                          </span>
-                        </span>
-                        <span className="text-xs text-slate-400">{leccion.duracionMin} min</span>
-                        <span className="sr-only">
-                          {hecha ? 'Lección completada' : 'Lección pendiente'}
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
+              <div
+                className={`tarjeta p-6 ${
+                  completado
+                    ? 'border-exito-500/40 bg-exito-100/30'
+                    : esActual
+                      ? 'border-2 border-marca-600'
+                      : ''
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Tomo {tomo.orden}: {tomo.titulo}
+                  </h2>
+                  {completado ? (
+                    <Etiqueta tono="exito">Completado</Etiqueta>
+                  ) : esActual ? (
+                    <Etiqueta tono="marca">En curso</Etiqueta>
+                  ) : (
+                    <Etiqueta>Pendiente</Etiqueta>
+                  )}
+                </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                {todasHechas && !completado && (
-                  <Link
-                    href={`/aprender/${cursoSlug}/evaluacion/${tomo.id}`}
-                    className="boton-primario text-xs"
-                  >
-                    Hacer la evaluación del tomo
-                  </Link>
-                )}
-                {completado && (
-                  <Link href={`/repasar/${tomo.id}`} className="boton-secundario text-xs">
-                    Repasar con flashcards
-                  </Link>
-                )}
+                <ul className="mt-4 space-y-1.5">
+                  {tomo.lecciones.map(leccion => {
+                    const hecha = completadas.has(leccion.id)
+                    return (
+                      <li key={leccion.id}>
+                        <Link
+                          href={`/aprender/${cursoSlug}/${leccion.id}`}
+                          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-100"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
+                                hecha ? 'bg-exito-500 text-white' : 'bg-slate-200 text-slate-600'
+                              }`}
+                              aria-hidden="true"
+                            >
+                              {hecha ? '✓' : leccion.orden}
+                            </span>
+                            <span className={hecha ? 'text-slate-500' : 'text-slate-800'}>
+                              {leccion.titulo}
+                            </span>
+                          </span>
+                          <span className="text-xs text-slate-400">{leccion.duracionMin} min</span>
+                          <span className="sr-only">
+                            {hecha ? 'Lección completada' : 'Lección pendiente'}
+                          </span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {todasHechas && !completado && (
+                    <Link
+                      href={`/aprender/${cursoSlug}/evaluacion/${tomo.id}`}
+                      className="boton-primario text-xs"
+                    >
+                      Hacer la evaluación del tomo
+                    </Link>
+                  )}
+                  {completado && (
+                    <Link href={`/repasar/${tomo.id}`} className="boton-secundario text-xs">
+                      Repasar con flashcards
+                    </Link>
+                  )}
+                </div>
               </div>
             </li>
           )

@@ -1,7 +1,25 @@
 import type { Metadata } from 'next'
+import { JetBrains_Mono, Nunito } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
+import { Racha } from '@/componentes/base'
+import { gamificationApi } from '@/api/resto'
 import { perfilSesion } from '@/lib/sesion'
+
+// Doc 11 §3: Nunito (redondeada, amigable) para la UI y JetBrains Mono para
+// código. Se cargan con next/font, que las AUTOHOSPEDA en el build: sin petición
+// a Google en runtime, sin salto de maquetación al cargar y sin depender de que
+// el navegador del alumno llegue a un tercero.
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--fuente-ui',
+  display: 'swap',
+})
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--fuente-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'EdTech Solution — Aprende a programar por niveles',
@@ -13,8 +31,12 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
   const perfil = await perfilSesion()
   const esAdmin = perfil?.roles.includes('admin') ?? false
 
+  // La racha vive en la barra superior (doc 11 §4). Si gamification no responde,
+  // la barra se dibuja igual: una racha ausente no puede tumbar la navegación.
+  const juego = perfil === null ? null : await gamificationApi.miPerfil().catch(() => null)
+
   return (
-    <html lang="es">
+    <html lang="es" className={`${nunito.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen">
         <a
           href="#contenido"
@@ -23,41 +45,42 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
           Saltar al contenido
         </a>
 
-        <header className="border-b border-slate-200 bg-white">
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
           <nav
-            className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3"
+            className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4"
             aria-label="Principal"
           >
-            <Link href="/" className="text-lg font-extrabold text-marca-600">
-              EdTech
+            <Link href="/" className="mr-4 flex items-center gap-2" aria-label="EdTech, inicio">
+              <span
+                className="grid h-8 w-8 place-items-center rounded-lg bg-marca-600 text-sm font-extrabold text-white"
+                aria-hidden="true"
+              >
+                E
+              </span>
+              <span className="text-base font-extrabold tracking-tight text-slate-900">EdTech</span>
             </Link>
-            <Link
-              href="/cursos"
-              className="text-sm font-bold text-slate-600 transition-colors hover:text-marca-600"
-            >
+
+            <Link href="/cursos" className="enlace-nav">
               Cursos
             </Link>
-            {perfil && (
-              <Link
-                href="/dashboard"
-                className="text-sm font-bold text-slate-600 transition-colors hover:text-marca-600"
-              >
+            {perfil !== null && (
+              <Link href="/dashboard" className="enlace-nav">
                 Mi panel
               </Link>
             )}
             {esAdmin && (
-              <Link
-                href="/admin"
-                className="text-sm font-bold text-slate-600 transition-colors hover:text-marca-600"
-              >
+              <Link href="/admin" className="enlace-nav">
                 Admin
               </Link>
             )}
 
             <div className="ml-auto flex items-center gap-3">
-              {perfil ? (
+              {juego !== null && juego.rachaActual > 0 && <Racha dias={juego.rachaActual} />}
+              {perfil !== null ? (
                 <>
-                  <span className="hidden text-sm text-slate-600 sm:inline">{perfil.nombre}</span>
+                  <span className="hidden text-sm font-bold text-slate-700 sm:inline">
+                    {perfil.nombre}
+                  </span>
                   <a href="/api/auth/logout" className="boton-secundario text-xs">
                     Salir
                   </a>

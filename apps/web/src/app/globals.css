@@ -41,6 +41,10 @@
   .boton-exito {
     @apply boton bg-exito-500 text-white hover:bg-exito-700;
   }
+  .enlace-nav {
+    @apply rounded-lg px-3 py-1.5 text-sm font-bold text-slate-600 transition-colors
+           hover:bg-slate-100 hover:text-marca-600;
+  }
   .etiqueta {
     @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold;
   }
