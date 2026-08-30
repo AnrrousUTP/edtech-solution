@@ -223,7 +223,12 @@ resource "aws_cognito_user_pool_client" "web" {
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["openid", "profile", "email"]
+  # `aws.cognito.signin.user.admin` habilita las APIs de AUTOSERVICIO del propio
+  # usuario (alta de TOTP, cambio de contraseña). Sin él, la pantalla de MFA del
+  # admin (doc 08 §6) no puede existir: Cognito responde "Access Token does not
+  # have required scopes". El alcance es el propio usuario y nada más, y el token
+  # solo se usa desde Route Handlers del servidor (doc 08 §7) — A-57.
+  allowed_oauth_scopes = ["openid", "profile", "email", "aws.cognito.signin.user.admin"]
   callback_urls                        = var.callback_urls
   logout_urls                          = var.logout_urls
   supported_identity_providers         = local.proveedores

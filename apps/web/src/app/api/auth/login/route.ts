@@ -40,7 +40,10 @@ export const GET = async (peticion: Request): Promise<Response> => {
   autorizacion.searchParams.set('response_type', 'code')
   autorizacion.searchParams.set('client_id', config.cognito.clientId)
   autorizacion.searchParams.set('redirect_uri', `${config.appUrl}/api/auth/callback`)
-  autorizacion.searchParams.set('scope', 'openid profile email')
+  // `aws.cognito.signin.user.admin` es lo que permite el autoservicio del propio
+  // usuario —el alta del TOTP del admin (doc 08 §6)— sin credenciales IAM. El
+  // token vive solo en una cookie httpOnly que lee el servidor (A-57).
+  autorizacion.searchParams.set('scope', 'openid profile email aws.cognito.signin.user.admin')
   autorizacion.searchParams.set('state', estado)
   autorizacion.searchParams.set('code_challenge', reto)
   autorizacion.searchParams.set('code_challenge_method', 'S256')
