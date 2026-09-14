@@ -1,6 +1,7 @@
 import {
   isOk,
   requiereAuth,
+  requiereRol,
   type CommandBus,
   type QueryBus,
   type Result,
@@ -31,7 +32,7 @@ const responder = <T>(
   })
 }
 
-export const crearRouter = (_bus: CommandBus, queries: QueryBus, cfg: Config): Router => {
+export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Router => {
   const router = Router()
   router.use(json())
   const auth = requiereAuth({
@@ -39,6 +40,7 @@ export const crearRouter = (_bus: CommandBus, queries: QueryBus, cfg: Config): R
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
+  const admin = [auth, requiereRol('admin')]
 
   router.get('/mi-perfil', auth, async (req, res) => {
     responder(
@@ -52,6 +54,32 @@ export const crearRouter = (_bus: CommandBus, queries: QueryBus, cfg: Config): R
     responder(
       res,
       await queries.dispatch({ _tag: 'VerificarCertificado', codigo: req.params.codigo ?? '' }),
+    )
+  })
+
+  router.post('/admin/certificados/curso', ...admin, async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    responder(
+      res,
+      await bus.dispatch({
+        _tag: 'OtorgarPorCurso',
+        usuarioId: String(b.usuarioId ?? ''),
+        cursoId: String(b.cursoId ?? ''),
+        cursoTitulo: String(b.cursoTitulo ?? ''),
+      }),
+    )
+  })
+
+  router.post('/admin/certificados/carrera', ...admin, async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    responder(
+      res,
+      await bus.dispatch({
+        _tag: 'OtorgarPorCarrera',
+        usuarioId: String(b.usuarioId ?? ''),
+        carreraId: String(b.carreraId ?? ''),
+        carreraTitulo: String(b.carreraTitulo ?? ''),
+      }),
     )
   })
 

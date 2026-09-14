@@ -51,6 +51,13 @@ export class LeccionFueraDelCursoError extends EnrollmentError {
   }
 }
 
+export class LeccionBloqueadaError extends EnrollmentError {
+  readonly code = 'LECCION_BLOQUEADA'
+  constructor(id: string) {
+    super(`La lección ${id} está bloqueada: completa primero la lección anterior`)
+  }
+}
+
 export class IntentoNoEncontradoError extends EnrollmentError {
   readonly code = 'INTENTO_NO_ENCONTRADO'
   constructor(id: string) {

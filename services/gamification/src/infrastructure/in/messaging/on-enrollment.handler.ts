@@ -71,6 +71,9 @@ export const onUsuarioRegistrado = (sobre: SobreEvento): Command => {
   const cmd: CrearPerfilCommand = {
     _tag: 'CrearPerfil',
     usuarioId: String(sobre.payload.usuarioId),
+    ...(typeof sobre.payload.nombreVisible === 'string'
+      ? { nombreTitular: sobre.payload.nombreVisible }
+      : {}),
   }
   return cmd
 }

@@ -1,7 +1,7 @@
 import { AggregateRoot, Err, Ok, type Result, UniqueId } from '@edtech/shared-kernel'
 import { BancoInvalidoError, type CatalogError } from '../module.errors'
 
-export type UsoBanco = 'NIVELACION' | 'EVALUACION_TOMO' | 'DIAGNOSTICO_PREVIO'
+export type UsoBanco = 'NIVELACION' | 'EVALUACION_TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
 export type TipoPregunta = 'OPCION_UNICA' | 'OPCION_MULTIPLE' | 'CODIGO' | 'VERDADERO_FALSO'
 
 export type Pregunta = {

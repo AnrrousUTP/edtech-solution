@@ -63,14 +63,10 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   http.use(noEncontradoMiddleware)
   http.use(errorMiddleware)
 
-  let poller: SqsPoller | null = null
-  if (cfg.colaUrl) {
-    poller = new SqsPoller(crearSqsClient({ region: cfg.region, endpoint: cfg.awsEndpoint }), {
-      queueUrl: cfg.colaUrl,
-      procesar: crearProcesador(db, bus),
-    })
-  }
-
+  const sqs = crearSqsClient({ region: cfg.region, endpoint: cfg.awsEndpoint })
+  const poller = cfg.colaUrl
+    ? new SqsPoller(sqs, { queueUrl: cfg.colaUrl, procesar: crearProcesador(db, bus) })
+    : null
   return {
     http,
     poller,

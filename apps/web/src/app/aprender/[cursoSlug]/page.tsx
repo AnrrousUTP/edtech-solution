@@ -20,7 +20,7 @@ const MapaCurso = async ({
       <ErrorConAccion
         titulo="Necesitas iniciar sesión"
         detalle="Este curso es parte de tu ruta de aprendizaje: entra para continuar donde lo dejaste."
-        accion={{ texto: 'Entrar', href: `/api/auth/login?destino=/aprender/${cursoSlug}` }}
+        accion={{ texto: 'Entrar', href: `/login?destino=/aprender/${cursoSlug}` }}
       />
     )
   }
@@ -44,9 +44,11 @@ const MapaCurso = async ({
   )
   const totalLecciones = curso.tomos.reduce((s, t) => s + t.lecciones.length, 0)
   const primerTomoIncompleto = progreso.tomos.find(t => !t.completado)
+  const ordenLecciones = curso.tomos.flatMap(tomo => tomo.lecciones.map(leccion => leccion.id))
+  const primerPendiente = ordenLecciones.findIndex(leccionId => !completadas.has(leccionId))
 
   return (
-    <div>
+    <div className="tech-learning-map">
       <nav className="text-sm text-slate-500">
         <Link href="/dashboard" className="transition-colors hover:text-marca-600">
           Mi panel
@@ -65,11 +67,19 @@ const MapaCurso = async ({
         />
       </div>
 
-      {/* Mapa de niveles (doc 11 §4): ruta VERTICAL con el estado de cada tomo
-          visible. El nodo actual se distingue por color y borde, nunca por
-          movimiento (D19). La línea que une los nodos es decorativa. */}
-      <ol className="relative mt-10" aria-label="Ruta del curso">
-        {curso.tomos.map(tomo => {
+      <div className="course-map-intro">
+        <p className="course-map-kicker">PATH / LEARNING MAP</p>
+        <p>
+          Completa cada nodo para abrir el siguiente checkpoint. Las lecciones son botones de
+          práctica; la evaluación aparece cuando el tomo está listo.
+        </p>
+      </div>
+
+      {/* Ruta de aprendizaje con nodos y botones de lección. El movimiento se
+          reserva para el scroll global; el mapa comunica estados por color,
+          borde y contenido. */}
+      <ol className="course-map" aria-label="Ruta del curso">
+        {curso.tomos.map((tomo, tomoIndex) => {
           const estadoTomo = progreso.tomos.find(t => t.tomoId === tomo.id)
           const completado = estadoTomo?.completado ?? false
           const esActual = primerTomoIncompleto?.tomoId === tomo.id
@@ -79,93 +89,100 @@ const MapaCurso = async ({
           return (
             <li
               key={tomo.id}
-              className="relative pb-6 pl-14 last:pb-0"
+              className={`course-map-node course-map-node-${(tomoIndex % 3) + 1} ${completado ? 'is-complete' : ''} ${esActual ? 'is-current' : ''}`}
               aria-current={esActual ? 'step' : undefined}
             >
-              {/* La línea de la ruta: no la dibuja el último nodo */}
-              <span
-                className="absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-0.5 bg-slate-200 last:hidden"
-                aria-hidden="true"
-              />
-              <span
-                className={`absolute left-0 top-0 grid h-10 w-10 place-items-center rounded-xl border-2 text-sm font-extrabold ${
-                  completado
-                    ? 'border-exito-500 bg-exito-500 text-white'
-                    : esActual
-                      ? 'border-marca-600 bg-white text-marca-600'
-                      : 'border-slate-200 bg-slate-100 text-slate-400'
-                }`}
-                aria-hidden="true"
-              >
-                {completado ? '✓' : tomo.orden}
-              </span>
+              <span className="course-map-connector" aria-hidden="true" />
+              <div className="course-map-node-head">
+                <span
+                  className={`course-map-orb ${
+                    completado ? 'is-complete' : esActual ? 'is-current' : 'is-locked'
+                  }`}
+                  aria-hidden="true"
+                >
+                  {completado ? '✓' : tomo.orden}
+                </span>
 
-              <div
-                className={`tarjeta p-6 ${
-                  completado
-                    ? 'border-exito-500/40 bg-exito-100/30'
-                    : esActual
-                      ? 'border-2 border-marca-600'
-                      : ''
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Tomo {tomo.orden}: {tomo.titulo}
-                  </h2>
-                  {completado ? (
-                    <Etiqueta tono="exito">Completado</Etiqueta>
-                  ) : esActual ? (
-                    <Etiqueta tono="marca">En curso</Etiqueta>
-                  ) : (
-                    <Etiqueta>Pendiente</Etiqueta>
-                  )}
+                <div className="course-map-node-copy">
+                  <p>
+                    TOMO {String(tomo.orden).padStart(2, '0')} / {tomo.lecciones.length} LECCIONES
+                  </p>
+                  <h2>{tomo.titulo}</h2>
                 </div>
+                {completado ? (
+                  <Etiqueta tono="exito">Completado</Etiqueta>
+                ) : esActual ? (
+                  <Etiqueta tono="marca">En curso</Etiqueta>
+                ) : (
+                  <Etiqueta>Pendiente</Etiqueta>
+                )}
+              </div>
 
-                <ul className="mt-4 space-y-1.5">
+              <div className="course-map-node-body">
+                <ul className="course-map-lessons">
                   {tomo.lecciones.map(leccion => {
                     const hecha = completadas.has(leccion.id)
+                    const indiceGlobal = ordenLecciones.indexOf(leccion.id)
+                    const desbloqueada =
+                      hecha || primerPendiente < 0 || indiceGlobal <= primerPendiente
                     return (
                       <li key={leccion.id}>
-                        <Link
-                          href={`/aprender/${cursoSlug}/${leccion.id}`}
-                          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-100"
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <span
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                                hecha ? 'bg-exito-500 text-white' : 'bg-slate-200 text-slate-600'
-                              }`}
-                              aria-hidden="true"
-                            >
-                              {hecha ? '✓' : leccion.orden}
+                        {desbloqueada ? (
+                          <Link
+                            href={`/aprender/${cursoSlug}/${leccion.id}`}
+                            className={`course-map-lesson ${hecha ? 'is-complete' : ''}`}
+                          >
+                            <span className="course-map-lesson-index" aria-hidden="true">
+                              {hecha ? '✓' : String(leccion.orden).padStart(2, '0')}
                             </span>
-                            <span className={hecha ? 'text-slate-500' : 'text-slate-800'}>
-                              {leccion.titulo}
+                            <span className="course-map-lesson-title">{leccion.titulo}</span>
+                            <span className="course-map-lesson-time">
+                              {leccion.duracionMin} min
                             </span>
+                            <span className="sr-only">
+                              {hecha ? 'Lección completada' : 'Lección disponible'}
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="course-map-lesson is-locked" aria-disabled="true">
+                            <span className="course-map-lesson-index" aria-hidden="true">
+                              {String(leccion.orden).padStart(2, '0')}
+                            </span>
+                            <span className="course-map-lesson-title">{leccion.titulo}</span>
+                            <span className="course-map-lesson-time">
+                              {leccion.duracionMin} min
+                            </span>
+                            <span className="sr-only">Lección bloqueada; completa la anterior</span>
                           </span>
-                          <span className="text-xs text-slate-400">{leccion.duracionMin} min</span>
-                          <span className="sr-only">
-                            {hecha ? 'Lección completada' : 'Lección pendiente'}
-                          </span>
-                        </Link>
+                        )}
                       </li>
                     )
                   })}
                 </ul>
 
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="course-map-actions">
+                  {todasHechas && (
+                    <Link
+                      href={`/aprender/${cursoSlug}/refuerzo/${tomo.id}`}
+                      className="course-map-evaluation is-secondary"
+                    >
+                      Practicar refuerzo <b>↗</b>
+                    </Link>
+                  )}
                   {todasHechas && !completado && (
                     <Link
                       href={`/aprender/${cursoSlug}/evaluacion/${tomo.id}`}
-                      className="boton-primario text-xs"
+                      className="course-map-evaluation"
                     >
-                      Hacer la evaluación del tomo
+                      Evaluar tomo <b>↗</b>
                     </Link>
                   )}
                   {completado && (
-                    <Link href={`/repasar/${tomo.id}`} className="boton-secundario text-xs">
-                      Repasar con flashcards
+                    <Link
+                      href={`/repasar/${tomo.id}`}
+                      className="course-map-evaluation is-secondary"
+                    >
+                      Repasar flashcards <b>↗</b>
                     </Link>
                   )}
                 </div>

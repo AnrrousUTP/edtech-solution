@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
     "baseUrl": ".",
     "paths": {
       "@edtech/shared-kernel": ["./packages/shared-kernel/src/index.ts"]

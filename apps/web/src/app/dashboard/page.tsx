@@ -38,7 +38,7 @@ const Dashboard = async (): Promise<JSX.Element> => {
       <ErrorConAccion
         titulo="Entra para ver tu panel"
         detalle="Acá viven tu racha, tus insignias, tus certificados y los cursos que empezaste."
-        accion={{ texto: 'Entrar', href: '/api/auth/login?destino=/dashboard' }}
+        accion={{ texto: 'Entrar', href: '/login?destino=/dashboard' }}
       />
     )
   }
@@ -54,7 +54,7 @@ const Dashboard = async (): Promise<JSX.Element> => {
   const obtenidas = new Set((gamificacion?.insignias ?? []).map(i => i.criterio))
 
   return (
-    <div className="space-y-12">
+    <div className="tech-dashboard space-y-12">
       <section>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

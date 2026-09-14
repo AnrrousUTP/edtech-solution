@@ -9,13 +9,13 @@ export default {
     extend: {
       colors: {
         marca: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5', // acciones primarias, progreso
-          700: '#4338ca',
-          900: '#312e81',
+          50: '#e8f0fe',
+          100: '#d2e3fc',
+          400: '#5f9df7',
+          500: '#4285f4',
+          600: '#1a73e8', // acciones primarias, progreso
+          700: '#185abc',
+          900: '#0b3d91',
         },
         acento: { 100: '#fef3c7', 400: '#fbbf24', 600: '#d97706' }, // rachas, insignias
         exito: { 100: '#d1fae5', 500: '#10b981', 700: '#047857' }, // completado, aprobado
@@ -25,7 +25,7 @@ export default {
       // aquí el nombre de la familia sin cargarla en ningún lado era el bug: la
       // UI caía al system-ui de siempre y perdía toda la identidad del doc 11 §3.
       fontFamily: {
-        sans: ['var(--fuente-ui)', 'ui-rounded', 'system-ui', 'sans-serif'],
+        sans: ['var(--fuente-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--fuente-mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: { lg: '12px', xl: '16px' },

@@ -13,7 +13,7 @@ const VerificarCertificado = async ({
 
   if (!certificado) {
     return (
-      <div className="tarjeta mx-auto max-w-lg border-alerta-500/30 p-10 text-center">
+      <div className="tech-certificate-card tarjeta mx-auto max-w-lg border-alerta-500/30 p-10 text-center">
         <p className="text-5xl" aria-hidden="true">
           ⚠️
         </p>
@@ -31,7 +31,7 @@ const VerificarCertificado = async ({
   }
 
   return (
-    <div className="tarjeta mx-auto max-w-lg border-exito-500/40 p-10 text-center">
+    <div className="tech-certificate-card tarjeta mx-auto max-w-lg border-exito-500/40 p-10 text-center">
       <p className="text-5xl" aria-hidden="true">
         ✅
       </p>

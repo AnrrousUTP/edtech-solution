@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { config } from '@/lib/config'
+import { config, destinoInterno } from '@/lib/config'
 import { COOKIE_ACCESO, COOKIE_PERFIL, COOKIE_REFRESH, claimsDeToken } from '@/lib/sesion'
 
 // Intercambia el código por tokens y los guarda en cookies httpOnly (doc 08 §7).
@@ -13,7 +13,7 @@ export const GET = async (peticion: Request): Promise<Response> => {
   const almacen = await cookies()
   const verificador = almacen.get('pkce_verificador')?.value
   const estadoEsperado = almacen.get('pkce_estado')?.value
-  const destino = almacen.get('pkce_destino')?.value ?? '/dashboard'
+  const destino = destinoInterno(almacen.get('pkce_destino')?.value)
 
   if (!codigo || !verificador || !estado || estado !== estadoEsperado) {
     return NextResponse.redirect(new URL('/?error=auth', config.appUrl))

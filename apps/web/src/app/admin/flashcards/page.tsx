@@ -15,7 +15,7 @@ const RevisionFlashcards = async ({ searchParams }: Props): Promise<JSX.Element>
       <ErrorConAccion
         titulo="Necesitas permisos de administrador"
         detalle="La revisión de flashcards es la barrera que impide que material sin revisar llegue a los estudiantes."
-        accion={{ texto: 'Volver al inicio', href: '/' }}
+        accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
   }
@@ -45,7 +45,7 @@ const RevisionFlashcards = async ({ searchParams }: Props): Promise<JSX.Element>
   const mazos = tomoElegido ? ((await flashcardsApi.mazosAdmin(tomoElegido)) ?? []) : []
 
   return (
-    <div>
+    <div className="tech-admin-flashcards">
       <nav className="text-sm text-slate-500">
         <Link href="/admin" className="transition-colors hover:text-marca-600">
           Administración

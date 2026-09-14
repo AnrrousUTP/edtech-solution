@@ -44,7 +44,7 @@ export const Mazo = ({ tarjetas }: { tarjetas: Tarjeta[] }): JSX.Element => {
 
   if (terminado) {
     return (
-      <div className="tarjeta aparece mx-auto max-w-lg p-8 text-center">
+      <div className="tech-review-page tarjeta aparece mx-auto max-w-lg p-8 text-center">
         <p className="text-5xl" aria-hidden="true">
           🧠
         </p>
@@ -76,7 +76,7 @@ export const Mazo = ({ tarjetas }: { tarjetas: Tarjeta[] }): JSX.Element => {
   if (!tarjeta) return <div />
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="tech-review-page mx-auto max-w-2xl">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-extrabold text-slate-900">Repaso</h1>
         <span className="text-sm text-slate-500">
@@ -92,7 +92,7 @@ export const Mazo = ({ tarjetas }: { tarjetas: Tarjeta[] }): JSX.Element => {
         type="button"
         onClick={() => setVolteada(v => !v)}
         aria-expanded={volteada}
-        className={`mt-8 flex min-h-64 w-full flex-col items-center justify-center rounded-xl border-2 p-8 text-center transition-colors ${
+        className={`tech-review-card mt-8 flex min-h-64 w-full flex-col items-center justify-center rounded-xl border-2 p-8 text-center transition-colors ${
           volteada
             ? 'border-marca-600 bg-marca-50'
             : 'border-slate-200 bg-white hover:border-marca-400 hover:bg-marca-50'

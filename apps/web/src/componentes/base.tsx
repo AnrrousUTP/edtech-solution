@@ -12,11 +12,11 @@ export const Etiqueta = ({
   tono?: 'neutro' | 'marca' | 'exito' | 'acento' | 'alerta'
 }): JSX.Element => {
   const tonos = {
-    neutro: 'bg-slate-100 text-slate-700',
-    marca: 'bg-marca-100 text-marca-700',
-    exito: 'bg-exito-100 text-exito-700',
-    acento: 'bg-acento-100 text-acento-600',
-    alerta: 'bg-alerta-100 text-alerta-700',
+    neutro: 'tech-badge-neutral',
+    marca: 'tech-badge-blue',
+    exito: 'tech-badge-green',
+    acento: 'tech-badge-yellow',
+    alerta: 'tech-badge-red',
   }
   return <span className={`etiqueta ${tonos[tono]}`}>{children}</span>
 }
@@ -42,7 +42,7 @@ export const BarraProgreso = ({
         </div>
       )}
       <div
-        className="h-2.5 w-full overflow-hidden rounded-lg bg-slate-200"
+        className="tech-progress-track h-2.5 w-full overflow-hidden rounded-lg"
         role="progressbar"
         aria-valuenow={porcentaje}
         aria-valuemin={0}
@@ -50,7 +50,7 @@ export const BarraProgreso = ({
         aria-label={etiqueta ?? 'Progreso'}
       >
         <div
-          className="h-full rounded-lg bg-marca-600 transition-[width] duration-300"
+          className="tech-progress-fill h-full rounded-lg transition-[width] duration-300"
           style={{ width: `${porcentaje}%` }}
         />
       </div>
@@ -68,7 +68,7 @@ export const Racha = ({ dias }: { dias: number }): JSX.Element => {
         : 'bg-slate-100 text-slate-600'
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${tono}`}
+      className={`tech-streak inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${tono}`}
       title={`Racha de ${dias} ${dias === 1 ? 'día' : 'días'}`}
     >
       <span aria-hidden="true">🔥</span>
@@ -87,7 +87,7 @@ export const Vacio = ({
   detalle: string
   accion?: { texto: string; href: string }
 }): JSX.Element => (
-  <div className="tarjeta p-10 text-center">
+  <div className="tarjeta tech-empty p-10 text-center">
     <p className="text-lg font-bold text-slate-800">{titulo}</p>
     <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">{detalle}</p>
     {accion && (
@@ -108,7 +108,7 @@ export const ErrorConAccion = ({
   detalle: string
   accion: { texto: string; href: string }
 }): JSX.Element => (
-  <div className="tarjeta border-alerta-500/30 bg-alerta-100/40 p-8 text-center">
+  <div className="tarjeta tech-error border-alerta-500/30 p-8 text-center">
     <p className="text-lg font-bold text-alerta-700">{titulo}</p>
     <p className="mx-auto mt-2 max-w-md text-sm text-slate-700">{detalle}</p>
     <Link href={accion.href} className="boton-secundario mt-5">

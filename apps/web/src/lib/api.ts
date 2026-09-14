@@ -19,6 +19,14 @@ const sobreExito = <T extends z.ZodTypeAny>(datos: T) => z.object({ data: datos 
 const sobreError = z.object({
   error: z.object({ code: z.string(), message: z.string() }),
 })
+const parsearJson = (texto: string): unknown => {
+  if (!texto) return {}
+  try {
+    return JSON.parse(texto) as unknown
+  } catch {
+    return {}
+  }
+}
 
 type Opciones = {
   metodo?: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -51,7 +59,7 @@ export const llamar = async <T extends z.ZodTypeAny>(
 
   const texto = await respuesta.text()
   if (!respuesta.ok) {
-    const parseado = sobreError.safeParse(texto ? JSON.parse(texto) : {})
+    const parseado = sobreError.safeParse(parsearJson(texto))
     throw new ErrorApi(
       respuesta.status,
       parseado.success ? parseado.data.error.code : 'DESCONOCIDO',
@@ -59,7 +67,7 @@ export const llamar = async <T extends z.ZodTypeAny>(
     )
   }
 
-  const cuerpo = sobreExito(esquema).safeParse(texto ? JSON.parse(texto) : { data: null })
+  const cuerpo = sobreExito(esquema).safeParse(parsearJson(texto))
   if (!cuerpo.success) {
     throw new ErrorApi(
       respuesta.status,

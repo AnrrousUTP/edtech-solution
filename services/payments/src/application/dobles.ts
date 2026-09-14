@@ -52,6 +52,9 @@ export class InMemoryOrdenRepository implements OrdenRepository {
   async porUsuario(usuarioId: UniqueId): Promise<Orden[]> {
     return [...this.ordenes.values()].filter(o => o.usuarioId.valor === usuarioId.valor)
   }
+  async todas(): Promise<Orden[]> {
+    return [...this.ordenes.values()]
+  }
   async vencidas(ahora: Date): Promise<Orden[]> {
     return [...this.ordenes.values()].filter(o => o.estado === 'PENDIENTE' && o.expiraAt <= ahora)
   }

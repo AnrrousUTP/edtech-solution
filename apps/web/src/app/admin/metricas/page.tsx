@@ -12,7 +12,7 @@ const Metricas = async (): Promise<JSX.Element> => {
       <ErrorConAccion
         titulo="Necesitas permisos de administrador"
         detalle="Las métricas de ingresos son solo para administradores."
-        accion={{ texto: 'Volver al inicio', href: '/' }}
+        accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
   }
@@ -28,7 +28,7 @@ const Metricas = async (): Promise<JSX.Element> => {
   }
 
   const [ordenes, cursos] = await Promise.all([
-    paymentsApi.misOrdenes().catch(() => []),
+    paymentsApi.ordenesAdmin().catch(() => []),
     catalogApi.cursosAdmin().catch(() => []),
   ])
 
@@ -51,7 +51,7 @@ const Metricas = async (): Promise<JSX.Element> => {
   const ranking = [...porCurso.values()].sort((a, b) => b.bruto - a.bruto)
 
   return (
-    <div>
+    <div className="tech-admin-metrics">
       <nav className="text-sm text-slate-500">
         <Link href="/admin" className="transition-colors hover:text-marca-600">
           Administración

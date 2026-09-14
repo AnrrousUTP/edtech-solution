@@ -11,6 +11,7 @@ import {
 } from '@edtech/shared-kernel'
 import {
   CursoNoProyectadoError,
+  LeccionBloqueadaError,
   LeccionFueraDelCursoError,
   SinMatriculaError,
   type EnrollmentError,
@@ -62,6 +63,11 @@ export class CompletarLeccionHandler implements CommandHandler<
 
     const tomo = curso.tomoDeLeccion(cmd.leccionId)
     if (!tomo) return Err(new LeccionFueraDelCursoError(cmd.leccionId))
+    const lecciones = curso.tomos.flatMap(item => item.leccionIds)
+    const indice = lecciones.indexOf(cmd.leccionId)
+    if (indice > 0 && !matricula.leccionesCompletadas.has(lecciones[indice - 1]!)) {
+      return Err(new LeccionBloqueadaError(cmd.leccionId))
+    }
 
     const r = matricula.completarLeccion(cmd.leccionId, tomo, this.reloj.ahora())
     if (isErr(r)) return Err(r.error)

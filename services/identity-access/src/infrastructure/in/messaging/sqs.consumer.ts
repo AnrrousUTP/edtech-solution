@@ -12,7 +12,6 @@ import {
 import { onAltaUsuarioCognito } from './on-alta-usuario-cognito.handler'
 import { onCursoCompletado } from './on-curso-completado.handler'
 import { onTestNivelacionCompletado } from './on-test-nivelacion-completado.handler'
-import { processedEvents } from '../../out/persistencia/schema'
 import type { Db } from '../../out/persistencia/db'
 
 const HANDLERS: Record<string, (sobre: SobreEvento) => Command | null> = {
@@ -24,12 +23,8 @@ const HANDLERS: Record<string, (sobre: SobreEvento) => Command | null> = {
 export const crearProcesador =
   (db: Db, bus: CommandBus) =>
   async (sobre: SobreEvento): Promise<ResultadoMensaje> => {
-    const insertado = await db
-      .insert(processedEvents)
-      .values({ eventId: sobre.eventId, eventType: sobre.eventType, resultado: 'OK' })
-      .onConflictDoNothing()
-      .returning({ id: processedEvents.eventId })
-    if (insertado.length === 0) {
+    const insertado = await db.claimEvent(sobre.eventId, sobre.eventType)
+    if (!insertado) {
       log.info('evento ya procesado', { eventId: sobre.eventId })
       return 'ACK'
     }
@@ -62,6 +57,7 @@ export const crearProcesador =
         eventId: sobre.eventId,
         error: err instanceof Error ? err.message : String(err),
       })
+      await db.releaseEvent(sobre.eventId)
       return 'NACK'
     }
   }

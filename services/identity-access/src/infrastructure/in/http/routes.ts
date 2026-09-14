@@ -50,7 +50,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
       usuarioId,
       // Alta perezosa (doc 08 §4.3): el access token no trae email; se usa un
       // placeholder que la reconciliación con Cognito corrige después.
-      altaPerezosa: { email: `${usuarioId}@pendiente.edtech` },
+      altaPerezosa: {
+        email: req.auth?.email ?? `${usuarioId}@pendiente.edtech`,
+        ...(req.auth?.nombreVisible ? { nombreVisible: req.auth.nombreVisible } : {}),
+      },
     })
     responder(res, r)
   })

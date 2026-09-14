@@ -21,6 +21,7 @@ import {
   ExpirarOrdenesHandler,
   MisOrdenesHandler,
   ProyectarPrecioHandler,
+  TodasLasOrdenesHandler,
 } from '../application/consultar-ordenes/consultar-ordenes.handler'
 import { CrearOrdenHandler } from '../application/crear-orden/crear-orden.handler'
 import { ProcesarWebhookHandler } from '../application/procesar-webhook/procesar-webhook.handler'
@@ -88,6 +89,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   const queries = new QueryBus()
   queries.register(new EstadoOrdenHandler(ordenes))
   queries.register(new MisOrdenesHandler(ordenes))
+  queries.register(new TodasLasOrdenesHandler(ordenes))
 
   const http = express()
   http.use(requestContextMiddleware)

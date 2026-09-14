@@ -184,8 +184,10 @@ services:
       NEXT_PUBLIC_API_BASE: http://localhost:8080
       APP_URL: http://localhost:3000
       JWT_LOCAL_URL: http://jwt-local:4599
+      EDTECH_LOCAL_AUTH: "true"
     depends_on:
       gateway: { condition: service_started }
+      jwt-local: { condition: service_started }
 
 volumes:
   pgdata: {}

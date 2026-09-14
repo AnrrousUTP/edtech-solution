@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EdTech">
+  <rect width="64" height="64" rx="14" fill="#020911"/>
+  <path d="M15 13h34v9H25v7h20v8H25v5h24v9H15z" fill="#34d9ff"/>
+  <path d="M45 45h7v7h-7z" fill="#ffd343"/>
+</svg>

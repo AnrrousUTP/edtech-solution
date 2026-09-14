@@ -17,7 +17,7 @@ const PaginaCheckout = async ({
       <ErrorConAccion
         titulo="Entra para completar la compra"
         detalle="Necesitamos tu cuenta para vincular el curso a tu progreso."
-        accion={{ texto: 'Entrar', href: `/api/auth/login?destino=/checkout/${cursoSlug}` }}
+        accion={{ texto: 'Entrar', href: `/login?destino=/checkout/${cursoSlug}` }}
       />
     )
   }
@@ -36,7 +36,7 @@ const PaginaCheckout = async ({
   }
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="tech-checkout mx-auto max-w-lg">
       <h1 className="text-3xl font-extrabold text-slate-900">Completar compra</h1>
 
       <div className="tarjeta mt-6 p-6">

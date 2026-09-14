@@ -12,7 +12,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
       <ErrorConAccion
         titulo="Necesitas permisos de administrador"
         detalle="Esta sección es para gestionar el catálogo. Si crees que deberías tener acceso, pídeselo a quien administra la plataforma."
-        accion={{ texto: 'Volver al inicio', href: '/' }}
+        accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
   }
@@ -30,10 +30,25 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
   const cursos = await catalogApi.cursosAdmin().catch(() => [])
 
   return (
-    <div>
+    <div className="tech-admin-page">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-extrabold text-slate-900">Administración</h1>
-        <nav className="flex gap-3">
+        <nav className="flex flex-wrap gap-3">
+          <Link href="/admin/cursos/nuevo" className="boton-primario text-xs">
+            Nuevo curso
+          </Link>
+          <Link href="/admin/carreras" className="boton-secundario text-xs">
+            Rutas
+          </Link>
+          <Link href="/admin/bancos" className="boton-secundario text-xs">
+            Evaluaciones
+          </Link>
+          <Link href="/admin/certificados" className="boton-secundario text-xs">
+            Credenciales
+          </Link>
+          <Link href="/admin/matriculas" className="boton-secundario text-xs">
+            Accesos
+          </Link>
           <Link href="/admin/flashcards" className="boton-secundario text-xs">
             Revisión de flashcards
           </Link>
@@ -61,12 +76,18 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
               <tr key={curso.id}>
                 <td className="py-4 pr-4">
                   <Link
-                    href={`/cursos/${curso.slug}`}
+                    href={`/admin/cursos/${curso.id}`}
                     className="font-bold text-slate-900 transition-colors hover:text-marca-600"
                   >
                     {curso.titulo}
                   </Link>
                   <p className="font-mono text-xs text-slate-400">{curso.slug}</p>
+                  <Link
+                    href={`/cursos/${curso.slug}`}
+                    className="mt-1 inline-block text-xs text-marca-600"
+                  >
+                    Vista pública ↗
+                  </Link>
                 </td>
                 <td className="py-4 pr-4 text-slate-600">{curso.tecnologia}</td>
                 <td className="py-4 pr-4 text-slate-600">

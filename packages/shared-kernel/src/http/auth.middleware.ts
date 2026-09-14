@@ -49,7 +49,7 @@ const noAutorizado = (res: Response, message: string): void => {
 
 declare module 'express-serve-static-core' {
   interface Request {
-    auth?: { usuarioId: string; roles: string[] }
+    auth?: { usuarioId: string; roles: string[]; email?: string; nombreVisible?: string }
   }
 }
 
@@ -71,7 +71,19 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
         if (typeof payload.sub !== 'string') return noAutorizado(res, 'Token sin sub')
 
         const roles = extraerGrupos(payload)
-        req.auth = { usuarioId: payload.sub, roles }
+        const email = typeof payload.email === 'string' ? payload.email : undefined
+        const nombreVisible =
+          typeof payload.name === 'string'
+            ? payload.name
+            : typeof payload.nombre_visible === 'string'
+              ? payload.nombre_visible
+              : undefined
+        req.auth = {
+          usuarioId: payload.sub,
+          roles,
+          ...(email ? { email } : {}),
+          ...(nombreVisible ? { nombreVisible } : {}),
+        }
         asignarIdentidad(payload.sub, roles)
         next()
       })

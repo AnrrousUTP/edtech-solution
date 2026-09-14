@@ -1,6 +1,7 @@
 import {
   isOk,
   requiereAuth,
+  requiereRol,
   type CommandBus,
   type QueryBus,
   type Result,
@@ -92,6 +93,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
       res,
       await queries.dispatch({ _tag: 'MisOrdenes', usuarioId: req.auth?.usuarioId ?? '' }),
     )
+  })
+
+  router.get('/admin/ordenes', auth, requiereRol('admin'), async (_req, res) => {
+    responder(res, await queries.dispatch({ _tag: 'TodasLasOrdenes' }))
   })
 
   return router

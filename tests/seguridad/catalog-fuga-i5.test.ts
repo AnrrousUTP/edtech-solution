@@ -109,6 +109,12 @@ describe.skipIf(!entornoArriba)('I-5: fuga de respuestas correctas', () => {
     tomoId = contenido.data.tomos[0]!.id
     leccionId = contenido.data.tomos[0]!.lecciones[0]!
 
+    const publicado = await fetch(`${base}/admin/cursos/${cursoId}/publicar`, {
+      method: 'POST',
+      headers: auth,
+    })
+    expect(publicado.status).toBe(200)
+
     await fetch(`${base}/admin/bancos`, {
       method: 'POST',
       headers: auth,

@@ -6,6 +6,7 @@ export type Config = {
   busName: string
   colaUrl: string | undefined
   colaGeneracionUrl: string | undefined
+  bucket: string
   /** 'fake' en local; 'bedrock' en AWS dev desde F11 (doc 10 §8). */
   generador: 'fake' | 'bedrock'
   bedrock: { agentId: string; agentAliasId: string; modeloDeclarado: string }
@@ -22,6 +23,7 @@ export const cargarConfig = (): Config => {
     busName: env.EVENT_BUS_NAME ?? 'edtech-domain-events',
     colaUrl: env.QUEUE_URL,
     colaGeneracionUrl: env.QUEUE_GENERACION_URL,
+    bucket: env.BUCKET_MEDIA ?? 'edtech-dev-media',
     generador: env.GENERADOR_FLASHCARDS === 'bedrock' ? 'bedrock' : 'fake',
     bedrock: {
       agentId: env.BEDROCK_AGENT_ID ?? '',

@@ -28,6 +28,27 @@ const Reproductor = async ({
     )
   }
 
+  const ordenLecciones = curso.tomos.flatMap(tomo => tomo.lecciones.map(leccion => leccion.id))
+  const completadas = new Set(
+    progreso.tomos.flatMap(tomo =>
+      tomo.lecciones.filter(leccion => leccion.completada).map(leccion => leccion.leccionId),
+    ),
+  )
+  const indiceActual = ordenLecciones.indexOf(leccionId)
+  const primerPendiente = ordenLecciones.findIndex(id => !completadas.has(id))
+  if (
+    indiceActual < 0 ||
+    (primerPendiente >= 0 && indiceActual > primerPendiente && !completadas.has(leccionId))
+  ) {
+    return (
+      <ErrorConAccion
+        titulo="Esta lección está bloqueada"
+        detalle="Completa los nodos anteriores del mapa para abrirla."
+        accion={{ texto: 'Volver al mapa', href: `/aprender/${cursoSlug}` }}
+      />
+    )
+  }
+
   const leccion = await catalogApi.leccion(leccionId)
   if (!leccion) notFound()
 
@@ -42,7 +63,7 @@ const Reproductor = async ({
     (estadoTomo?.lecciones.length ?? 0) - (hechasEnTomo + (yaCompletada ? 0 : 1)) === 0
 
   return (
-    <div className="grid gap-8 lg:grid-cols-4">
+    <div className="tech-lesson-page grid gap-8 lg:grid-cols-4">
       <div className="lg:col-span-3">
         <nav className="text-sm text-slate-500">
           <Link href={`/aprender/${cursoSlug}`} className="transition-colors hover:text-marca-600">
@@ -121,20 +142,31 @@ const Reproductor = async ({
               const hecha =
                 estadoTomo?.lecciones.find(l => l.leccionId === otra.id)?.completada ?? false
               const esActual = otra.id === leccionId
+              const indiceOtra = ordenLecciones.indexOf(otra.id)
+              const disponible = hecha || primerPendiente < 0 || indiceOtra <= primerPendiente
               return (
                 <li key={otra.id}>
-                  <Link
-                    href={`/aprender/${cursoSlug}/${otra.id}`}
-                    className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                      esActual
-                        ? 'bg-marca-50 font-bold text-marca-700'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                    aria-current={esActual ? 'page' : undefined}
-                  >
-                    {hecha ? '✓ ' : ''}
-                    {otra.titulo}
-                  </Link>
+                  {disponible ? (
+                    <Link
+                      href={`/aprender/${cursoSlug}/${otra.id}`}
+                      className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                        esActual
+                          ? 'bg-marca-50 font-bold text-marca-700'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                      aria-current={esActual ? 'page' : undefined}
+                    >
+                      {hecha ? '✓ ' : ''}
+                      {otra.titulo}
+                    </Link>
+                  ) : (
+                    <span
+                      className="block rounded-lg px-3 py-1.5 text-sm text-slate-400"
+                      aria-disabled="true"
+                    >
+                      {otra.titulo} <span className="text-xs">· bloqueada</span>
+                    </span>
+                  )}
                 </li>
               )
             })}

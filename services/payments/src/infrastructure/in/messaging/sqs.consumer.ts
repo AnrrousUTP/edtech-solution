@@ -16,7 +16,6 @@ import type {
   ProyectarPrecioCommand,
 } from '../../../application/consultar-ordenes/consultar-ordenes.handler'
 import type { ProcesarWebhookCommand } from '../../../application/procesar-webhook/procesar-webhook.handler'
-import { processedEvents } from '../../out/persistencia/schema'
 import type { Db } from '../../out/persistencia/db'
 
 export const onCursoPublicado = (sobre: SobreEvento): Command => {
@@ -64,12 +63,8 @@ const HANDLERS: Record<string, (sobre: SobreEvento) => Command | null> = {
 export const crearProcesador =
   (db: Db, bus: CommandBus, webhooks: WebhookRepository) =>
   async (sobre: SobreEvento): Promise<ResultadoMensaje> => {
-    const insertado = await db
-      .insert(processedEvents)
-      .values({ eventId: sobre.eventId, eventType: sobre.eventType, resultado: 'OK' })
-      .onConflictDoNothing()
-      .returning({ id: processedEvents.eventId })
-    if (insertado.length === 0) {
+    const insertado = await db.claimEvent(sobre.eventId, sobre.eventType)
+    if (!insertado) {
       log.info('evento ya procesado', { eventId: sobre.eventId })
       return 'ACK'
     }
@@ -104,6 +99,7 @@ export const crearProcesador =
           paypalEventId,
           error: err instanceof Error ? err.message : String(err),
         })
+        await db.releaseEvent(sobre.eventId)
         return 'NACK' // reintento de SQS → DLQ a la quinta
       }
     }
@@ -133,6 +129,7 @@ export const crearProcesador =
         eventId: sobre.eventId,
         error: err instanceof Error ? err.message : String(err),
       })
+      await db.releaseEvent(sobre.eventId)
       return 'NACK'
     }
   }

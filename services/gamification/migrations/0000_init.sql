@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS "gamification"."perfiles" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "gamification"."perfiles" ADD COLUMN IF NOT EXISTS "nombre_titular" text;--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "gamification"."processed_events" (
 	"event_id" uuid PRIMARY KEY NOT NULL,
 	"event_type" text NOT NULL,

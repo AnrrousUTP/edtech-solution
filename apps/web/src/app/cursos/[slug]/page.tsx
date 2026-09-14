@@ -28,7 +28,7 @@ const DetalleCurso = async ({
   )
 
   return (
-    <div className="grid gap-8 lg:grid-cols-3">
+    <div className="tech-course-detail grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
         <div className="flex flex-wrap items-center gap-2">
           <Etiqueta>{curso.tecnologia}</Etiqueta>
@@ -95,7 +95,7 @@ const DetalleCurso = async ({
               </Link>
             ) : !perfil ? (
               <a
-                href={`/api/auth/login?destino=${encodeURIComponent(`/cursos/${curso.slug}`)}`}
+                href={`/login?destino=${encodeURIComponent(`/cursos/${curso.slug}`)}`}
                 className="boton-primario w-full"
               >
                 Entrar para empezar

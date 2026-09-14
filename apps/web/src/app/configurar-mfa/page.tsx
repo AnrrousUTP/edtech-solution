@@ -8,7 +8,7 @@ import { FormularioMfa } from './formulario'
 // marca el token con `mfa_pendiente` y esta pantalla es el bloqueo.
 const ConfigurarMfa = async (): Promise<JSX.Element> => {
   const perfil = await perfilSesion()
-  if (perfil === null) redirect('/api/auth/login?destino=/configurar-mfa')
+  if (perfil === null) redirect('/login?destino=/configurar-mfa')
 
   if (!(await esAdmin())) {
     return (
@@ -31,7 +31,7 @@ const ConfigurarMfa = async (): Promise<JSX.Element> => {
   }
 
   return (
-    <div>
+    <div className="tech-mfa-page">
       <h1 className="text-3xl font-extrabold text-slate-900">Configura tu segundo factor</h1>
       <p className="mt-2 max-w-2xl text-slate-600">
         Tu cuenta está en el grupo <code className="font-mono text-sm">admin</code>. Antes de entrar

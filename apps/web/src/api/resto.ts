@@ -65,6 +65,26 @@ export const gamificationApi = {
     llamarOpcional(`/api/gamification/certificados/${codigo}`, verificacionCertificado, {
       autenticado: false,
     }),
+  otorgarCurso: (datos: { usuarioId: string; cursoId: string; cursoTitulo: string }) =>
+    llamar(
+      '/api/gamification/admin/certificados/curso',
+      z.object({
+        certificadoId: z.string().nullable(),
+        certificadoNuevo: z.boolean(),
+        insigniaOtorgada: z.boolean(),
+      }),
+      { metodo: 'POST', cuerpo: datos },
+    ),
+  otorgarCarrera: (datos: { usuarioId: string; carreraId: string; carreraTitulo: string }) =>
+    llamar(
+      '/api/gamification/admin/certificados/carrera',
+      z.object({
+        certificadoId: z.string().nullable(),
+        certificadoNuevo: z.boolean(),
+        insigniaOtorgada: z.boolean(),
+      }),
+      { metodo: 'POST', cuerpo: datos },
+    ),
 }
 
 // ── flashcards ───────────────────────────────────────────────────────────────
@@ -144,5 +164,6 @@ export const paymentsApi = {
       { metodo: 'POST', cuerpo: { cursoId } },
     ),
   misOrdenes: () => llamar('/api/payments/mis-ordenes', z.array(ordenEstado)),
+  ordenesAdmin: () => llamar('/api/payments/admin/ordenes', z.array(ordenEstado)),
   estadoOrden: (ordenId: string) => llamarOpcional(`/api/payments/ordenes/${ordenId}`, ordenEstado),
 }

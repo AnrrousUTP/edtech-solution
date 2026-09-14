@@ -37,7 +37,7 @@ export const Examen = ({
   titulo: string
   preguntas: PreguntaExamen[]
   bancoId: string
-  tipo: 'NIVELACION' | 'TOMO'
+  tipo: 'NIVELACION' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO' | 'TOMO'
   cursoId?: string
   tomoId?: string
   umbral: number
@@ -55,6 +55,10 @@ export const Examen = ({
   const respondidas = Object.keys(respuestas).length
 
   const entregar = async (): Promise<void> => {
+    if (respondidas < preguntas.length) {
+      setError('Responde todas las preguntas antes de entregar.')
+      return
+    }
     setEnviando(true)
     setError(null)
     const respuesta = await fetch('/api/entregar-intento', {
@@ -109,7 +113,7 @@ export const Examen = ({
           {resultado.aprobado ? '🎉' : '📘'}
         </p>
         <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
-          {tipo === 'NIVELACION'
+          {tipo === 'NIVELACION' || tipo === 'DIAGNOSTICO_PREVIO'
             ? 'Test completado'
             : resultado.aprobado
               ? '¡Evaluación aprobada!'
@@ -121,6 +125,16 @@ export const Examen = ({
           <p className="mt-4 text-slate-700">
             Tu nivel es <strong className="text-marca-600">{resultado.nivelResultante}</strong>. Ya
             puedes ver los cursos recomendados para ti.
+          </p>
+        )}
+        {tipo === 'DIAGNOSTICO_PREVIO' && (
+          <p className="mt-4 text-slate-700">
+            Diagnóstico guardado. Ya puedes elegir una ruta y volver a practicar con contexto.
+          </p>
+        )}
+        {tipo === 'REFUERZO' && (
+          <p className="mt-4 text-slate-700">
+            Práctica completada. Usa este resultado para decidir qué conceptos volver a estudiar.
           </p>
         )}
         {tipo === 'TOMO' && !resultado.aprobado && (
@@ -185,7 +199,7 @@ export const Examen = ({
                 role="radio"
                 aria-checked={elegida}
                 onClick={() => setRespuestas(previo => ({ ...previo, [pregunta.id]: opcion.id }))}
-                className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                className={`tech-exam-option flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
                   elegida
                     ? 'border-marca-600 bg-marca-50 font-bold text-marca-700'
                     : 'border-slate-200 bg-white text-slate-700 hover:border-marca-400 hover:bg-marca-50'
@@ -233,10 +247,14 @@ export const Examen = ({
           <button
             type="button"
             onClick={() => void entregar()}
-            disabled={enviando || respondidas === 0}
+            disabled={enviando || respondidas < preguntas.length}
             className="boton-primario"
           >
-            {enviando ? 'Corrigiendo…' : 'Entregar'}
+            {enviando
+              ? 'Corrigiendo…'
+              : respondidas < preguntas.length
+                ? `Faltan ${preguntas.length - respondidas}`
+                : 'Entregar'}
           </button>
         ) : (
           <button

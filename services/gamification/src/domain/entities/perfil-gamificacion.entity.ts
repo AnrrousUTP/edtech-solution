@@ -33,6 +33,7 @@ const soloFecha = (d: Date, zonaHoraria: string): string =>
 
 type Props = {
   usuarioId: UniqueId
+  nombreTitular: string | null
   puntos: number
   rachaActual: number
   rachaMaxima: number
@@ -49,6 +50,7 @@ export class PerfilGamificacion extends AggregateRoot {
   static crear(usuarioId: UniqueId, zonaHoraria = 'America/Lima'): PerfilGamificacion {
     return new PerfilGamificacion({
       usuarioId,
+      nombreTitular: null,
       puntos: 0,
       rachaActual: 0,
       rachaMaxima: 0,
@@ -60,6 +62,11 @@ export class PerfilGamificacion extends AggregateRoot {
 
   static reconstruir(props: Props): PerfilGamificacion {
     return new PerfilGamificacion(props)
+  }
+
+  fijarNombreTitular(nombre: string): void {
+    const limpio = nombre.trim()
+    if (limpio) this.props.nombreTitular = limpio.slice(0, 120)
   }
 
   /** I-7: una insignia se otorga UNA sola vez por (usuario, criterio, referencia). */
@@ -124,6 +131,9 @@ export class PerfilGamificacion extends AggregateRoot {
 
   get usuarioId(): UniqueId {
     return this.props.usuarioId
+  }
+  get nombreTitular(): string | null {
+    return this.props.nombreTitular
   }
   get puntos(): number {
     return this.props.puntos

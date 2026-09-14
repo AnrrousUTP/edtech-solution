@@ -1,42 +1,34 @@
 import type { Metadata } from 'next'
-import { JetBrains_Mono, Nunito } from 'next/font/google'
+import { JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
-import { Racha } from '@/componentes/base'
-import { gamificationApi } from '@/api/resto'
 import { perfilSesion } from '@/lib/sesion'
+import SiteHeader from './site-header'
 
-// Doc 11 §3: Nunito (redondeada, amigable) para la UI y JetBrains Mono para
-// código. Se cargan con next/font, que las AUTOHOSPEDA en el build: sin petición
-// a Google en runtime, sin salto de maquetación al cargar y sin depender de que
-// el navegador del alumno llegue a un tercero.
-const nunito = Nunito({
+// Space Grotesk da a la interfaz una voz técnica y editorial. JetBrains Mono
+// queda reservada para comandos, metadatos y estados del sistema.
+const display = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--fuente-ui',
+  variable: '--fuente-display',
   display: 'swap',
 })
-const jetbrains = JetBrains_Mono({
+const mono = JetBrains_Mono({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--fuente-mono',
   display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'EdTech Solution — Aprende a programar por niveles',
-  description:
-    'Cursos de programación con progresión por niveles, gamificación y repaso asistido por IA.',
+  title: 'EdTech — Aprende habilidades para avanzar',
+  description: 'Rutas prácticas para aprender tecnología, practicar y demostrar lo que sabes.',
 }
 
 const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<JSX.Element> => {
   const perfil = await perfilSesion()
-  const esAdmin = perfil?.roles.includes('admin') ?? false
-
-  // La racha vive en la barra superior (doc 11 §4). Si gamification no responde,
-  // la barra se dibuja igual: una racha ausente no puede tumbar la navegación.
-  const juego = perfil === null ? null : await gamificationApi.miPerfil().catch(() => null)
 
   return (
-    <html lang="es" className={`${nunito.variable} ${jetbrains.variable}`}>
+    <html lang="es" className={`${display.variable} ${mono.variable}`}>
       <body className="min-h-screen">
         <a
           href="#contenido"
@@ -45,62 +37,77 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
           Saltar al contenido
         </a>
 
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-          <nav
-            className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4"
-            aria-label="Principal"
-          >
-            <Link href="/" className="mr-4 flex items-center gap-2" aria-label="EdTech, inicio">
-              <span
-                className="grid h-8 w-8 place-items-center rounded-lg bg-marca-600 text-sm font-extrabold text-white"
-                aria-hidden="true"
-              >
-                E
-              </span>
-              <span className="text-base font-extrabold tracking-tight text-slate-900">EdTech</span>
-            </Link>
+        <SiteHeader perfil={perfil} />
 
-            <Link href="/cursos" className="enlace-nav">
-              Cursos
-            </Link>
-            {perfil !== null && (
-              <Link href="/dashboard" className="enlace-nav">
-                Mi panel
-              </Link>
-            )}
-            {esAdmin && (
-              <Link href="/admin" className="enlace-nav">
-                Admin
-              </Link>
-            )}
-
-            <div className="ml-auto flex items-center gap-3">
-              {juego !== null && juego.rachaActual > 0 && <Racha dias={juego.rachaActual} />}
-              {perfil !== null ? (
-                <>
-                  <span className="hidden text-sm font-bold text-slate-700 sm:inline">
-                    {perfil.nombre}
-                  </span>
-                  <a href="/api/auth/logout" className="boton-secundario text-xs">
-                    Salir
-                  </a>
-                </>
-              ) : (
-                <a href="/api/auth/login" className="boton-primario text-xs">
-                  Entrar
-                </a>
-              )}
-            </div>
-          </nav>
-        </header>
-
-        <main id="contenido" className="mx-auto max-w-6xl px-4 py-8">
+        <main id="contenido" className="app-main mx-auto max-w-7xl px-4 py-8">
           {children}
         </main>
 
-        <footer className="mt-16 border-t border-slate-200 bg-white py-6">
-          <div className="mx-auto max-w-6xl px-4 text-sm text-slate-500">
-            EdTech Solution — HTML, CSS y Express, de la primera etiqueta a tu primera API.
+        <footer id="footer" className="site-footer tech-footer">
+          <div className="tech-footer-inner">
+            <div className="tech-footer-topline">
+              <span>EDTECH / OPEN LEARNING SYSTEM</span>
+              <span>
+                <i /> ALL SYSTEMS OPERATIONAL
+              </span>
+            </div>
+            <div className="tech-footer-grid">
+              <div className="tech-footer-lead">
+                <p className="tech-footer-label">END OF SESSION / 00</p>
+                <h2>
+                  Keep
+                  <br />
+                  <span>building.</span>
+                </h2>
+                <p>
+                  Aprende tecnología construyendo evidencia que puedas volver a ejecutar, compartir
+                  y mejorar.
+                </p>
+              </div>
+              <div className="tech-footer-column">
+                <p className="tech-footer-label">EXPLORE</p>
+                <Link href="/">
+                  Inicio <b>01</b>
+                </Link>
+                <Link href="/cursos">
+                  Catálogo <b>02</b>
+                </Link>
+                <Link href="/#faq">
+                  FAQ <b>03</b>
+                </Link>
+                <Link href="/#contactanos">
+                  Contáctanos <b>04</b>
+                </Link>
+              </div>
+              <div className="tech-footer-column">
+                <p className="tech-footer-label">SYSTEM</p>
+                <Link href="/register">
+                  Register <b>↗</b>
+                </Link>
+                <Link href="/login">
+                  Iniciar Sesión <b>↗</b>
+                </Link>
+                <a href="mailto:hello@edtech.dev">
+                  Support <b>↗</b>
+                </a>
+                <span className="tech-footer-version">v0.1 / PYTHON PATH</span>
+              </div>
+              <div className="tech-footer-terminal">
+                <div>
+                  <span>edtech@workspace:~$</span>
+                  <b>echo "see you at the next commit"</b>
+                </div>
+                <p>output</p>
+                <strong>✓ ready for your next build</strong>
+                <span className="tech-footer-cursor">▋</span>
+              </div>
+            </div>
+            <div className="tech-footer-bottom">
+              <span>© 2026 EDTECH / LEARN BY BUILDING</span>
+              <span>
+                PYTHON <i /> JAVASCRIPT <i /> SYSTEMS
+              </span>
+            </div>
           </div>
         </footer>
       </body>

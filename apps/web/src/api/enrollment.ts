@@ -52,6 +52,16 @@ export const enrollmentApi = {
       { metodo: 'POST', cuerpo: { cursoId } },
     ),
 
+  matricularManual: (usuarioId: string, cursoId: string) =>
+    llamar(
+      '/api/enrollment/admin/matriculas',
+      z.object({ matriculaId: z.string(), creada: z.boolean() }),
+      {
+        metodo: 'POST',
+        cuerpo: { usuarioId, cursoId },
+      },
+    ),
+
   completarLeccion: (leccionId: string, cursoId: string) =>
     llamar(
       `/api/enrollment/lecciones/${leccionId}/completar`,
@@ -60,7 +70,7 @@ export const enrollmentApi = {
     ),
 
   iniciarIntento: (datos: {
-    tipo: 'NIVELACION' | 'TOMO'
+    tipo: 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
     bancoId: string
     cursoId?: string
     tomoId?: string

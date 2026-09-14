@@ -12,7 +12,7 @@ const Nivelacion = async (): Promise<JSX.Element> => {
       <ErrorConAccion
         titulo="Entra para hacer el test"
         detalle="Necesitamos tu cuenta para guardar el nivel que te toque y recomendarte cursos."
-        accion={{ texto: 'Entrar', href: '/api/auth/login?destino=/nivelacion' }}
+        accion={{ texto: 'Entrar', href: '/login?destino=/nivelacion' }}
       />
     )
   }
@@ -29,7 +29,7 @@ const Nivelacion = async (): Promise<JSX.Element> => {
   }
 
   return (
-    <div>
+    <div className="tech-level-test">
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <p className="text-sm text-slate-600">
           {banco.preguntas.length} preguntas de dificultad creciente. No se aprueba ni se reprueba:

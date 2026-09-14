@@ -27,8 +27,16 @@ bun run tools/seed/publicar-cursos.ts    # publicarlos emite los eventos de verd
 | postgres://localhost:5432/edtech | Base de datos, un esquema por servicio       |
 
 Perfiles de compose: `base` (infra), `pagos`, `contenido`, `full`. Para entrar sin
-Cognito, `http://localhost:3000/api/auth/local?rol=estudiante` (o `rol=admin`)
-emite un token local y deja la sesión puesta.
+Cognito, el perfil `full` activa `EDTECH_LOCAL_AUTH=true` y
+`http://localhost:3000/api/auth/local?rol=estudiante` (o `rol=admin`)
+emite un token local y deja la sesión puesta. Esa bandera debe omitirse en AWS.
+
+La web también expone `/login`, `/register`, `/recuperar` y `/admin/login`. Si
+`COGNITO_DOMINIO` y `COGNITO_CLIENT_ID` están configurados, estas pantallas usan
+el Hosted UI de Cognito con PKCE. Si no lo están y `EDTECH_LOCAL_AUTH=true`, usan
+`jwt-local` para probar
+registro, confirmación, login y recuperación sin Terraform. En desarrollo, los
+códigos de confirmación y recuperación son `123456` y `654321`.
 
 Las migraciones las aplica cada servicio al arrancar; no hay paso aparte.
 

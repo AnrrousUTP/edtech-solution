@@ -9,6 +9,7 @@ CREATE TYPE "catalog"."estado_pub" AS ENUM('BORRADOR', 'PUBLICADO', 'DESPUBLICAD
 CREATE TYPE "catalog"."tipo_bloque" AS ENUM('TEXTO', 'CODIGO', 'VIDEO', 'IMAGEN', 'CALLOUT');--> statement-breakpoint
 CREATE TYPE "catalog"."tipo_pregunta" AS ENUM('OPCION_UNICA', 'OPCION_MULTIPLE', 'CODIGO', 'VERDADERO_FALSO');--> statement-breakpoint
 CREATE TYPE "catalog"."uso_banco" AS ENUM('NIVELACION', 'EVALUACION_TOMO', 'DIAGNOSTICO_PREVIO');--> statement-breakpoint
+ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'REFUERZO';--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "catalog"."bancos_pregunta" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"uso" "catalog"."uso_banco" NOT NULL,

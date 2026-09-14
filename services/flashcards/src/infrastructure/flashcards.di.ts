@@ -52,7 +52,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   const sqs = crearSqsClient({ region: cfg.region, endpoint: cfg.awsEndpoint })
 
   const mazos = new DrizzleMazoRepository(db)
-  const contenido = new S3ContenidoFuente(s3)
+  const contenido = new S3ContenidoFuente(s3, cfg.bucket)
   const cola = new SqsColaGeneracion(sqs, cfg.colaGeneracionUrl ?? '')
   const reloj = new RelojSistema()
 

@@ -14,9 +14,11 @@
     "estructura": "bun run tools/check-structure.ts",
     "convenciones": "bun run tools/lint-convenciones.ts",
     "harness": "bun run arch && bun run estructura && bun run convenciones && bun test",
+    "design:audit": "node tools/design-auditor.mjs",
     "db:migrate": "bun run tools/db-migrate.ts",
     "db:seed": "bun run tools/seed/index.ts",
     "gen:localstack": "bun run tools/gen-localstack-init.ts",
+    "credenciales:local": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/aws/sincronizar-paypal-local.ps1",
     "prepare": "husky"
   },
   "lint-staged": {

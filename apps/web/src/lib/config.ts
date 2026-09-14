@@ -11,7 +11,19 @@ export const config = {
     clientId: process.env.COGNITO_CLIENT_ID ?? '',
     /** Emisor local (jwt-local) cuando no hay Cognito: solo desarrollo. */
     issuerLocal: process.env.JWT_LOCAL_URL ?? '',
+    localAuthEnabled: process.env.EDTECH_LOCAL_AUTH === 'true',
   },
 }
 
 export const hayCognito = (): boolean => Boolean(config.cognito.dominio && config.cognito.clientId)
+export const authLocalDisponible = (): boolean =>
+  Boolean(config.cognito.issuerLocal && config.cognito.localAuthEnabled)
+
+export const destinoInterno = (
+  valor: string | null | undefined,
+  fallback = '/dashboard',
+): string => {
+  if (!valor || !valor.startsWith('/') || valor.startsWith('//') || valor.includes('\\'))
+    return fallback
+  return valor
+}

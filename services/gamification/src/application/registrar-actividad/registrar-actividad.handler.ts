@@ -52,6 +52,7 @@ export class RegistrarActividadHandler implements CommandHandler<
 export type CrearPerfilCommand = Command & {
   readonly _tag: 'CrearPerfil'
   readonly usuarioId: string
+  readonly nombreTitular?: string
 }
 
 /** identity.usuario-registrado.v1 → crea el perfil de gamificación. Idempotente. */
@@ -66,8 +67,17 @@ export class CrearPerfilHandler implements CommandHandler<
 
   async execute(cmd: CrearPerfilCommand): Promise<Result<{ creado: boolean }, GamificationError>> {
     const usuarioId = UniqueId.desde(cmd.usuarioId)
-    if (await this.perfiles.porUsuario(usuarioId)) return Ok({ creado: false })
-    await this.perfiles.guardar(PerfilGamificacion.crear(usuarioId))
+    const existente = await this.perfiles.porUsuario(usuarioId)
+    if (existente) {
+      if (cmd.nombreTitular) {
+        existente.fijarNombreTitular(cmd.nombreTitular)
+        await this.perfiles.guardar(existente)
+      }
+      return Ok({ creado: false })
+    }
+    const perfil = PerfilGamificacion.crear(usuarioId)
+    if (cmd.nombreTitular) perfil.fijarNombreTitular(cmd.nombreTitular)
+    await this.perfiles.guardar(perfil)
     return Ok({ creado: true })
   }
 }

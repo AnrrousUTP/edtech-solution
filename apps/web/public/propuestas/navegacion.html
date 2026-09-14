@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EdTech / Navegación experimental</title>
+    <link rel="stylesheet" href="navegacion.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <header class="lab-header">
+      <a class="wordmark" href="#inicio"><span class="wordmark-mark">E</span>EDTECH<span class="wordmark-slash">/OS</span></a>
+      <nav class="main-nav" aria-label="Navegación de propuestas">
+        <a class="active" href="#inicio"><i>01</i>Inicio</a>
+        <a href="#catalogo"><i>02</i>Catálogo</a>
+        <a href="#faq"><i>03</i>FAQ</a>
+        <a href="#contactanos"><i>04</i>Contáctanos</a>
+      </nav>
+      <span class="header-status"><b></b>system online</span>
+    </header>
+
+    <main>
+      <section id="inicio" class="screen screen-home">
+        <div class="section-marker"><span>01</span><em>/</em><span>04</span><small>ENTRY POINT</small></div>
+        <div class="home-grid">
+          <div class="home-copy">
+            <p class="kicker"><span class="live-dot"></span>EDTECH / LEARNING SYSTEM</p>
+            <h1>Demuestra<br /><span>tu nivel.</span></h1>
+            <p class="lead">No acumules cursos. Construye evidencia, desbloquea lenguajes y deja que tu código hable.</p>
+            <div class="command-line"><span>edtech@workspace:~$</span> run diagnostic<span class="cursor"></span></div>
+          </div>
+
+          <div class="hero-console" aria-label="Vista previa de código Python">
+            <div class="console-top"><span class="console-id">PY / 001</span><span class="console-state"><b></b>ready to compile</span></div>
+            <div class="console-body">
+              <div class="code-line muted"><span>01</span># tu primer commit</div>
+              <div class="code-line"><span>02</span><strong>def</strong> <b>unlock</b>(level):</div>
+              <div class="code-line indent"><span>03</span><strong>return</strong> <mark>level</mark> + <mark>1</mark></div>
+              <div class="code-line muted"><span>04</span></div>
+              <div class="code-line"><span>05</span>print(<em>"Hello, World!"</em>)</div>
+              <div class="code-line output"><span>06</span><i>&gt;&gt;</i> Hello, World!</div>
+            </div>
+            <div class="console-bottom"><span>language: python</span><span>progress: 01 / 07</span><span class="compile-bar"><i></i></span></div>
+          </div>
+        </div>
+        <div class="home-footer"><span>scroll to compile</span><b>↓</b><span class="home-footer-line"></span><span>build your proof</span></div>
+      </section>
+
+      <section id="catalogo" class="screen screen-catalog">
+        <div class="section-marker"><span>02</span><em>/</em><span>04</span><small>SKILL GRAPH</small></div>
+        <div class="section-intro"><p class="kicker">CATALOG / DEPENDENCY MAP</p><h2>Elige tu próxima<br /><span>dependencia.</span></h2><p class="lead">Cada curso conecta con el siguiente. Explora la ruta, encuentra el salto y construye algo que funcione.</p></div>
+        <div class="catalog-interface">
+          <aside class="filter-panel">
+            <div class="panel-label">FILTERS <span>⌘ K</span></div>
+            <div class="filter-command"><span>$</span> catalog --query<span class="cursor"></span></div>
+            <div class="filter-list">
+              <a class="filter-active" href="#catalogo"><i></i>All systems <b>24</b></a>
+              <a href="#catalogo"><i class="blue"></i>Frontend <b>08</b></a>
+              <a href="#catalogo"><i class="yellow"></i>Data &amp; AI <b>06</b></a>
+              <a href="#catalogo"><i class="red"></i>Backend <b>07</b></a>
+              <a href="#catalogo"><i class="green"></i>Systems <b>03</b></a>
+            </div>
+            <div class="filter-footer">sort: <b>recommended</b><br />status: <i>available</i></div>
+          </aside>
+          <div class="skill-map">
+            <div class="map-toolbar"><span><b class="online-dot"></b>LIVE SKILL GRAPH</span><span>zoom 100% &nbsp; + &nbsp; −</span></div>
+            <div class="map-canvas">
+              <div class="map-line line-a"></div><div class="map-line line-b"></div><div class="map-line line-c"></div><div class="map-line line-d"></div>
+              <article class="skill-node node-main"><small>01 / START</small><b>Python</b><span>Fundamentos</span><i>available</i></article>
+              <article class="skill-node node-two"><small>02 / BUILD</small><b>Web APIs</b><span>Requests · JSON</span><i>available</i></article>
+              <article class="skill-node node-three locked"><small>03 / NEXT</small><b>JavaScript</b><span>requires: web APIs</span><i>locked</i></article>
+              <article class="skill-node node-four"><small>04 / SHIP</small><b>Git &amp; Deploy</b><span>Version control</span><i>available</i></article>
+              <div class="map-coordinates"><span>x: 048.22</span><span>y: 091.04</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="screen screen-faq">
+        <div class="section-marker"><span>03</span><em>/</em><span>04</span><small>DEBUG MODE</small></div>
+        <div class="section-intro"><p class="kicker">FAQ / RESOLVED ISSUES</p><h2>Cuando algo falla,<br /><span>depúralo.</span></h2><p class="lead">Busca una respuesta como buscarías un bug: con contexto, logs y una solución que puedas ejecutar.</p></div>
+        <div class="debug-layout">
+          <div class="debug-terminal">
+            <div class="terminal-top"><span><i></i><i></i><i></i></span><b>edtech@support:~$</b><em>session #2048</em></div>
+            <div class="terminal-content">
+              <div class="terminal-command"><span>$</span> faq --search <strong>"experiencia previa"</strong></div>
+              <div class="terminal-result"><small>RESULT 01 / MATCH 98%</small><h3>¿Necesito experiencia previa?</h3><p>No. Empiezas con Python desde cero y avanzas cuando puedes demostrar que entiendes lo que construiste.</p><span class="resolved">[ resolved ]</span></div>
+              <div class="terminal-command dim"><span>$</span> _</div>
+            </div>
+          </div>
+          <div class="faq-stack">
+            <div class="faq-stack-head"><span>COMMON_QUESTIONS</span><span>06 results</span></div>
+            <details open><summary><b>01</b>¿Cómo funcionan las rutas?</summary><p>Una ruta ordena cursos y proyectos para que cada avance tenga un propósito.</p></details>
+            <details><summary><b>02</b>¿Puedo empezar desde cero?</summary><p>Selecciona el nivel inicial y la plataforma configura tu primer desafío.</p></details>
+            <details><summary><b>03</b>¿Qué recibo al terminar?</summary><p>Una credencial basada en evidencia y proyectos que puedes mostrar.</p></details>
+            <details><summary><b>04</b>¿Puedo cambiar de lenguaje?</summary><p>Sí. Los lenguajes se desbloquean cuando completas sus dependencias.</p></details>
+          </div>
+        </div>
+      </section>
+
+      <section id="contactanos" class="screen screen-contact">
+        <div class="section-marker"><span>04</span><em>/</em><span>04</span><small>OPEN ISSUE</small></div>
+        <div class="contact-grid">
+          <div class="contact-copy"><p class="kicker"><span class="live-dot"></span>CONTACT / SUPPORT CHANNEL</p><h2>Abre un issue.<br /><span>Construimos la respuesta.</span></h2><p class="lead">Cuéntanos qué quieres construir, qué se rompió o qué debería existir. Cada mensaje llega al equipo correcto.</p><div class="contact-meta"><div><small>RESPONSE TARGET</small><b>&lt; 24h</b></div><div><small>CHANNEL</small><b>hello@edtech.dev</b></div></div></div>
+          <form class="issue-form" action="#contactanos">
+            <div class="form-head"><span>NEW ISSUE</span><span>ST-2048</span></div>
+            <label><span>01 / IDENTIFIER</span><input type="text" placeholder="Tu nombre" /></label>
+            <label><span>02 / REPLY TO</span><input type="email" placeholder="tu@email.com" /></label>
+            <label><span>03 / ISSUE TYPE</span><select><option>Necesito orientación</option><option>Reportar un problema</option><option>Proponer una mejora</option></select></label>
+            <label><span>04 / MESSAGE</span><textarea rows="4" placeholder="Describe el contexto..."></textarea></label>
+            <button type="submit"><span>create issue</span><b>↗</b></button>
+            <small class="form-note">Al enviar: ticket creado · status: open</small>
+          </form>
+        </div>
+        <div class="contact-footer"><span>EDTECH / OPEN SOURCE LEARNING</span><span>END OF PREVIEW <b>✦</b></span></div>
+      </section>
+    </main>
+  </body>
+</html>

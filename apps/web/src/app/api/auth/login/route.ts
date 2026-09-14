@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { config, hayCognito } from '@/lib/config'
+import { authLocalDisponible, config, destinoInterno, hayCognito } from '@/lib/config'
 
 // Login con el Hosted UI de Cognito y Authorization Code + PKCE (doc 08 §7).
 // No se escribe un formulario de login propio: ahorra el manejo de errores de
@@ -9,14 +9,17 @@ const base64url = (bytes: Uint8Array): string => Buffer.from(bytes).toString('ba
 
 export const GET = async (peticion: Request): Promise<Response> => {
   const url = new URL(peticion.url)
-  const destino = url.searchParams.get('destino') ?? '/dashboard'
+  const destino = destinoInterno(url.searchParams.get('destino'))
+  const modo = url.searchParams.get('modo')
 
-  if (!hayCognito()) {
+  if (!hayCognito() && authLocalDisponible()) {
     // Desarrollo local sin Cognito: el emisor local firma el token (doc 08 §8)
     return NextResponse.redirect(
       new URL(`/api/auth/local?destino=${encodeURIComponent(destino)}`, config.appUrl),
     )
   }
+
+  if (!hayCognito()) return NextResponse.redirect(new URL('/?error=sin-idp', config.appUrl))
 
   const verificador = base64url(crypto.getRandomValues(new Uint8Array(32)))
   const reto = base64url(
@@ -47,6 +50,7 @@ export const GET = async (peticion: Request): Promise<Response> => {
   autorizacion.searchParams.set('state', estado)
   autorizacion.searchParams.set('code_challenge', reto)
   autorizacion.searchParams.set('code_challenge_method', 'S256')
+  if (modo === 'registro') autorizacion.searchParams.set('screen_hint', 'signup')
 
   return NextResponse.redirect(autorizacion)
 }

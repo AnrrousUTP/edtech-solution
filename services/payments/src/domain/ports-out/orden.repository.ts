@@ -18,6 +18,8 @@ export interface OrdenRepository {
   pendienteDe(usuarioId: UniqueId, cursoId: UniqueId): Promise<Orden | null>
   capturadaDe(usuarioId: UniqueId, cursoId: UniqueId): Promise<Orden | null>
   porUsuario(usuarioId: UniqueId): Promise<Orden[]>
+  /** Lectura global exclusiva del panel admin; nunca se expone a estudiantes. */
+  todas(): Promise<Orden[]>
   guardar(orden: Orden): Promise<void>
   vencidas(ahora: Date): Promise<Orden[]>
 }

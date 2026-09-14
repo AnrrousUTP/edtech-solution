@@ -77,7 +77,7 @@ export class OtorgarPorCursoHandler implements CommandHandler<
       tipo: 'MENOR',
       referenciaId: cmd.cursoId,
       titulo: cmd.cursoTitulo,
-      nombreTitular: cmd.usuarioId, // el nombre real llega del perfil de identity (A-27)
+      nombreTitular: perfil.nombreTitular ?? 'Estudiante',
       codigo: CodigoVerificacion.generar(this.aleatorio),
       ahora,
     })
@@ -136,7 +136,7 @@ export class OtorgarPorCarreraHandler implements CommandHandler<
       tipo: 'MAYOR',
       referenciaId: cmd.carreraId,
       titulo: cmd.carreraTitulo,
-      nombreTitular: cmd.usuarioId,
+      nombreTitular: perfil.nombreTitular ?? 'Estudiante',
       codigo: CodigoVerificacion.generar(this.aleatorio),
       ahora,
     })

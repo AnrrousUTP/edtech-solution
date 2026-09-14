@@ -44,7 +44,7 @@ const EvaluacionTomo = async ({
   const pendientes = estadoTomo?.lecciones.filter(l => !l.completada).length ?? 0
 
   return (
-    <div>
+    <div className="tech-evaluation-page">
       <div className="mx-auto mb-8 max-w-2xl text-center">
         <p className="text-sm text-slate-600">
           Necesitas <strong>{evaluacion.umbral}%</strong> para aprobar el tomo. Puedes reintentar

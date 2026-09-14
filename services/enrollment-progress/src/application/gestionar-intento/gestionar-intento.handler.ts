@@ -60,7 +60,7 @@ export class IniciarIntentoHandler implements CommandHandler<
     const usuarioId = UniqueId.desde(cmd.usuarioId)
     let matriculaId: UniqueId | null = null
 
-    if (cmd.tipo !== 'NIVELACION') {
+    if (cmd.tipo !== 'NIVELACION' && cmd.tipo !== 'DIAGNOSTICO_PREVIO') {
       // No hay progreso sin matrícula activa (invariante doc 02 §5.3)
       if (!cmd.cursoId || !cmd.tomoId)
         return Err(new TomoNoEncontradoError(cmd.tomoId ?? 'sin tomo'))

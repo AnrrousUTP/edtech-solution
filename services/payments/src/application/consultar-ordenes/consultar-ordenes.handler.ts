@@ -89,6 +89,33 @@ export class MisOrdenesHandler implements QueryHandler<
   }
 }
 
+export type TodasLasOrdenesQuery = Query & { readonly _tag: 'TodasLasOrdenes' }
+
+export class TodasLasOrdenesHandler implements QueryHandler<
+  TodasLasOrdenesQuery,
+  EstadoOrdenResponse[],
+  PaymentsError
+> {
+  readonly handles = 'TodasLasOrdenes' as const
+
+  constructor(private readonly ordenes: OrdenRepository) {}
+
+  async execute(_q: TodasLasOrdenesQuery): Promise<Result<EstadoOrdenResponse[], PaymentsError>> {
+    const lista = await this.ordenes.todas()
+    return Ok(
+      lista.map(o => ({
+        ordenId: o.id.valor,
+        cursoId: o.cursoId.valor,
+        estado: o.estado,
+        monto: o.monto.monto,
+        moneda: o.monto.moneda,
+        comision: o.comision?.monto ?? null,
+        neto: o.neto?.monto ?? null,
+      })),
+    )
+  }
+}
+
 export type ProyectarPrecioCommand = Command & {
   readonly _tag: 'ProyectarPrecio'
   readonly cursoId: string
