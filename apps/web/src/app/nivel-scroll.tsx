@@ -292,10 +292,6 @@ const NivelScroll = (): JSX.Element => {
       const progress = root.querySelector<HTMLElement>('.story-progress')
       const progressFill = root.querySelector<HTMLElement>('.story-progress-fill')
       const progressLabel = root.querySelector<HTMLElement>('.story-progress-label')
-      const world = root.querySelector<HTMLElement>('.edtech-world-rail')
-      const worldCore = root.querySelector<HTMLElement>('.edtech-world-core')
-      const worldPath = root.querySelector<SVGPathElement>('.edtech-world-route-path')
-      const worldNodes = gsap.utils.toArray<HTMLElement>('.edtech-world-node')
 
       if (!reducedMotion) {
         reveals.forEach(element => {
@@ -388,19 +384,6 @@ const NivelScroll = (): JSX.Element => {
           ease: 'none',
           scrollTrigger: { trigger: root, start: 'top bottom', end: 'bottom top', scrub: true },
         })
-        if (worldCore)
-          gsap.to(worldCore, {
-            rotate: 360,
-            ease: 'none',
-            scrollTrigger: { trigger: root, start: 'top top', end: 'bottom bottom', scrub: 1 },
-          })
-        if (world)
-          gsap.to(world, {
-            rotate: 7,
-            scale: 1.05,
-            ease: 'none',
-            scrollTrigger: { trigger: root, start: 'top top', end: 'bottom bottom', scrub: 1.2 },
-          })
       }
 
       ScrollTrigger.create({
@@ -416,12 +399,6 @@ const NivelScroll = (): JSX.Element => {
           if (progressFill) gsap.set(progressFill, { scaleX: self.progress })
           if (progressLabel)
             progressLabel.textContent = `${String(percentage).padStart(2, '0')}% COMPILED`
-          if (world) world.style.setProperty('--world-progress', String(self.progress))
-          if (worldPath) worldPath.style.strokeDashoffset = String(520 - self.progress * 520)
-          worldNodes.forEach((node, index) => {
-            const threshold = index / Math.max(worldNodes.length - 1, 1)
-            gsap.set(node, { autoAlpha: self.progress >= threshold - 0.08 ? 1 : 0.28 })
-          })
         },
       })
     }, root)
@@ -435,37 +412,6 @@ const NivelScroll = (): JSX.Element => {
   return (
     <section ref={rootRef} className="level-scroll" aria-label="Progresión de niveles de EdTech">
       <div className="story-grid" aria-hidden="true" />
-      <div className="edtech-world-rail" aria-hidden="true">
-        <span className="edtech-world-caption">EDTECH / LEARNING WORLD</span>
-        <span className="edtech-world-orbit edtech-world-orbit-one" />
-        <span className="edtech-world-orbit edtech-world-orbit-two" />
-        <svg className="edtech-world-route" viewBox="0 0 260 260" focusable="false">
-          <path
-            className="edtech-world-route-path"
-            d="M34 196 C42 122 74 218 116 153 S174 35 226 74"
-          />
-        </svg>
-        <div className="edtech-world-core">
-          <b>E</b>
-          <span>BUILD</span>
-        </div>
-        <span className="edtech-world-node edtech-world-node-one">
-          <b>01</b>
-          <span>SYNTAX</span>
-        </span>
-        <span className="edtech-world-node edtech-world-node-two">
-          <b>02</b>
-          <span>TOOLS</span>
-        </span>
-        <span className="edtech-world-node edtech-world-node-three">
-          <b>03</b>
-          <span>HARNESS</span>
-        </span>
-        <span className="edtech-world-node edtech-world-node-four">
-          <b>04</b>
-          <span>PROOF</span>
-        </span>
-      </div>
       <div className="story-progress" aria-hidden="true">
         <span className="story-progress-label">00% COMPILED</span>
         <span className="story-progress-track">
@@ -516,7 +462,9 @@ const NivelScroll = (): JSX.Element => {
         </div>
         <div className="story-scroll-cue">
           <span>SCROLL TO COMPILE</span>
-          <b>↓</b>
+          <svg className="inline-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12 4v15M6 13l6 6 6-6" />
+          </svg>
         </div>
       </section>
 
@@ -800,7 +748,10 @@ const NivelScroll = (): JSX.Element => {
             required
           />
           <button type="submit">
-            Enviar señal <b>↗</b>
+            Enviar señal{' '}
+            <svg className="inline-icon inline-arrow" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M5 12h13m-5-5 5 5-5 5" />
+            </svg>
           </button>
           <small>Responderemos desde hello@edtech.dev</small>
         </form>
@@ -814,7 +765,10 @@ const NivelScroll = (): JSX.Element => {
           <span>empieza ahora.</span>
         </h2>
         <a href="/cursos">
-          Explorar catálogo <b>↗</b>
+          Explorar catálogo{' '}
+          <svg className="inline-icon inline-arrow" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M5 12h13m-5-5 5 5-5 5" />
+          </svg>
         </a>
       </section>
     </section>

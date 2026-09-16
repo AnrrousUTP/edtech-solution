@@ -199,7 +199,11 @@ export const AuthForm = ({
               : esReset
                 ? 'Actualizar contraseña'
                 : titulo}
-        <b>↗</b>
+        <b aria-hidden="true">
+          <svg className="inline-icon inline-arrow" viewBox="0 0 24 24">
+            <path d="M5 12h13m-5-5 5 5-5 5" />
+          </svg>
+        </b>
       </button>
 
       {mode === 'login' && (

@@ -28,7 +28,10 @@ export default async function CarrerasAdmin(): Promise<JSX.Element> {
   return (
     <div className="tech-admin-page">
       <Link href="/admin" className="admin-backlink">
-        ← Administración
+        <svg className="inline-icon" aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M19 12H5M11 6l-6 6 6 6" />
+        </svg>
+        Administración
       </Link>
       <h1 className="admin-title">Rutas que conectan cursos.</h1>
       <p className="admin-lead">

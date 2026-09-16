@@ -13,6 +13,12 @@ export const config = {
     issuerLocal: process.env.JWT_LOCAL_URL ?? '',
     localAuthEnabled: process.env.EDTECH_LOCAL_AUTH === 'true',
   },
+  assistant: {
+    openAiApiKey: process.env.OPENAI_API_KEY ?? '',
+    openAiModel: process.env.OPENAI_MODEL ?? 'gpt-5-mini',
+    elevenLabsApiKey: process.env.ELEVENLABS_API_KEY ?? '',
+    elevenLabsSttModel: process.env.ELEVENLABS_STT_MODEL ?? 'scribe_v2',
+  },
 }
 
 export const hayCognito = (): boolean => Boolean(config.cognito.dominio && config.cognito.clientId)

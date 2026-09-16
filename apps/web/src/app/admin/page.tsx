@@ -86,7 +86,16 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
                     href={`/cursos/${curso.slug}`}
                     className="mt-1 inline-block text-xs text-marca-600"
                   >
-                    Vista pública ↗
+                    <span className="inline-action">
+                      Vista pública{' '}
+                      <svg
+                        className="inline-icon inline-arrow"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M5 12h13m-5-5 5 5-5 5" />
+                      </svg>
+                    </span>
                   </Link>
                 </td>
                 <td className="py-4 pr-4 text-slate-600">{curso.tecnologia}</td>

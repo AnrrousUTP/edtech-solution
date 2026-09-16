@@ -185,6 +185,10 @@ services:
       APP_URL: http://localhost:3000
       JWT_LOCAL_URL: http://jwt-local:4599
       EDTECH_LOCAL_AUTH: "true"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_STT_MODEL: ${ELEVENLABS_STT_MODEL:-scribe_v2}
     depends_on:
       gateway: { condition: service_started }
       jwt-local: { condition: service_started }

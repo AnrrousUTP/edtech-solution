@@ -42,9 +42,14 @@ export const Celebracion = ({
           if (evento.key === 'Escape') alCerrar()
         }}
       >
-        <div className="text-5xl" aria-hidden="true">
-          {movimientoReducido ? '🏅' : '🎉'}
-        </div>
+        <svg
+          className={`celebration-icon ${movimientoReducido ? 'is-static' : ''}`}
+          viewBox="0 0 48 48"
+          aria-hidden="true"
+        >
+          <path d="M15 6h18v8a9 9 0 0 1-18 0V6Z" />
+          <path d="M15 10H9a6 6 0 0 0 6 6M33 10h6a6 6 0 0 1-6 6M24 23v8M16 40h16M19 31h10" />
+        </svg>
         <h2 id="titulo-celebracion" className="mt-4 text-2xl font-extrabold text-slate-900">
           {titulo}
         </h2>

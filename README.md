@@ -12,10 +12,46 @@ servicio en su `services/<servicio>/DECISIONS.md`.
 ## Arranque local
 
 ```bash
+docker compose --profile full up -d --build # 6 servicios + web + gateway + postgres + localstack
+```
+
+Para cargar el catálogo de ejemplo (opcional), instala Bun y ejecuta:
+
+```bash
 bun install
-docker compose --profile full up -d      # 6 servicios + web + gateway + postgres + localstack
-bun run db:seed                          # catálogo de ejemplo, en BORRADOR
-bun run tools/seed/publicar-cursos.ts    # publicarlos emite los eventos de verdad
+bun run db:seed                           # catálogo de ejemplo, en BORRADOR
+bun run tools/seed/publicar-cursos.ts     # publicarlos emite los eventos de verdad
+```
+
+El stack local no necesita un archivo `.env` ni credenciales de servicios externos
+para arrancar. Docker Compose usa valores locales por defecto y el archivo `.env`
+real está excluido de Git. Si se quiere usar el asistente, las credenciales se
+pueden definirse antes de levantar la web. Por ejemplo, en Bash:
+
+```bash
+OPENAI_API_KEY=<clave-opcional> ELEVENLABS_API_KEY=<clave-opcional> \
+  docker compose --profile full up -d --build
+```
+
+En PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY = '<clave-opcional>'
+$env:ELEVENLABS_API_KEY = '<clave-opcional>'
+docker compose --profile full up -d --build
+```
+
+Las dos claves son independientes: `OPENAI_API_KEY` habilita las respuestas de
+texto y `ELEVENLABS_API_KEY` habilita la transcripción de audio. Sin ellas, la
+plataforma y el resto de las funciones locales siguen arrancando; únicamente la
+función correspondiente del asistente muestra que no está configurada.
+
+Requisitos mínimos: Docker Desktop con Compose. Bun solo es necesario para
+ejecutar los comandos de seed y las herramientas de verificación desde el host.
+Para detener el entorno:
+
+```bash
+docker compose --profile full down
 ```
 
 | URL                              | Qué                                          |

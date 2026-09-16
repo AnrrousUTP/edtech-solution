@@ -15,7 +15,10 @@ const AdminLoginPage = async (): Promise<JSX.Element> => {
       <AuthForm mode="login" local={local} destino="/admin" />
       {local && (
         <Link className="auth-dev-link" href="/api/auth/local?rol=admin&destino=/admin">
-          Sesión admin local de prueba ↗
+          Sesión admin local de prueba{' '}
+          <svg className="inline-icon inline-arrow" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M5 12h13m-5-5 5 5-5 5" />
+          </svg>
         </Link>
       )}
     </AuthShell>

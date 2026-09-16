@@ -109,9 +109,18 @@ export const Examen = ({
   if (resultado) {
     return (
       <div className="tarjeta aparece mx-auto max-w-lg p-8 text-center">
-        <p className="text-5xl" aria-hidden="true">
-          {resultado.aprobado ? '🎉' : '📘'}
-        </p>
+        <svg className="result-icon" viewBox="0 0 48 48" aria-hidden="true">
+          {resultado.aprobado ? (
+            <>
+              <path d="m10 25 8 8 20-20" />
+              <circle cx="24" cy="24" r="18" />
+            </>
+          ) : (
+            <>
+              <path d="M14 5h14l6 6v32H14zM28 5v7h6M19 25h10M19 32h10" />
+            </>
+          )}
+        </svg>
         <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
           {tipo === 'NIVELACION' || tipo === 'DIAGNOSTICO_PREVIO'
             ? 'Test completado'
@@ -223,8 +232,8 @@ export const Examen = ({
       <p className="mt-3 text-xs text-slate-500">
         Con el teclado: <kbd className="font-mono">1</kbd>–
         <kbd className="font-mono">{pregunta.opciones.length}</kbd> elige,{' '}
-        <kbd className="font-mono">Enter</kbd> avanza, <kbd className="font-mono">←</kbd>{' '}
-        <kbd className="font-mono">→</kbd> navega.
+        <kbd className="font-mono">Enter</kbd> avanza, <kbd className="font-mono">A</kbd> anterior y{' '}
+        <kbd className="font-mono">D</kbd> siguiente.
       </p>
 
       {error && (

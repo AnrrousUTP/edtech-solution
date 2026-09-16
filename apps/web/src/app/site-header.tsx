@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { PerfilSesion } from '@/lib/sesion'
+import EdtechLogo from '@/componentes/edtech-logo'
 
 type SiteHeaderProps = {
   perfil: PerfilSesion | null
@@ -11,9 +12,9 @@ type SiteHeaderProps = {
 
 const linksPublicos = [
   { href: '/', label: 'Inicio', index: '01', key: 'home' },
-  { href: '/cursos', label: 'Catálogo', index: '02', key: 'catalog' },
-  { href: '/#faq', label: 'FAQ', index: '03', key: 'faq' },
-  { href: '/#contactanos', label: 'Contáctanos', index: '04', key: 'contact' },
+  { href: '/cursos', label: 'Explorar', index: '02', key: 'catalog' },
+  { href: '/#rutas', label: 'Rutas', index: '03', key: 'paths' },
+  { href: '/#faq', label: 'Ayuda', index: '04', key: 'faq' },
 ] as const
 
 const linksEstudiante = [
@@ -61,10 +62,10 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
             : 'catalog'
       : pathname === '/cursos' || pathname.startsWith('/cursos/')
         ? 'catalog'
-        : pathname === '/' && hash === '#faq'
-          ? 'faq'
-          : pathname === '/' && hash === '#contactanos'
-            ? 'contact'
+        : pathname === '/' && hash === '#rutas'
+          ? 'paths'
+          : pathname === '/' && hash === '#faq'
+            ? 'faq'
             : 'home'
 
   return (
@@ -73,14 +74,9 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
         className="header-space-nav mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4"
         aria-label="Principal"
       >
-        <div className="header-space-context" aria-label="EdTech">
-          <i className="edtech-mark" aria-hidden="true">
-            <b>E</b>
-            <span />
-          </i>
-          <span>EDTECH</span>
-          <b>/// 001</b>
-        </div>
+        <Link href="/" className="header-space-context" aria-label="EdTech, inicio">
+          <EdtechLogo />
+        </Link>
 
         <div className="header-public-nav" aria-label="Navegación pública">
           {links.map(link => (
@@ -90,7 +86,6 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
               className={link.key === activeKey ? 'is-active' : undefined}
               aria-current={link.key === activeKey ? 'page' : undefined}
             >
-              <small>{link.index}</small>
               {link.label}
             </Link>
           ))}
@@ -98,7 +93,9 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
 
         <div className="ml-auto flex items-center gap-2.5">
           <Link href="/cursos" className="header-search-button" aria-label="Buscar cursos">
-            <span aria-hidden="true">⌕</span>
+            <svg aria-hidden="true" className="header-icon" viewBox="0 0 24 24" fill="none">
+              <path d="m20 20-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />
+            </svg>
           </Link>
           {perfil !== null ? (
             <>
@@ -112,10 +109,10 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
           ) : (
             <>
               <Link href="/register" className="header-register-button">
-                Register
+                Crear cuenta
               </Link>
               <Link href="/login" className="header-login-button">
-                Iniciar Sesión
+                Entrar
               </Link>
             </>
           )}

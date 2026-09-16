@@ -4,6 +4,8 @@ import Link from 'next/link'
 import './globals.css'
 import { perfilSesion } from '@/lib/sesion'
 import SiteHeader from './site-header'
+import AssistantWidget from '@/componentes/asistente'
+import EdtechLogo from '@/componentes/edtech-logo'
 
 // Space Grotesk da a la interfaz una voz técnica y editorial. JetBrains Mono
 // queda reservada para comandos, metadatos y estados del sistema.
@@ -43,73 +45,42 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
           {children}
         </main>
 
-        <footer id="footer" className="site-footer tech-footer">
-          <div className="tech-footer-inner">
-            <div className="tech-footer-topline">
-              <span>EDTECH / OPEN LEARNING SYSTEM</span>
-              <span>
-                <i /> ALL SYSTEMS OPERATIONAL
-              </span>
-            </div>
-            <div className="tech-footer-grid">
-              <div className="tech-footer-lead">
-                <p className="tech-footer-label">END OF SESSION / 00</p>
-                <h2>
-                  Keep
-                  <br />
-                  <span>building.</span>
-                </h2>
+        <footer id="footer" className="site-footer edtech-footer">
+          <div className="edtech-footer-inner">
+            <div className="edtech-footer-main">
+              <div className="edtech-footer-brand">
+                <EdtechLogo />
                 <p>
-                  Aprende tecnología construyendo evidencia que puedas volver a ejecutar, compartir
-                  y mejorar.
+                  Aprende habilidades prácticas, construye evidencia y avanza con una ruta que
+                  puedes hacer tuya.
                 </p>
               </div>
-              <div className="tech-footer-column">
-                <p className="tech-footer-label">EXPLORE</p>
-                <Link href="/">
-                  Inicio <b>01</b>
-                </Link>
-                <Link href="/cursos">
-                  Catálogo <b>02</b>
-                </Link>
-                <Link href="/#faq">
-                  FAQ <b>03</b>
-                </Link>
-                <Link href="/#contactanos">
-                  Contáctanos <b>04</b>
-                </Link>
+              <div className="edtech-footer-column">
+                <strong>Explorar</strong>
+                <Link href="/">Inicio</Link>
+                <Link href="/cursos">Catálogo</Link>
+                <Link href="/#rutas">Rutas de aprendizaje</Link>
               </div>
-              <div className="tech-footer-column">
-                <p className="tech-footer-label">SYSTEM</p>
-                <Link href="/register">
-                  Register <b>↗</b>
-                </Link>
-                <Link href="/login">
-                  Iniciar Sesión <b>↗</b>
-                </Link>
-                <a href="mailto:hello@edtech.dev">
-                  Support <b>↗</b>
-                </a>
-                <span className="tech-footer-version">v0.1 / PYTHON PATH</span>
+              <div className="edtech-footer-column">
+                <strong>EdTech</strong>
+                <Link href="/register">Crear cuenta</Link>
+                <Link href="/login">Iniciar sesión</Link>
+                <Link href="/#faq">Preguntas frecuentes</Link>
               </div>
-              <div className="tech-footer-terminal">
-                <div>
-                  <span>edtech@workspace:~$</span>
-                  <b>echo "see you at the next commit"</b>
-                </div>
-                <p>output</p>
-                <strong>✓ ready for your next build</strong>
-                <span className="tech-footer-cursor">▋</span>
+              <div className="edtech-footer-column">
+                <strong>Contacto</strong>
+                <a href="mailto:hello@edtech.dev">hello@edtech.dev</a>
+                <a href="/#contactanos">Hablemos</a>
               </div>
             </div>
-            <div className="tech-footer-bottom">
-              <span>© 2026 EDTECH / LEARN BY BUILDING</span>
-              <span>
-                PYTHON <i /> JAVASCRIPT <i /> SYSTEMS
-              </span>
+            <div className="edtech-footer-bottom">
+              <span>© 2026 EdTech</span>
+              <span>Aprender haciendo, siempre.</span>
             </div>
           </div>
         </footer>
+
+        <AssistantWidget />
       </body>
     </html>
   )

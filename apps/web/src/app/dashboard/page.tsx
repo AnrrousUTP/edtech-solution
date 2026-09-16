@@ -153,7 +153,9 @@ const Dashboard = async (): Promise<JSX.Element> => {
                   className={`text-3xl ${ganada ? '' : 'opacity-30 grayscale'}`}
                   aria-hidden="true"
                 >
-                  🏅
+                  <svg className="badge-icon" viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M14 6h20v11a10 10 0 0 1-20 0V6ZM18 31l-4 11 10-5 10 5-4-11" />
+                  </svg>
                 </span>
                 <p
                   className={`mt-2 text-sm font-bold ${ganada ? 'text-slate-900' : 'text-slate-500'}`}

@@ -166,7 +166,14 @@ const MapaCurso = async ({
                       href={`/aprender/${cursoSlug}/refuerzo/${tomo.id}`}
                       className="course-map-evaluation is-secondary"
                     >
-                      Practicar refuerzo <b>↗</b>
+                      Practicar refuerzo{' '}
+                      <svg
+                        className="inline-icon inline-arrow"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M5 12h13m-5-5 5 5-5 5" />
+                      </svg>
                     </Link>
                   )}
                   {todasHechas && !completado && (
@@ -174,7 +181,14 @@ const MapaCurso = async ({
                       href={`/aprender/${cursoSlug}/evaluacion/${tomo.id}`}
                       className="course-map-evaluation"
                     >
-                      Evaluar tomo <b>↗</b>
+                      Evaluar tomo{' '}
+                      <svg
+                        className="inline-icon inline-arrow"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M5 12h13m-5-5 5 5-5 5" />
+                      </svg>
                     </Link>
                   )}
                   {completado && (
@@ -182,7 +196,14 @@ const MapaCurso = async ({
                       href={`/repasar/${tomo.id}`}
                       className="course-map-evaluation is-secondary"
                     >
-                      Repasar flashcards <b>↗</b>
+                      Repasar flashcards{' '}
+                      <svg
+                        className="inline-icon inline-arrow"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M5 12h13m-5-5 5 5-5 5" />
+                      </svg>
                     </Link>
                   )}
                 </div>
