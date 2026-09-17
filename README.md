@@ -11,9 +11,56 @@ servicio en su `services/<servicio>/DECISIONS.md`.
 
 ## Arranque local
 
+### Docker
+
 ```bash
 docker compose --profile full up -d --build # 6 servicios + web + gateway + postgres + localstack
 ```
+
+### Podman en Ubuntu sobre WSL2
+
+El flujo con Podman está probado en Ubuntu ejecutado sobre WSL2. No se necesita
+Docker Desktop ni Podman Desktop. Clona el repositorio dentro del filesystem de
+Ubuntu, por ejemplo `~/dev/edtech-platform`; evita trabajar desde `/mnt/c` o
+`/mnt/d`, porque el filesystem montado de Windows puede impedir que Bun detecte
+los cambios en modo watch.
+
+Instala Podman y configura la red rootless una sola vez dentro de Ubuntu:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y podman podman-compose
+mkdir -p ~/.config/containers
+cat > ~/.config/containers/containers.conf <<'EOF'
+[network]
+firewall_driver = "none"
+EOF
+```
+
+Desde la raíz del repositorio, levanta el stack con el override específico para
+Podman:
+
+```bash
+podman-compose \
+  -f docker-compose.yml \
+  -f docker-compose.podman.yml \
+  --profile full up -d --build
+```
+
+Para detenerlo:
+
+```bash
+podman-compose \
+  -f docker-compose.yml \
+  -f docker-compose.podman.yml \
+  --profile full down
+```
+
+Usa `podman-compose` directamente. En el entorno validado, `podman compose`
+delegó en el plugin de Docker Compose y se bloqueó durante la construcción.
+Ubuntu nativo instalado en una máquina física o una VM todavía requiere una
+validación de red independiente; el procedimiento documentado aquí corresponde
+a Ubuntu sobre WSL2.
 
 Para cargar el catálogo de ejemplo (opcional), instala Bun y ejecuta:
 
@@ -46,8 +93,9 @@ texto y `ELEVENLABS_API_KEY` habilita la transcripción de audio. Sin ellas, la
 plataforma y el resto de las funciones locales siguen arrancando; únicamente la
 función correspondiente del asistente muestra que no está configurada.
 
-Requisitos mínimos: Docker Desktop con Compose. Bun solo es necesario para
-ejecutar los comandos de seed y las herramientas de verificación desde el host.
+Requisitos mínimos: Docker Desktop/Engine con Compose, o Ubuntu sobre WSL2 con
+Podman y `podman-compose`. Bun solo es necesario para ejecutar los comandos de
+seed y las herramientas de verificación desde el host o desde Ubuntu.
 Para detener el entorno:
 
 ```bash

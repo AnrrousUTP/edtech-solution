@@ -1,0 +1,7 @@
+# Override local para Podman rootless en WSL2.
+# Reemplaza únicamente el resolver DNS del gateway; el resto del stack,
+# Dockerfiles, perfiles y variables permanece igual que en docker-compose.yml.
+services:
+  gateway:
+    volumes:
+      - ./tools/nginx-podman.conf:/etc/nginx/nginx.conf:ro

@@ -22,14 +22,21 @@ services:
     mem_limit: 1g
 
   localstack:
-    image: localstack/localstack:3
+    build:
+      context: ./tools/localstack-init
+      dockerfile: Dockerfile
+    image: edtech-localstack-init:local
     profiles: ["base", "pagos", "contenido", "full"]
     environment:
       SERVICES: events,sqs,s3,secretsmanager
       DEBUG: 0
     ports: ["4566:4566"]
-    volumes:
-      - ./tools/localstack-init:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal secretsmanager describe-secret --secret-id edtech/dev/paypal >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   jwt-local:
     build: ./tools/jwt-local
