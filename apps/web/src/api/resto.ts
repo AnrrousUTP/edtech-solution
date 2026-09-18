@@ -151,7 +151,7 @@ export const ordenEstado = z.object({
 export type OrdenEstado = z.infer<typeof ordenEstado>
 
 export const paymentsApi = {
-  crearOrden: (cursoId: string) =>
+  crearOrden: (cursoId: string, urls?: { urlRetorno: string; urlCancelacion: string }) =>
     llamar(
       '/api/payments/ordenes',
       z.object({
@@ -161,7 +161,7 @@ export const paymentsApi = {
         moneda: z.string(),
         reutilizada: z.boolean(),
       }),
-      { metodo: 'POST', cuerpo: { cursoId } },
+      { metodo: 'POST', cuerpo: { cursoId, ...urls } },
     ),
   misOrdenes: () => llamar('/api/payments/mis-ordenes', z.array(ordenEstado)),
   ordenesAdmin: () => llamar('/api/payments/admin/ordenes', z.array(ordenEstado)),

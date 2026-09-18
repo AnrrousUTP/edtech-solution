@@ -62,7 +62,7 @@ export class IniciarIntentoHandler implements CommandHandler<
 
     if (cmd.tipo !== 'NIVELACION' && cmd.tipo !== 'DIAGNOSTICO_PREVIO') {
       // No hay progreso sin matrícula activa (invariante doc 02 §5.3)
-      if (!cmd.cursoId || !cmd.tomoId)
+      if (!cmd.cursoId || (cmd.tipo !== 'EVALUACION_INICIAL' && !cmd.tomoId))
         return Err(new TomoNoEncontradoError(cmd.tomoId ?? 'sin tomo'))
       const matricula = await this.matriculas.porUsuarioYCurso(
         usuarioId,
@@ -71,7 +71,8 @@ export class IniciarIntentoHandler implements CommandHandler<
       if (!matricula) return Err(new SinMatriculaError(cmd.usuarioId, cmd.cursoId))
       const curso = await this.cursos.porId(cmd.cursoId)
       if (!curso) return Err(new CursoNoProyectadoError(cmd.cursoId))
-      if (!curso.tomoPorId(cmd.tomoId)) return Err(new TomoNoEncontradoError(cmd.tomoId))
+      if (cmd.tipo !== 'EVALUACION_INICIAL' && cmd.tomoId && !curso.tomoPorId(cmd.tomoId))
+        return Err(new TomoNoEncontradoError(cmd.tomoId))
       matriculaId = matricula.id
     }
 

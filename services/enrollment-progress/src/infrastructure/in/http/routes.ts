@@ -89,6 +89,17 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
+  router.get('/evaluacion-inicial/estado/:cursoId', auth, async (req, res) => {
+    responder(
+      res,
+      await queries.dispatch({
+        _tag: 'EvaluacionInicial',
+        usuarioId: req.auth?.usuarioId ?? '',
+        cursoId: req.params.cursoId ?? '',
+      }),
+    )
+  })
+
   router.get('/progreso/:cursoId', auth, async (req, res) => {
     responder(
       res,

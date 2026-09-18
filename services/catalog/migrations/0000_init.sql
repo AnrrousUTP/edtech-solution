@@ -10,6 +10,7 @@ CREATE TYPE "catalog"."tipo_bloque" AS ENUM('TEXTO', 'CODIGO', 'VIDEO', 'IMAGEN'
 CREATE TYPE "catalog"."tipo_pregunta" AS ENUM('OPCION_UNICA', 'OPCION_MULTIPLE', 'CODIGO', 'VERDADERO_FALSO');--> statement-breakpoint
 CREATE TYPE "catalog"."uso_banco" AS ENUM('NIVELACION', 'EVALUACION_TOMO', 'DIAGNOSTICO_PREVIO');--> statement-breakpoint
 ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'REFUERZO';--> statement-breakpoint
+ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'EVALUACION_INICIAL';--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "catalog"."bancos_pregunta" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"uso" "catalog"."uso_banco" NOT NULL,
@@ -63,6 +64,8 @@ CREATE TABLE IF NOT EXISTS "catalog"."cursos" (
 	"deleted_at" timestamp with time zone,
 	CONSTRAINT "cursos_slug_unique" UNIQUE("slug")
 );
+--> statement-breakpoint
+ALTER TABLE "catalog"."bancos_pregunta" ADD COLUMN IF NOT EXISTS "curso_id" uuid;
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "catalog"."ejercicios" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -119,6 +122,12 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "catalog"."bancos_pregunta" ADD CONSTRAINT "bancos_pregunta_curso_id_cursos_id_fk" FOREIGN KEY ("curso_id") REFERENCES "catalog"."cursos"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "catalog"."bloques" ADD CONSTRAINT "bloques_leccion_id_lecciones_id_fk" FOREIGN KEY ("leccion_id") REFERENCES "catalog"."lecciones"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -161,3 +170,29 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "carrera_cursos_pk" ON "catalog"."carrera_cursos" USING btree ("carrera_id","curso_id");
+--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "catalog"."tipo_material" AS ENUM('PDF', 'ENLACE', 'VIDEO', 'DOCUMENTO');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "catalog"."materiales" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tomo_id" uuid NOT NULL,
+	"orden" integer NOT NULL,
+	"titulo" text NOT NULL,
+	"descripcion" text,
+	"tipo" "catalog"."tipo_material" NOT NULL,
+	"url" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "catalog"."materiales" ADD CONSTRAINT "materiales_tomo_id_tomos_id_fk" FOREIGN KEY ("tomo_id") REFERENCES "catalog"."tomos"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "materiales_tomo_orden" ON "catalog"."materiales" USING btree ("tomo_id","orden");

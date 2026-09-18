@@ -10,7 +10,8 @@ import {
   type RespuestaDada,
 } from '../services/correccion.service'
 
-export type TipoEvaluacion = 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
+export type TipoEvaluacion =
+  'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO'
 export type EstadoIntento = 'EN_CURSO' | 'ENTREGADO'
 
 type Props = {

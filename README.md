@@ -62,6 +62,32 @@ Ubuntu nativo instalado en una máquina física o una VM todavía requiere una
 validación de red independiente; el procedimiento documentado aquí corresponde
 a Ubuntu sobre WSL2.
 
+### Ejecutar junto a otros proyectos en Anrrous Dev
+
+Si ya tienes otros contenedores ocupando los puertos habituales, usa el override
+con puertos alternos. Este perfil activa una pasarela de pagos local que simula
+la aprobación, captura y reembolso sin conectarse a PayPal ni guardar claves:
+
+```bash
+set -a
+source tools/local/anrrous-dev.env
+set +a
+
+podman-compose \
+  --env-file .env \
+  -f docker-compose.yml \
+  -f docker-compose.podman.yml \
+  -f docker-compose.anrrous-dev.yml \
+  --profile full up -d --build
+```
+
+La aplicación queda en `http://localhost:3100` y el gateway en
+`http://localhost:8180`. Para detener este stack usa los mismos tres archivos
+con `down`, cargando también `tools/local/anrrous-dev.env` y `.env`. El modo
+real de PayPal sigue siendo el predeterminado en el Compose base; se activa con
+`PAYPAL_MODE=real` y requiere credenciales de Sandbox en Secrets Manager o
+LocalStack. Las claves nunca deben hardcodearse en el código.
+
 Para cargar el catálogo de ejemplo (opcional), instala Bun y ejecuta:
 
 ```bash
@@ -70,10 +96,15 @@ bun run db:seed                           # catálogo de ejemplo, en BORRADOR
 bun run tools/seed/publicar-cursos.ts     # publicarlos emite los eventos de verdad
 ```
 
-El stack local no necesita un archivo `.env` ni credenciales de servicios externos
-para arrancar. Docker Compose usa valores locales por defecto y el archivo `.env`
-real está excluido de Git. Si se quiere usar el asistente, las credenciales se
-pueden definirse antes de levantar la web. Por ejemplo, en Bash:
+El stack local puede arrancar sin credenciales externas usando los valores por
+defecto y el archivo `.env` real está excluido de Git. Para ejecutar el
+asistente, el `.env` debe cargarse con `--env-file .env`. En Anrrous Dev no se
+debe usar `tools/local/anrrous-dev.env` como único `--env-file`, porque eso
+dejaría vacías las claves del asistente; ese archivo solo contiene los puertos
+alternos y el modo de PayPal local.
+
+Si se quiere usar el asistente con Docker, las credenciales se pueden definir
+antes de levantar la web. Por ejemplo, en Bash:
 
 ```bash
 OPENAI_API_KEY=<clave-opcional> ELEVENLABS_API_KEY=<clave-opcional> \

@@ -140,6 +140,43 @@ const main = async (): Promise<void> => {
            VALUES ($1,$2,$3,$4,$5,70) ON CONFLICT (id) DO NOTHING`,
           [tomoId, curso.id, t, `${curso.titulo} — Tomo ${t}`, `Tomo ${t} de ${curso.titulo}`],
         )
+        const materiales = [
+          [
+            'PDF',
+            'Guía de conceptos',
+            `https://edtech.local/materiales/${curso.slug}/${t}/guia.pdf`,
+          ],
+          [
+            'DOCUMENTO',
+            'Hoja de práctica',
+            `https://edtech.local/materiales/${curso.slug}/${t}/practica`,
+          ],
+          [
+            'VIDEO',
+            'Demostración paso a paso',
+            `https://edtech.local/materiales/${curso.slug}/${t}/demo`,
+          ],
+          [
+            'ENLACE',
+            'Reto de la semana',
+            `https://edtech.local/materiales/${curso.slug}/${t}/reto`,
+          ],
+        ] as const
+        for (const [orden, [tipo, titulo, url]] of materiales.entries()) {
+          await c.query(
+            `INSERT INTO catalog.materiales (id, tomo_id, orden, titulo, descripcion, tipo, url)
+             VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO NOTHING`,
+            [
+              det(40000 + contadorTomo * 10 + orden + 1),
+              tomoId,
+              orden + 1,
+              titulo,
+              `Material de apoyo de la semana ${t} de ${curso.titulo}`,
+              tipo,
+              url,
+            ],
+          )
+        }
         for (let l = 1; l <= 4; l++) {
           const leccionId = det(1000 + contadorTomo * 10 + l)
           const bloques = [
@@ -209,6 +246,57 @@ const main = async (): Promise<void> => {
             ],
           )
         }
+
+        // Banco de repaso de la semana: se entrega antes de la evaluación.
+        const bancoRepasoId = det(900 + contadorTomo)
+        await c.query(
+          `INSERT INTO catalog.bancos_pregunta (id, uso, tomo_id, titulo)
+           VALUES ($1,'REFUERZO',$2,$3) ON CONFLICT (id) DO NOTHING`,
+          [bancoRepasoId, tomoId, `Repasa lo aprendido — ${curso.titulo} Tomo ${t}`],
+        )
+        for (let p = 1; p <= 4; p++) {
+          await c.query(
+            `INSERT INTO catalog.preguntas (id, banco_id, tipo, enunciado, opciones, respuesta_correcta, puntaje)
+             VALUES ($1,$2,'OPCION_UNICA',$3,$4,$5,1) ON CONFLICT (id) DO NOTHING`,
+            [
+              det(32000 + contadorTomo * 100 + p),
+              bancoRepasoId,
+              `Repaso ${p} sobre ${curso.titulo} (semana ${t}): ¿cuál es la opción correcta?`,
+              JSON.stringify([
+                { id: 'a', texto: 'Opción correcta' },
+                { id: 'b', texto: 'Distractor 1' },
+                { id: 'c', texto: 'Distractor 2' },
+              ]),
+              JSON.stringify('a'),
+            ],
+          )
+        }
+      }
+
+      // Evaluación inicial específica del curso: el docente puede reemplazar
+      // estas preguntas y definir respuestaCorrecta desde el panel de bancos.
+      const bancoInicial = det(700 + iCurso)
+      await c.query(
+        `INSERT INTO catalog.bancos_pregunta (id, uso, tomo_id, curso_id, titulo)
+         VALUES ($1,'EVALUACION_INICIAL',NULL,$2,$3) ON CONFLICT (id) DO NOTHING`,
+        [bancoInicial, curso.id, `Test inicial — ${curso.titulo}`],
+      )
+      for (let p = 1; p <= 5; p++) {
+        await c.query(
+          `INSERT INTO catalog.preguntas (id, banco_id, tipo, enunciado, opciones, respuesta_correcta, puntaje)
+           VALUES ($1,$2,'OPCION_UNICA',$3,$4,$5,1) ON CONFLICT (id) DO NOTHING`,
+          [
+            det(31000 + iCurso * 100 + p),
+            bancoInicial,
+            `Pregunta inicial ${p} sobre ${curso.titulo}: ¿cuál es la opción correcta?`,
+            JSON.stringify([
+              { id: 'a', texto: 'Opción correcta' },
+              { id: 'b', texto: 'Distractor 1' },
+              { id: 'c', texto: 'Distractor 2' },
+            ]),
+            JSON.stringify('a'),
+          ],
+        )
       }
     }
 

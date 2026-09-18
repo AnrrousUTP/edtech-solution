@@ -31,6 +31,7 @@ export default async function BancosAdmin(): Promise<JSX.Element> {
   const tomos = detalles
     .flatMap(curso => curso?.tomos ?? [])
     .map(tomo => ({ id: tomo.id, titulo: tomo.titulo }))
+  const cursosDisponibles = cursos.map(curso => ({ id: curso.id, titulo: curso.titulo }))
   return (
     <div className="tech-admin-page">
       <Link href="/admin" className="admin-backlink">
@@ -43,7 +44,7 @@ export default async function BancosAdmin(): Promise<JSX.Element> {
       <p className="admin-lead">
         Conocimiento previo, refuerzo y certificación viven en bancos versionables.
       </p>
-      <GestorBancos bancos={bancos} tomos={tomos} />
+      <GestorBancos bancos={bancos} tomos={tomos} cursos={cursosDisponibles} />
     </div>
   )
 }

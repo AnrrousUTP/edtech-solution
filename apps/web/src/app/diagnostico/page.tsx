@@ -3,13 +3,23 @@ import { ErrorConAccion, Vacio } from '@/componentes/base'
 import { Examen } from '@/componentes/examen'
 import { perfilSesion } from '@/lib/sesion'
 
-export default async function Diagnostico(): Promise<JSX.Element> {
+export default async function Diagnostico({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string }>
+}): Promise<JSX.Element> {
+  const { curso } = await searchParams
+  const volverA = curso && /^[a-z0-9-]+$/.test(curso) ? '/aprender/' + curso : '/cursos'
+
   if (!(await perfilSesion()))
     return (
       <ErrorConAccion
         titulo="Entra para conocer tu punto de partida"
         detalle="Guardaremos el resultado para que puedas elegir una ruta con mejor contexto."
-        accion={{ texto: 'Entrar', href: '/login?destino=/diagnostico' }}
+        accion={{
+          texto: 'Entrar',
+          href: '/login?destino=' + encodeURIComponent('/diagnostico?curso=' + (curso ?? '')),
+        }}
       />
     )
   const banco = await catalogApi.diagnostico()
@@ -35,7 +45,7 @@ export default async function Diagnostico(): Promise<JSX.Element> {
         bancoId={banco.bancoId}
         tipo="DIAGNOSTICO_PREVIO"
         umbral={banco.umbral}
-        volverA="/cursos"
+        volverA={volverA}
       />
     </div>
   )

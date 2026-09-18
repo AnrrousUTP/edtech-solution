@@ -28,7 +28,7 @@ const linksAdmin = [
   { href: '/admin', label: 'Control', index: '01', key: 'admin' },
   { href: '/admin/cursos/nuevo', label: 'Cursos', index: '02', key: 'courses' },
   { href: '/admin/bancos', label: 'Evaluaciones', index: '03', key: 'assessments' },
-  { href: '/admin/flashcards', label: 'HITL', index: '04', key: 'hitl' },
+  { href: '/admin/flashcards', label: 'Flashcards', index: '04', key: 'hitl' },
 ] as const
 
 const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {

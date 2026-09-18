@@ -57,16 +57,34 @@ const responder = (res: Response, data: unknown, status = 200): void => {
 const idOrSlug = (value: string): { field: 'id' | 'slug'; value: string } =>
   /^[0-9a-f-]{36}$/i.test(value) ? { field: 'id', value } : { field: 'slug', value }
 const body = (req: Request): Record<string, unknown> => (req.body ?? {}) as Record<string, unknown>
-type UsoBancoAdmin = 'DIAGNOSTICO_PREVIO' | 'NIVELACION' | 'EVALUACION_TOMO' | 'REFUERZO'
+type UsoBancoAdmin =
+  'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'NIVELACION' | 'EVALUACION_TOMO' | 'REFUERZO'
 
-const validarBancoAdmin = (uso: string, tomoId: string | null): string | null => {
+const validarBancoAdmin = (
+  uso: string,
+  tomoId: string | null,
+  cursoId: string | null,
+): string | null => {
   if (
-    !(['DIAGNOSTICO_PREVIO', 'NIVELACION', 'EVALUACION_TOMO', 'REFUERZO'] as string[]).includes(uso)
+    !(
+      [
+        'DIAGNOSTICO_PREVIO',
+        'EVALUACION_INICIAL',
+        'NIVELACION',
+        'EVALUACION_TOMO',
+        'REFUERZO',
+      ] as string[]
+    ).includes(uso)
   )
     return 'El uso del banco no es válido'
   if ((uso === 'REFUERZO' || uso === 'EVALUACION_TOMO') && !tomoId)
     return 'Los bancos de refuerzo y examen necesitan un tomo'
   if (uso === 'NIVELACION' && tomoId) return 'Los bancos de nivelación deben ser globales'
+  if (uso === 'DIAGNOSTICO_PREVIO' && (tomoId || cursoId))
+    return 'El diagnóstico general debe ser global'
+  if (uso === 'EVALUACION_INICIAL' && (!cursoId || tomoId))
+    return 'El test inicial necesita un curso y no un tomo'
+  if (uso !== 'EVALUACION_INICIAL' && cursoId) return 'Solo el test inicial se asigna a un curso'
   return null
 }
 
@@ -111,6 +129,10 @@ const detalleCurso = async (db: Db, slugOId: string, todos: boolean): Promise<un
   )
   const tomos = []
   for (const tomo of tomosR.rows) {
+    const materiales = await db.query(
+      `SELECT id, orden, titulo, descripcion, tipo, url FROM catalog.materiales WHERE tomo_id = $1 ORDER BY orden`,
+      [tomo.id],
+    )
     const lecciones = await db.query(
       `SELECT id, orden, titulo, duracion_min FROM catalog.lecciones WHERE tomo_id = $1 ORDER BY orden`,
       [tomo.id],
@@ -121,6 +143,7 @@ const detalleCurso = async (db: Db, slugOId: string, todos: boolean): Promise<un
       titulo: tomo.titulo,
       descripcion: tomo.descripcion,
       umbral: tomo.umbral_aprobacion,
+      materiales: materiales.rows,
       lecciones: lecciones.rows.map(l => ({
         id: l.id,
         orden: l.orden,
@@ -163,7 +186,7 @@ const contenidoAdmin = async (db: Db, leccionId: string): Promise<unknown | null
 
 const bancosAdmin = async (db: Db): Promise<unknown[]> => {
   const bancos = await db.query(
-    `SELECT id, uso, tomo_id, titulo FROM catalog.bancos_pregunta ORDER BY titulo, id`,
+    `SELECT id, uso, tomo_id, curso_id, titulo FROM catalog.bancos_pregunta ORDER BY titulo, id`,
   )
   const resultado = []
   for (const banco of bancos.rows) {
@@ -176,6 +199,7 @@ const bancosAdmin = async (db: Db): Promise<unknown[]> => {
       bancoId: banco.id,
       uso: banco.uso,
       tomoId: banco.tomo_id,
+      cursoId: banco.curso_id,
       titulo: banco.titulo,
       preguntas: preguntas.rows.map(pregunta => ({
         id: pregunta.id,
@@ -293,6 +317,23 @@ const contextoTomo = async (db: Db, tomoId: string): Promise<unknown | null> => 
 const diagnostico = async (db: Db): Promise<unknown | null> => {
   const r = await db.query(`SELECT id, titulo FROM catalog.bancos_pregunta
     WHERE uso = 'DIAGNOSTICO_PREVIO' ORDER BY id LIMIT 1`)
+  const banco = r.rows[0]
+  if (!banco) return null
+  const preguntas = await db.query(
+    `SELECT id, tipo, enunciado, opciones, puntaje
+    FROM catalog.preguntas WHERE banco_id = $1 ORDER BY id`,
+    [banco.id],
+  )
+  return { bancoId: banco.id, titulo: banco.titulo, umbral: 60, preguntas: preguntas.rows }
+}
+
+const evaluacionInicial = async (db: Db, cursoId: string): Promise<unknown | null> => {
+  const r = await db.query(
+    `SELECT b.id, b.titulo FROM catalog.bancos_pregunta b
+    JOIN catalog.cursos c ON c.id = b.curso_id
+    WHERE b.uso = 'EVALUACION_INICIAL' AND b.curso_id = $1 AND c.estado = 'PUBLICADO' LIMIT 1`,
+    [cursoId],
+  )
   const banco = r.rows[0]
   if (!banco) return null
   const preguntas = await db.query(
@@ -532,6 +573,20 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
       next(e)
     }
   })
+  http.get('/api/catalog/cursos/:cursoId/evaluacion-inicial', async (req, res, next) => {
+    try {
+      const data = await evaluacionInicial(db, req.params.cursoId ?? '')
+      data
+        ? responder(res, data)
+        : res
+            .status(404)
+            .json({
+              error: { code: 'BANCO_NO_ENCONTRADO', message: 'Test inicial no configurado' },
+            })
+    } catch (e) {
+      next(e)
+    }
+  })
   http.get('/api/catalog/interno/bancos/:id/respuestas', async (req, res, next) => {
     if (req.headers['x-interno-token'] !== (cfg.internoToken ?? 'local-interno')) {
       return res
@@ -745,14 +800,12 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
       const descripcion = String(b.descripcion ?? '').trim()
       const tecnologia = String(b.tecnologia ?? '').trim()
       if (!slug || !titulo || !descripcion || !tecnologia) {
-        return res
-          .status(400)
-          .json({
-            error: {
-              code: 'CURSO_INVALIDO',
-              message: 'Slug, título, descripción y tecnología son obligatorios',
-            },
-          })
+        return res.status(400).json({
+          error: {
+            code: 'CURSO_INVALIDO',
+            message: 'Slug, título, descripción y tecnología son obligatorios',
+          },
+        })
       }
       const r = await db.query(
         `INSERT INTO catalog.cursos
@@ -822,6 +875,39 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
             Number(tomo.umbral ?? 70),
           ],
         )
+        const materiales = Array.isArray(tomo.materiales)
+          ? (tomo.materiales as Record<string, unknown>[])
+          : []
+        const materialesIds: string[] = []
+        for (const material of materiales.slice(0, 4)) {
+          const materialId = typeof material.id === 'string' ? material.id : randomUUID()
+          materialesIds.push(materialId)
+          const tipo = ['PDF', 'ENLACE', 'VIDEO', 'DOCUMENTO'].includes(String(material.tipo))
+            ? String(material.tipo)
+            : 'DOCUMENTO'
+          await db.query(
+            `INSERT INTO catalog.materiales (id, tomo_id, orden, titulo, descripcion, tipo, url)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          ON CONFLICT (id) DO UPDATE SET tomo_id = EXCLUDED.tomo_id, orden = EXCLUDED.orden,
+          titulo = EXCLUDED.titulo, descripcion = EXCLUDED.descripcion, tipo = EXCLUDED.tipo,
+          url = EXCLUDED.url, updated_at = now()`,
+            [
+              materialId,
+              tomoId,
+              Number(material.orden ?? materialesIds.length),
+              String(material.titulo ?? 'Material'),
+              typeof material.descripcion === 'string' ? material.descripcion : null,
+              tipo,
+              String(material.url ?? ''),
+            ],
+          )
+        }
+        if (materialesIds.length)
+          await db.query(
+            `DELETE FROM catalog.materiales WHERE tomo_id = $1 AND id <> ALL($2::uuid[])`,
+            [tomoId, materialesIds],
+          )
+        else await db.query(`DELETE FROM catalog.materiales WHERE tomo_id = $1`, [tomoId])
         const lecciones = Array.isArray(tomo.lecciones)
           ? (tomo.lecciones as Record<string, unknown>[])
           : []
@@ -982,12 +1068,13 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
       const bancoId = randomUUID()
       const uso = String(b.uso ?? 'DIAGNOSTICO_PREVIO') as UsoBancoAdmin
       const tomoId = typeof b.tomoId === 'string' && b.tomoId.length > 0 ? b.tomoId : null
-      const errorBanco = validarBancoAdmin(uso, tomoId)
+      const cursoId = typeof b.cursoId === 'string' && b.cursoId.length > 0 ? b.cursoId : null
+      const errorBanco = validarBancoAdmin(uso, tomoId, cursoId)
       if (errorBanco)
         return res.status(400).json({ error: { code: 'BANCO_INVALIDO', message: errorBanco } })
       await db.query(
-        `INSERT INTO catalog.bancos_pregunta (id, uso, tomo_id, titulo) VALUES ($1, $2, $3, $4)`,
-        [bancoId, uso, tomoId, String(b.titulo ?? '')],
+        `INSERT INTO catalog.bancos_pregunta (id, uso, tomo_id, curso_id, titulo) VALUES ($1, $2, $3, $4, $5)`,
+        [bancoId, uso, tomoId, cursoId, String(b.titulo ?? '')],
       )
       const preguntas = Array.isArray(b.preguntas) ? (b.preguntas as Record<string, unknown>[]) : []
       for (const pregunta of preguntas)
@@ -1013,7 +1100,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
     try {
       const b = body(req)
       const actual = await db.query(
-        `SELECT uso, tomo_id FROM catalog.bancos_pregunta WHERE id = $1 LIMIT 1`,
+        `SELECT uso, tomo_id, curso_id FROM catalog.bancos_pregunta WHERE id = $1 LIMIT 1`,
         [req.params.id],
       )
       if (!actual.rows[0])
@@ -1027,12 +1114,18 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
           : typeof b.tomoId === 'string' && b.tomoId.length > 0
             ? b.tomoId
             : null
-      const errorBanco = validarBancoAdmin(uso, tomoId)
+      const cursoId =
+        b.cursoId === undefined
+          ? (actual.rows[0].curso_id as string | null)
+          : typeof b.cursoId === 'string' && b.cursoId.length > 0
+            ? b.cursoId
+            : null
+      const errorBanco = validarBancoAdmin(uso, tomoId, cursoId)
       if (errorBanco)
         return res.status(400).json({ error: { code: 'BANCO_INVALIDO', message: errorBanco } })
       await db.query(
-        `UPDATE catalog.bancos_pregunta SET uso = $1, tomo_id = $2, titulo = COALESCE($3, titulo) WHERE id = $4`,
-        [uso, tomoId, b.titulo ?? null, req.params.id],
+        `UPDATE catalog.bancos_pregunta SET uso = $1, tomo_id = $2, curso_id = $3, titulo = COALESCE($4, titulo) WHERE id = $5`,
+        [uso, tomoId, cursoId, b.titulo ?? null, req.params.id],
       )
       if (Array.isArray(b.preguntas)) {
         await db.query('DELETE FROM catalog.preguntas WHERE banco_id = $1', [req.params.id])

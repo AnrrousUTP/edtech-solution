@@ -5,4 +5,8 @@ export interface IntentoRepository {
   porId(id: UniqueId): Promise<IntentoEvaluacion | null>
   guardar(intento: IntentoEvaluacion): Promise<void>
   ultimoNivelacionDe(usuarioId: UniqueId): Promise<IntentoEvaluacion | null>
+  ultimoEvaluacionInicialDe(
+    usuarioId: UniqueId,
+    cursoId: UniqueId,
+  ): Promise<IntentoEvaluacion | null>
 }

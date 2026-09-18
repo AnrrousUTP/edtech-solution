@@ -35,12 +35,17 @@ export const resultadoIntento = z.object({
   cursoCompletado: z.boolean(),
 })
 
+export const estadoEvaluacionInicial = z.object({ completado: z.boolean() })
+
 export type MatriculaResumen = z.infer<typeof matriculaResumen>
 export type ProgresoCurso = z.infer<typeof progresoCurso>
 export type ResultadoIntento = z.infer<typeof resultadoIntento>
 
 export const enrollmentApi = {
   misMatriculas: () => llamar('/api/enrollment/mis-matriculas', z.array(matriculaResumen)),
+
+  evaluacionInicial: (cursoId: string) =>
+    llamar(`/api/enrollment/evaluacion-inicial/estado/${cursoId}`, estadoEvaluacionInicial),
 
   progreso: (cursoId: string) =>
     llamarOpcional(`/api/enrollment/progreso/${cursoId}`, progresoCurso),
@@ -70,7 +75,7 @@ export const enrollmentApi = {
     ),
 
   iniciarIntento: (datos: {
-    tipo: 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
+    tipo: 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO'
     bancoId: string
     cursoId?: string
     tomoId?: string

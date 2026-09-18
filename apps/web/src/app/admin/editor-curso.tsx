@@ -12,6 +12,14 @@ const ejemplo = [
     titulo: 'Fundamentos',
     descripcion: 'La primera misión',
     umbral: 70,
+    materiales: [
+      {
+        orden: 1,
+        titulo: 'Guía de fundamentos',
+        tipo: 'PDF',
+        url: 'https://ejemplo.com/guia.pdf',
+      },
+    ],
     lecciones: [
       {
         orden: 1,
@@ -35,6 +43,15 @@ const ejemplo = [
   },
 ]
 
+const rutaDesdeJson = (valor: string): Record<string, unknown>[] => {
+  try {
+    const parsed = JSON.parse(valor) as unknown
+    return Array.isArray(parsed) ? (parsed as Record<string, unknown>[]) : []
+  } catch {
+    return []
+  }
+}
+
 export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
   const router = useRouter()
   const [datos, setDatos] = useState({
@@ -52,6 +69,7 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
   const [estado, setEstado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
+  const ruta = rutaDesdeJson(json)
 
   const guardar = async (evento: React.FormEvent): Promise<void> => {
     evento.preventDefault()
@@ -90,7 +108,7 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
         cursoId = respuesta.cursoId
       }
       const estructura = JSON.parse(json) as unknown
-      if (!Array.isArray(estructura)) throw new Error('El contenido debe ser un arreglo de tomos')
+      if (!Array.isArray(estructura)) throw new Error('El contenido debe ser un arreglo de semanas')
       const guardado = await fetch('/api/admin/catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -192,26 +210,93 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
         </div>
       </section>
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">02 / CONTENT PIPELINE</div>
-        <h2>Mapa del curso</h2>
+        <div className="admin-section-kicker">02 / RUTA ACADÉMICA</div>
+        <h2>Mapa de la ruta</h2>
         <p className="admin-help">
-          Edita la estructura como JSON. Los bloques admiten TEXTO, CODIGO, VIDEO, IMAGEN y CALLOUT.
+          Cada semana combina materiales, contenido, repaso y evaluación. El estudiante verá esta
+          secuencia como un camino progresivo.
         </p>
-        <textarea
-          className="admin-code-editor"
-          value={json}
-          onChange={e => setJson(e.target.value)}
-          spellCheck={false}
-          rows={26}
-          aria-label="Estructura JSON del curso"
-        />
-        <button
-          type="button"
-          className="boton-secundario mt-3"
-          onClick={() => setJson(JSON.stringify(ejemplo, null, 2))}
-        >
-          Cargar plantilla Hello World
-        </button>
+        <div className="admin-route-preview" aria-label="Vista previa de la ruta">
+          {ruta.length === 0 ? (
+            <p className="admin-help">Escribe una estructura válida para ver la ruta.</p>
+          ) : (
+            ruta.map((semana, index) => {
+              const lecciones = Array.isArray(semana.lecciones) ? semana.lecciones : []
+              const materiales = Array.isArray(semana.materiales) ? semana.materiales : []
+              return (
+                <article
+                  key={`${String(semana.id ?? index)}-${index}`}
+                  className="admin-route-week"
+                >
+                  <div className="admin-route-week-marker">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
+                  <div className="admin-route-week-body">
+                    <div className="admin-route-week-heading">
+                      <div>
+                        <span>Semana {index + 1}</span>
+                        <h3>{String(semana.titulo ?? 'Semana sin título')}</h3>
+                      </div>
+                      <span className="admin-route-threshold">
+                        Aprueba con {String(semana.umbral ?? 70)}%
+                      </span>
+                    </div>
+                    <div className="admin-route-week-grid">
+                      <div>
+                        <strong>Materiales</strong>
+                        <span>{materiales.length}/4 cargados</span>
+                      </div>
+                      <div>
+                        <strong>Contenido</strong>
+                        <span>{lecciones.length} lecciones</span>
+                      </div>
+                      <div>
+                        <strong>Repaso</strong>
+                        <span>Banco de preguntas</span>
+                      </div>
+                      <div>
+                        <strong>Evaluación</strong>
+                        <span>Test semanal</span>
+                      </div>
+                    </div>
+                    {materiales.length > 0 && (
+                      <div className="admin-route-materials">
+                        {materiales.slice(0, 4).map((material, materialIndex) => {
+                          const item = (material ?? {}) as Record<string, unknown>
+                          return (
+                            <span key={`${materialIndex}-${String(item.titulo ?? 'material')}`}>
+                              {String(item.tipo ?? 'DOCUMENTO')} ·{' '}
+                              {String(item.titulo ?? 'Material')}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              )
+            })
+          )}
+        </div>
+        <details className="admin-advanced-editor">
+          <summary>Editar estructura avanzada</summary>
+          <p className="admin-help">Los bloques admiten TEXTO, CODIGO, VIDEO, IMAGEN y CALLOUT.</p>
+          <textarea
+            className="admin-code-editor"
+            value={json}
+            onChange={e => setJson(e.target.value)}
+            spellCheck={false}
+            rows={26}
+            aria-label="Estructura JSON del curso"
+          />
+          <button
+            type="button"
+            className="boton-secundario mt-3"
+            onClick={() => setJson(JSON.stringify(ejemplo, null, 2))}
+          >
+            Cargar plantilla de ruta
+          </button>
+        </details>
       </section>
       {(error || estado) && (
         <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">

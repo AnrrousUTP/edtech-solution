@@ -28,6 +28,17 @@ const Reproductor = async ({
     )
   }
 
+  const evaluacionInicial = await enrollmentApi.evaluacionInicial(curso.id)
+  if (!evaluacionInicial.completado) {
+    return (
+      <ErrorConAccion
+        titulo="Completa el test inicial primero"
+        detalle="Responde el diagnóstico para abrir la primera misión y comenzar tu ruta con el nivel adecuado."
+        accion={{ texto: 'Ir al test inicial', href: `/aprender/${cursoSlug}/evaluacion-inicial` }}
+      />
+    )
+  }
+
   const ordenLecciones = curso.tomos.flatMap(tomo => tomo.lecciones.map(leccion => leccion.id))
   const completadas = new Set(
     progreso.tomos.flatMap(tomo =>

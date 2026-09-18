@@ -17,6 +17,14 @@ export type CursoResumen = {
 }
 
 export type LeccionResumen = { id: string; orden: number; titulo: string; duracionMin: number }
+export type MaterialResumen = {
+  id: string
+  orden: number
+  titulo: string
+  descripcion: string | null
+  tipo: string
+  url: string
+}
 
 export type TomoDetalle = {
   id: string
@@ -24,6 +32,7 @@ export type TomoDetalle = {
   titulo: string
   descripcion: string | null
   umbral: number
+  materiales: MaterialResumen[]
   lecciones: LeccionResumen[]
 }
 

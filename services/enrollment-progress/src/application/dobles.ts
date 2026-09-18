@@ -73,6 +73,21 @@ export class InMemoryIntentoRepository implements IntentoRepository {
   async ultimoNivelacionDe(): Promise<IntentoEvaluacion | null> {
     return null
   }
+  async ultimoEvaluacionInicialDe(
+    usuarioId: UniqueId,
+    _cursoId: UniqueId,
+  ): Promise<IntentoEvaluacion | null> {
+    return (
+      [...this.guardados.values()]
+        .filter(
+          i =>
+            i.usuarioId.valor === usuarioId.valor &&
+            i.tipo === 'EVALUACION_INICIAL' &&
+            i.estado === 'ENTREGADO',
+        )
+        .sort((a, b) => b.iniciadoAt.getTime() - a.iniciadoAt.getTime())[0] ?? null
+    )
+  }
 }
 
 export class InMemoryProyeccionRepository implements CursoProyeccionRepository {

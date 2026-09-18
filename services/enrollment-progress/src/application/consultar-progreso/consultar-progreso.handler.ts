@@ -13,6 +13,35 @@ import {
 } from '../../domain/module.errors'
 import type { CursoProyeccionRepository } from '../../domain/ports-out/curso-proyeccion.repository'
 import type { MatriculaRepository } from '../../domain/ports-out/matricula.repository'
+import type { IntentoRepository } from '../../domain/ports-out/intento.repository'
+
+export type EvaluacionInicialQuery = Query & {
+  readonly _tag: 'EvaluacionInicial'
+  readonly usuarioId: string
+  readonly cursoId: string
+}
+
+export type EvaluacionInicialResponse = { completado: boolean }
+
+export class EvaluacionInicialHandler implements QueryHandler<
+  EvaluacionInicialQuery,
+  EvaluacionInicialResponse,
+  EnrollmentError
+> {
+  readonly handles = 'EvaluacionInicial' as const
+
+  constructor(private readonly intentos: IntentoRepository) {}
+
+  async execute(
+    q: EvaluacionInicialQuery,
+  ): Promise<Result<EvaluacionInicialResponse, EnrollmentError>> {
+    const intento = await this.intentos.ultimoEvaluacionInicialDe(
+      UniqueId.desde(q.usuarioId),
+      UniqueId.desde(q.cursoId),
+    )
+    return Ok({ completado: intento !== null })
+  }
+}
 
 export type MisMatriculasQuery = Query & {
   readonly _tag: 'MisMatriculas'

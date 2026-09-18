@@ -1,7 +1,8 @@
 import { AggregateRoot, Err, Ok, type Result, UniqueId } from '@edtech/shared-kernel'
 import { BancoInvalidoError, type CatalogError } from '../module.errors'
 
-export type UsoBanco = 'NIVELACION' | 'EVALUACION_TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
+export type UsoBanco =
+  'NIVELACION' | 'EVALUACION_INICIAL' | 'EVALUACION_TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
 export type TipoPregunta = 'OPCION_UNICA' | 'OPCION_MULTIPLE' | 'CODIGO' | 'VERDADERO_FALSO'
 
 export type Pregunta = {
@@ -32,11 +33,9 @@ export class BancoPreguntas extends AggregateRoot {
     tomoId: string | null
     titulo: string
   }): Result<BancoPreguntas, CatalogError> {
-    const esNivelacion = datos.uso === 'NIVELACION'
-    if (esNivelacion !== (datos.tomoId === null))
-      return Err(
-        new BancoInvalidoError('Un banco de NIVELACION no tiene tomo; los demás lo requieren'),
-      )
+    const necesitaTomo = datos.uso === 'EVALUACION_TOMO' || datos.uso === 'REFUERZO'
+    if (necesitaTomo !== (datos.tomoId !== null))
+      return Err(new BancoInvalidoError('Solo los bancos de tomo y refuerzo necesitan un tomo'))
     return Ok(
       new BancoPreguntas({
         id: UniqueId.nuevo(),

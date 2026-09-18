@@ -23,12 +23,22 @@ export const leccionResumen = z.object({
   duracionMin: z.number(),
 })
 
+export const materialResumen = z.object({
+  id: z.string(),
+  orden: z.number(),
+  titulo: z.string(),
+  descripcion: z.string().nullable(),
+  tipo: z.string(),
+  url: z.string(),
+})
+
 export const tomoDetalle = z.object({
   id: z.string(),
   orden: z.number(),
   titulo: z.string(),
   descripcion: z.string().nullable(),
   umbral: z.number(),
+  materiales: z.array(materialResumen).default([]),
   lecciones: z.array(leccionResumen),
 })
 
@@ -108,6 +118,7 @@ export const bancoAdmin = z.object({
   bancoId: z.string(),
   uso: z.string(),
   tomoId: z.string().nullable(),
+  cursoId: z.string().nullable(),
   titulo: z.string(),
   preguntas: z.array(preguntaAdmin),
 })
@@ -155,6 +166,11 @@ export const catalogApi = {
 
   diagnostico: () =>
     llamarOpcional('/api/catalog/diagnostico', evaluacionPublica, { autenticado: false }),
+
+  evaluacionInicial: (cursoId: string) =>
+    llamarOpcional(`/api/catalog/cursos/${cursoId}/evaluacion-inicial`, evaluacionPublica, {
+      autenticado: false,
+    }),
 
   // ── admin ──────────────────────────────────────────────────────────────────
   cursosAdmin: () => llamar('/api/catalog/admin/cursos', z.array(cursoResumen)),

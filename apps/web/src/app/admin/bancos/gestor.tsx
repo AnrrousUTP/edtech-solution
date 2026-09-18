@@ -20,9 +20,11 @@ const plantilla = [
 export const GestorBancos = ({
   bancos,
   tomos,
+  cursos,
 }: {
   bancos: BancoAdmin[]
   tomos: { id: string; titulo: string }[]
+  cursos: { id: string; titulo: string }[]
 }): JSX.Element => {
   const router = useRouter()
   const [seleccion, setSeleccion] = useState<string | null>(null)
@@ -30,6 +32,7 @@ export const GestorBancos = ({
   const [form, setForm] = useState({
     uso: 'DIAGNOSTICO_PREVIO',
     tomoId: '',
+    cursoId: '',
     titulo: '',
     preguntas: JSON.stringify(plantilla, null, 2),
   })
@@ -40,6 +43,7 @@ export const GestorBancos = ({
     setForm({
       uso: banco.uso,
       tomoId: banco.tomoId ?? '',
+      cursoId: banco.cursoId ?? '',
       titulo: banco.titulo,
       preguntas: JSON.stringify(banco.preguntas, null, 2),
     })
@@ -57,7 +61,12 @@ export const GestorBancos = ({
         body: JSON.stringify({
           accion: actual ? 'actualizar-banco' : 'crear-banco',
           ...(actual ? { id: actual.bancoId } : {}),
-          datos: { ...form, tomoId: form.tomoId || null, preguntas },
+          datos: {
+            ...form,
+            tomoId: form.tomoId || null,
+            cursoId: form.cursoId || null,
+            preguntas,
+          },
         }),
       })
       const data = await respuesta.json()
@@ -74,7 +83,7 @@ export const GestorBancos = ({
   return (
     <div className="admin-two-column">
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">ASSESSMENTS / BANKS</div>
+        <div className="admin-section-kicker">RUTA / EVALUACIONES</div>
         <div className="flex items-center justify-between gap-3">
           <h2>Bancos de preguntas</h2>
           <button
@@ -85,6 +94,7 @@ export const GestorBancos = ({
               setForm({
                 uso: 'DIAGNOSTICO_PREVIO',
                 tomoId: '',
+                cursoId: '',
                 titulo: '',
                 preguntas: JSON.stringify(plantilla, null, 2),
               })
@@ -107,13 +117,15 @@ export const GestorBancos = ({
                   {banco.uso} · {banco.preguntas.length} preguntas
                 </small>
               </span>
-              <span className="admin-status">{banco.tomoId ? 'TOMO' : 'GLOBAL'}</span>
+              <span className="admin-status">
+                {banco.cursoId ? 'CURSO' : banco.tomoId ? 'SEMANA' : 'GLOBAL'}
+              </span>
             </button>
           ))}
         </div>
       </section>
       <form className="tech-admin-card" onSubmit={guardar}>
-        <div className="admin-section-kicker">EDITOR / QUESTION BANK</div>
+        <div className="admin-section-kicker">DOCENTE / EVALUACIÓN</div>
         <h2>{actual ? 'Editar banco' : 'Crear banco'}</h2>
         <div className="admin-form-grid">
           <label className="admin-form-wide">
@@ -128,13 +140,14 @@ export const GestorBancos = ({
             Uso
             <select value={form.uso} onChange={e => setForm({ ...form, uso: e.target.value })}>
               <option value="DIAGNOSTICO_PREVIO">Conocimiento previo</option>
-              <option value="REFUERZO">Refuerzo de aprendizaje</option>
+              <option value="EVALUACION_INICIAL">Test inicial del curso</option>
+              <option value="REFUERZO">Repasa lo aprendido</option>
               <option value="NIVELACION">Nivelación</option>
-              <option value="EVALUACION_TOMO">Examen de tomo</option>
+              <option value="EVALUACION_TOMO">Evaluación semanal</option>
             </select>
           </label>
           <label>
-            Tomo
+            Semana
             <select
               value={form.tomoId}
               onChange={e => setForm({ ...form, tomoId: e.target.value })}
@@ -147,9 +160,23 @@ export const GestorBancos = ({
               ))}
             </select>
           </label>
+          <label>
+            Curso
+            <select
+              value={form.cursoId}
+              onChange={e => setForm({ ...form, cursoId: e.target.value })}
+            >
+              <option value="">Global</option>
+              {cursos.map(curso => (
+                <option key={curso.id} value={curso.id}>
+                  {curso.titulo}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <label className="admin-form-wide admin-json-label">
-          Preguntas y respuestas correctas
+          Preguntas y respuestas correctas (el docente define respuestaCorrecta)
           <textarea
             className="admin-code-editor"
             rows={20}
