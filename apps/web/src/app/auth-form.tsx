@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type AuthMode = 'login' | 'register' | 'recover'
 
@@ -23,6 +23,11 @@ export const AuthForm = ({
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ocupada, setOcupada] = useState(false)
+  const [lista, setLista] = useState(false)
+
+  useEffect(() => {
+    setLista(true)
+  }, [])
 
   const api = async (
     accion: string,
@@ -189,16 +194,18 @@ export const AuthForm = ({
         </p>
       )}
 
-      <button type="submit" disabled={ocupada} className="auth-submit">
-        {ocupada
-          ? 'Procesando…'
-          : !local
-            ? 'Continuar con Cognito'
-            : esConfirmacion
-              ? 'Confirmar cuenta'
-              : esReset
-                ? 'Actualizar contraseña'
-                : titulo}
+      <button type="submit" disabled={ocupada || !lista} className="auth-submit">
+        {!lista
+          ? 'Preparando…'
+          : ocupada
+            ? 'Procesando…'
+            : !local
+              ? 'Continuar con Cognito'
+              : esConfirmacion
+                ? 'Confirmar cuenta'
+                : esReset
+                  ? 'Actualizar contraseña'
+                  : titulo}
         <b aria-hidden="true">
           <svg className="inline-icon inline-arrow" viewBox="0 0 24 24">
             <path d="M5 12h13m-5-5 5 5-5 5" />

@@ -15,6 +15,13 @@ const messageSchema = z.object({
     )
     .min(1)
     .max(MAX_ASSISTANT_HISTORY),
+  context: z
+    .object({
+      pathname: z.string().max(200).optional(),
+      pageTitle: z.string().max(160).optional(),
+      pageSummary: z.string().max(1200).optional(),
+    })
+    .optional(),
 })
 
 const errorResponse = (message: string, status: number): NextResponse =>
@@ -42,7 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const text = await generateAssistantReply(parsed.data.messages)
+    const text = await generateAssistantReply(parsed.data.messages, parsed.data.context)
     return NextResponse.json({ text }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     if (error instanceof AssistantProviderError && error.code === 'not-configured') {

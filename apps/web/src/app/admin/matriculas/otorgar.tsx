@@ -28,7 +28,6 @@ export const OtorgarMatricula = ({
   }
   return (
     <form className="tech-admin-card mt-8 max-w-3xl" onSubmit={enviar}>
-      <div className="admin-section-kicker">ACCESS / MANUAL ENROLLMENT</div>
       <h2>Dar acceso a un curso</h2>
       <p className="admin-help">
         Alta manual para becas, soporte o cohortes internas. La autorización del servicio sigue

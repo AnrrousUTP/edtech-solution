@@ -48,7 +48,10 @@ export const llamar = async <T extends z.ZodTypeAny>(
     if (token) cabeceras.Authorization = `Bearer ${token}`
   }
 
-  const respuesta = await fetch(`${config.apiBase}${ruta}`, {
+  // En local el catálogo puede exponerse directamente desde Anrrous Dev,
+  // mientras que en AWS continúa pasando por el gateway definido en API_BASE.
+  const base = ruta.startsWith('/api/catalog') ? config.catalogApiBase : config.servicesApiBase
+  const respuesta = await fetch(`${base}${ruta}`, {
     method: opciones.metodo ?? 'GET',
     headers: cabeceras,
     ...(opciones.cuerpo !== undefined ? { body: JSON.stringify(opciones.cuerpo) } : {}),

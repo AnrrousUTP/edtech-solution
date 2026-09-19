@@ -49,6 +49,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
+  router.get('/admin/perfiles', ...admin, async (_req, res) => {
+    responder(res, await queries.dispatch({ _tag: 'ListarPerfilesAdmin' }))
+  })
+
   // PÚBLICA sin cuenta: verificación de certificado (pantalla 11 del doc 11)
   router.get('/certificados/:codigo', async (req, res) => {
     responder(

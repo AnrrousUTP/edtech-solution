@@ -76,7 +76,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
     <div className="tech-admin-page">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="admin-section-kicker">CENTRO ACADÉMICO</p>
           <h1 className="text-3xl font-extrabold text-slate-900">
             Diseña tus rutas de aprendizaje
           </h1>
@@ -85,23 +84,11 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
             estudiante.
           </p>
         </div>
-        <nav className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link href="/admin/cursos/nuevo" className="boton-primario text-xs">
             Crear curso
           </Link>
-          <Link href="/admin/carreras" className="boton-secundario text-xs">
-            Rutas
-          </Link>
-          <Link href="/admin/bancos" className="boton-secundario text-xs">
-            Evaluaciones
-          </Link>
-          <Link href="/admin/flashcards" className="boton-secundario text-xs">
-            Flashcards
-          </Link>
-          <Link href="/admin/metricas" className="boton-secundario text-xs">
-            Métricas
-          </Link>
-        </nav>
+        </div>
       </div>
 
       <section className="admin-overview-grid" aria-label="Resumen académico">
@@ -121,7 +108,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
 
       <div className="mt-10 flex items-end justify-between gap-4">
         <div>
-          <p className="admin-section-kicker">CONTENIDO Y PROGRESIÓN</p>
           <h2 className="text-2xl font-extrabold text-slate-900">Tus cursos</h2>
         </div>
         <span className="text-sm text-slate-500">Cada tarjeta representa una ruta completa</span>

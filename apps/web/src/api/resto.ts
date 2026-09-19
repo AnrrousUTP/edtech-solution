@@ -18,6 +18,7 @@ export type Perfil = z.infer<typeof perfil>
 
 export const identityApi = {
   yo: () => llamarOpcional('/api/identity/me', perfil),
+  usuariosAdmin: () => llamar('/api/identity/usuarios', z.array(perfil)),
   actualizar: (cambios: { nombreVisible?: string; pais?: string | null }) =>
     llamar('/api/identity/me', z.object({ actualizado: z.boolean() }), {
       metodo: 'PUT',
@@ -47,6 +48,18 @@ export const perfilGamificacion = z.object({
   ),
 })
 
+export const perfilGamificacionAdmin = z.object({
+  usuarioId: z.string(),
+  nombreTitular: z.string().nullable(),
+  puntos: z.number(),
+  rachaActual: z.number(),
+  rachaMaxima: z.number(),
+  ultimaActividad: z.string().nullable(),
+  insignias: z.array(
+    z.object({ criterio: z.string(), referenciaId: z.string(), otorgadaAt: z.string() }),
+  ),
+})
+
 export const verificacionCertificado = z.object({
   valido: z.literal(true),
   tipo: z.string(),
@@ -61,10 +74,15 @@ export type VerificacionCertificado = z.infer<typeof verificacionCertificado>
 
 export const gamificationApi = {
   miPerfil: () => llamarOpcional('/api/gamification/mi-perfil', perfilGamificacion),
+  perfilesAdmin: () => llamar('/api/gamification/admin/perfiles', z.array(perfilGamificacionAdmin)),
   verificar: (codigo: string) =>
-    llamarOpcional(`/api/gamification/certificados/${codigo}`, verificacionCertificado, {
-      autenticado: false,
-    }),
+    llamarOpcional(
+      `/api/gamification/certificados/${encodeURIComponent(codigo.trim().toUpperCase())}`,
+      verificacionCertificado,
+      {
+        autenticado: false,
+      },
+    ),
   otorgarCurso: (datos: { usuarioId: string; cursoId: string; cursoTitulo: string }) =>
     llamar(
       '/api/gamification/admin/certificados/curso',

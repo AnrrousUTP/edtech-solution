@@ -71,7 +71,9 @@ export const Racha = ({ dias }: { dias: number }): JSX.Element => {
       className={`tech-streak inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold ${tono}`}
       title={`Racha de ${dias} ${dias === 1 ? 'día' : 'días'}`}
     >
-      <span aria-hidden="true">🔥</span>
+      <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 2c1 5-3 6-2 10 1-1 2-2 4-2 3 0 5 2 5 6a9 9 0 0 1-18 0c0-4 2-7 6-10-1 4 1 5 2 6-1-4 0-7 3-10Z" />
+      </svg>
       <span>{dias}</span>
       <span className="sr-only">días de racha</span>
     </span>

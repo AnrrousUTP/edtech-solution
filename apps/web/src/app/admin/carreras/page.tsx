@@ -39,7 +39,14 @@ export default async function CarrerasAdmin(): Promise<JSX.Element> {
       </p>
       <GestorCarreras
         carreras={carreras}
-        cursos={cursos.map(c => ({ id: c.id, titulo: c.titulo }))}
+        cursos={cursos.map(c => ({
+          id: c.id,
+          titulo: c.titulo,
+          tecnologia: c.tecnologia,
+          nivelMin: c.nivelMin,
+          nivelMax: c.nivelMax,
+          estado: c.estado,
+        }))}
       />
     </div>
   )

@@ -83,7 +83,6 @@ export const GestorBancos = ({
   return (
     <div className="admin-two-column">
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">RUTA / EVALUACIONES</div>
         <div className="flex items-center justify-between gap-3">
           <h2>Bancos de preguntas</h2>
           <button
@@ -125,7 +124,6 @@ export const GestorBancos = ({
         </div>
       </section>
       <form className="tech-admin-card" onSubmit={guardar}>
-        <div className="admin-section-kicker">DOCENTE / EVALUACIÓN</div>
         <h2>{actual ? 'Editar banco' : 'Crear banco'}</h2>
         <div className="admin-form-grid">
           <label className="admin-form-wide">

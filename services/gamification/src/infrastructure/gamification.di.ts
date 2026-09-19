@@ -15,6 +15,7 @@ import {
   MiPerfilHandler,
   VerificarCertificadoHandler,
 } from '../application/consultar-gamificacion/consultar-gamificacion.handler'
+import { ListarPerfilesAdminHandler } from '../application/listar-perfiles-admin/listar-perfiles-admin.handler'
 import { GenerarPdfHandler } from '../application/generar-pdf/generar-pdf.handler'
 import {
   OtorgarPorCarreraHandler,
@@ -76,6 +77,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   const queries = new QueryBus()
   queries.register(new MiPerfilHandler(perfiles, certificados))
   queries.register(new VerificarCertificadoHandler(certificados, almacen))
+  queries.register(new ListarPerfilesAdminHandler(perfiles))
 
   const http = express()
   http.use(requestContextMiddleware)

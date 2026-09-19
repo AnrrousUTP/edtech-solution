@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
+import { flashcardsApi } from '@/api/resto'
 import { EditorCurso } from '../../editor-curso'
 import { ErrorConAccion } from '@/componentes/base'
 import { esAdmin, mfaPendiente } from '@/lib/sesion'
@@ -49,6 +50,12 @@ export default async function EditarCurso({
       ejercicios: porId.get(leccion.id)?.ejercicios ?? [],
     })),
   }))
+  const mazosPorTomo = await Promise.all(
+    curso.tomos.map(async tomo => ({
+      tomoId: tomo.id,
+      mazos: (await flashcardsApi.mazosAdmin(tomo.id)) ?? [],
+    })),
+  )
   return (
     <div className="tech-admin-page">
       <Link href="/admin" className="admin-backlink">
@@ -57,7 +64,7 @@ export default async function EditarCurso({
         </svg>
         Administración
       </Link>
-      <EditorCurso curso={curso} contenido={estructura} />
+      <EditorCurso curso={curso} contenido={estructura} mazosPorTomo={mazosPorTomo} />
     </div>
   )
 }

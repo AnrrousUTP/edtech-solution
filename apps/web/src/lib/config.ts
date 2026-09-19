@@ -2,6 +2,12 @@
 // (doc 08 §7): estas variables se leen solo en Server Components y Route Handlers.
 export const config = {
   apiBase: process.env.API_BASE ?? 'http://localhost:8080',
+  /** En local puede apuntar al gateway mientras Catálogo corre directo en otro puerto. */
+  servicesApiBase:
+    process.env.EDTECH_SERVICES_API_BASE ?? process.env.API_BASE ?? 'http://localhost:8080',
+  /** Base directa del catálogo cuando Anrrous Dev expone ese servicio fuera del gateway. */
+  catalogApiBase:
+    process.env.EDTECH_SERVICES_API_BASE ?? process.env.API_BASE ?? 'http://localhost:8080',
   /** Base pública para las llamadas del navegador (checkout con polling). */
   apiBasePublica: process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8080',
   appUrl: process.env.APP_URL ?? 'http://localhost:3000',

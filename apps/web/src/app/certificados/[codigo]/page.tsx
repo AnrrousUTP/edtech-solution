@@ -14,9 +14,10 @@ const VerificarCertificado = async ({
   if (!certificado) {
     return (
       <div className="tech-certificate-card tarjeta mx-auto max-w-lg border-alerta-500/30 p-10 text-center">
-        <p className="text-5xl" aria-hidden="true">
-          ⚠️
-        </p>
+        <svg className="certificate-status-icon is-error" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="18" />
+          <path d="M24 14v12M24 32v2" />
+        </svg>
         <h1 className="mt-4 text-2xl font-extrabold text-slate-900">Certificado no encontrado</h1>
         <p className="mt-3 text-slate-600">
           No existe ningún certificado con el código{' '}
@@ -32,9 +33,10 @@ const VerificarCertificado = async ({
 
   return (
     <div className="tech-certificate-card tarjeta mx-auto max-w-lg border-exito-500/40 p-10 text-center">
-      <p className="text-5xl" aria-hidden="true">
-        ✅
-      </p>
+      <svg className="certificate-status-icon is-success" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="18" />
+        <path d="m14 24 7 7 14-15" />
+      </svg>
       <h1 className="mt-4 text-2xl font-extrabold text-slate-900">Certificado verificado</h1>
       <p className="mt-2 text-sm text-slate-600">
         Este certificado fue emitido por EdTech Solution y es auténtico.
@@ -69,12 +71,15 @@ const VerificarCertificado = async ({
 
       {certificado.pdfUrl && (
         <a
-          href={certificado.pdfUrl}
+          href={`/certificados/${encodeURIComponent(codigo.trim().toUpperCase())}/pdf`}
           target="_blank"
           rel="noreferrer"
           className="boton-primario mt-8"
         >
-          Ver el PDF
+          <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 3h9l3 3v15H6zM14 3v4h4M9 13h6M9 17h6M9 9h2" />
+          </svg>
+          Ver certificado PDF
         </a>
       )}
     </div>

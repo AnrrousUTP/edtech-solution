@@ -14,6 +14,7 @@ import { ActualizarPerfilHandler } from '../application/actualizar-perfil/actual
 import { CrearUsuarioHandler } from '../application/crear-usuario/crear-usuario.handler'
 import { FijarNivelPorTestHandler } from '../application/fijar-nivel-por-test/fijar-nivel-por-test.handler'
 import { ObtenerPerfilHandler } from '../application/obtener-perfil/obtener-perfil.handler'
+import { ListarUsuariosHandler } from '../application/listar-usuarios/listar-usuarios.handler'
 import { SubirNivelPorCursoHandler } from '../application/subir-nivel/subir-nivel.handler'
 import type { Config } from './config/config'
 import { crearRouter } from './in/http/routes'
@@ -45,6 +46,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
 
   const queries = new QueryBus()
   queries.register(new ObtenerPerfilHandler(usuarios, publisher))
+  queries.register(new ListarUsuariosHandler(usuarios))
 
   const http = express()
   http.use(requestContextMiddleware)

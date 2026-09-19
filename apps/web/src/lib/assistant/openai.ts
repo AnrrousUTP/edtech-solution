@@ -6,6 +6,12 @@ export type AssistantMessage = {
   content: string
 }
 
+export type AssistantContext = {
+  pathname?: string
+  pageTitle?: string
+  pageSummary?: string
+}
+
 export class AssistantProviderError extends Error {
   constructor(public readonly code: 'not-configured' | 'unavailable') {
     super(code)
@@ -23,13 +29,19 @@ type OpenAIResponse = {
   }>
 }
 
-export const generateAssistantReply = async (messages: AssistantMessage[]): Promise<string> => {
+export const generateAssistantReply = async (
+  messages: AssistantMessage[],
+  context?: AssistantContext,
+): Promise<string> => {
   if (!assistantConfig.openAiApiKey) {
     throw new AssistantProviderError('not-configured')
   }
 
   let response: Response
   try {
+    const contextHint = [context?.pageTitle, context?.pathname].filter(Boolean).join(' · ')
+    const contextSummary = context?.pageSummary?.trim()
+
     response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
@@ -39,20 +51,41 @@ export const generateAssistantReply = async (messages: AssistantMessage[]): Prom
       body: JSON.stringify({
         model: assistantConfig.openAiModel,
         instructions: ASSISTANT_INSTRUCTIONS,
-        input: messages.map(message => ({
-          role: message.role,
-          content: [
-            {
-              type: message.role === 'assistant' ? 'output_text' : 'input_text',
-              text: message.content,
-            },
-          ],
-        })),
+        input: [
+          ...(contextHint || contextSummary
+            ? [
+                {
+                  role: 'user' as const,
+                  content: [
+                    {
+                      type: 'input_text' as const,
+                      text: [
+                        contextHint ? `Pantalla actual: ${contextHint}` : '',
+                        contextSummary ? `Datos visibles de la pantalla: ${contextSummary}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join('\n'),
+                    },
+                  ],
+                },
+              ]
+            : []),
+          ...messages.map(message => ({
+            role: message.role,
+            content: [
+              {
+                type:
+                  message.role === 'assistant' ? ('output_text' as const) : ('input_text' as const),
+                text: message.content,
+              },
+            ],
+          })),
+        ],
         // gpt-5-mini razona antes de contestar: con el esfuerzo por defecto
         // gastaba todo el presupuesto en razonamiento y no devolvía texto.
         reasoning: { effort: 'minimal' },
         text: { verbosity: 'low' },
-        max_output_tokens: 800,
+        max_output_tokens: 420,
         store: false,
       }),
     })

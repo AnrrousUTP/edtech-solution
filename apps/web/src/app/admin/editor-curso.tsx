@@ -3,8 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { CursoDetalle } from '@/api/catalog'
+import type { MazoAdmin } from '@/api/resto'
+import { RevisionMazo } from './revision-mazo'
 
-type Props = { curso: CursoDetalle | null; contenido: unknown[] }
+type Props = {
+  curso: CursoDetalle | null
+  contenido: unknown[]
+  mazosPorTomo?: { tomoId: string; mazos: MazoAdmin[] }[]
+}
 
 const ejemplo = [
   {
@@ -52,7 +58,7 @@ const rutaDesdeJson = (valor: string): Record<string, unknown>[] => {
   }
 }
 
-export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
+export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX.Element => {
   const router = useRouter()
   const [datos, setDatos] = useState({
     titulo: curso?.titulo ?? '',
@@ -70,6 +76,7 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const ruta = rutaDesdeJson(json)
+  const mazosPorSemana = new Map(mazosPorTomo.map(item => [item.tomoId, item.mazos]))
 
   const guardar = async (evento: React.FormEvent): Promise<void> => {
     evento.preventDefault()
@@ -129,7 +136,6 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
   return (
     <form onSubmit={guardar} className="admin-editor-grid">
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">01 / METADATA</div>
         <h2>{curso ? 'Editar curso' : 'Nuevo curso'}</h2>
         <p className="admin-help">Define la ficha pública y el nivel de entrada.</p>
         <div className="admin-form-grid">
@@ -210,7 +216,6 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
         </div>
       </section>
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">02 / RUTA ACADÉMICA</div>
         <h2>Mapa de la ruta</h2>
         <p className="admin-help">
           Cada semana combina materiales, contenido, repaso y evaluación. El estudiante verá esta
@@ -223,6 +228,8 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
             ruta.map((semana, index) => {
               const lecciones = Array.isArray(semana.lecciones) ? semana.lecciones : []
               const materiales = Array.isArray(semana.materiales) ? semana.materiales : []
+              const tomoId = typeof semana.id === 'string' ? semana.id : null
+              const mazos = tomoId ? (mazosPorSemana.get(tomoId) ?? []) : []
               return (
                 <article
                   key={`${String(semana.id ?? index)}-${index}`}
@@ -272,6 +279,39 @@ export const EditorCurso = ({ curso, contenido }: Props): JSX.Element => {
                         })}
                       </div>
                     )}
+                    <div className="admin-route-flashcards">
+                      <div className="admin-route-flashcards-heading">
+                        <div>
+                          <strong>Flashcards de esta semana</strong>
+                          <span>Revisa cada mazo junto al tema que lo origina.</span>
+                        </div>
+                        <span className="admin-route-flashcards-count">
+                          {tomoId ? `${mazos.length} mazos` : 'Disponible al guardar'}
+                        </span>
+                      </div>
+                      {!tomoId ? (
+                        <p className="admin-help">
+                          Guarda el curso para habilitar la generación y validación de flashcards.
+                        </p>
+                      ) : mazos.length === 0 ? (
+                        <p className="admin-help">
+                          Todavía no hay mazos para esta semana. Se crearán cuando el contenido
+                          publicado genere una nueva versión.
+                        </p>
+                      ) : (
+                        <div className="admin-route-flashcards-list">
+                          {mazos.map(mazo => (
+                            <details key={mazo.mazoId} open>
+                              <summary>
+                                <span>Versión {mazo.version}</span>
+                                <span>{mazo.estado}</span>
+                              </summary>
+                              <RevisionMazo mazo={mazo} />
+                            </details>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </article>
               )

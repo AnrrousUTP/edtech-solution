@@ -236,7 +236,9 @@ const MapaCurso = async ({
       <div className="learning-map-gamebar" aria-label="Estadísticas de aprendizaje">
         <div className="learning-map-gamebar-item is-streak">
           <span className="learning-map-gamebar-icon" aria-hidden="true">
-            🔥
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2c1 5-3 6-2 10 1-1 2-2 4-2 3 0 5 2 5 6a9 9 0 0 1-18 0c0-4 2-7 6-10-1 4 1 5 2 6-1-4 0-7 3-10Z" />
+            </svg>
           </span>
           <span>
             <strong>{gamificacion?.rachaActual ?? 0}</strong>
@@ -245,7 +247,9 @@ const MapaCurso = async ({
         </div>
         <div className="learning-map-gamebar-item">
           <span className="learning-map-gamebar-icon" aria-hidden="true">
-            ✦
+            <svg viewBox="0 0 24 24">
+              <path d="m12 3 2.7 6.3L21 12l-6.3 2.7L12 21l-2.7-6.3L3 12l6.3-2.7L12 3Z" />
+            </svg>
           </span>
           <span>
             <strong>{gamificacion?.puntos ?? 0}</strong>
@@ -254,7 +258,9 @@ const MapaCurso = async ({
         </div>
         <div className="learning-map-gamebar-item">
           <span className="learning-map-gamebar-icon" aria-hidden="true">
-            🏁
+            <svg viewBox="0 0 24 24">
+              <path d="M6 21V4M6 5h12l-3 4 3 4H6" />
+            </svg>
           </span>
           <span>
             <strong>{totalPorcentaje}%</strong>
@@ -269,7 +275,11 @@ const MapaCurso = async ({
           <h1>{curso.titulo}</h1>
           <p>{curso.descripcion}</p>
           <div className="learning-map-hero-message">
-            <span aria-hidden="true">✦</span>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m12 3 2.7 6.3L21 12l-6.3 2.7L12 21l-2.7-6.3L3 12l6.3-2.7L12 3Z" />
+              </svg>
+            </span>
             <p>
               <strong>
                 {!evaluacionInicialCompletada

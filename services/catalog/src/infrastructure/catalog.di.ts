@@ -578,11 +578,9 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
       const data = await evaluacionInicial(db, req.params.cursoId ?? '')
       data
         ? responder(res, data)
-        : res
-            .status(404)
-            .json({
-              error: { code: 'BANCO_NO_ENCONTRADO', message: 'Test inicial no configurado' },
-            })
+        : res.status(404).json({
+            error: { code: 'BANCO_NO_ENCONTRADO', message: 'Test inicial no configurado' },
+          })
     } catch (e) {
       next(e)
     }
@@ -1008,6 +1006,14 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
           b.publicar ? 'PUBLICADO' : 'BORRADOR',
         ],
       )
+      if (Array.isArray(b.cursos)) {
+        for (const [orden, curso] of (b.cursos as Record<string, unknown>[]).entries()) {
+          await db.query(
+            'INSERT INTO catalog.carrera_cursos (carrera_id, curso_id, orden) VALUES ($1, $2, $3)',
+            [carreraId, String(curso.cursoId ?? ''), Number(curso.orden ?? orden + 1)],
+          )
+        }
+      }
       return responder(res, { carreraId }, 201)
     } catch (e) {
       next(e)

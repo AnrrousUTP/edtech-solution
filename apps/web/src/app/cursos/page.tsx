@@ -1,4 +1,17 @@
 import Link from 'next/link'
+import {
+  ArrowRight,
+  BookOpen,
+  CheckSquare,
+  Cloud,
+  Code2,
+  LayoutGrid,
+  Route,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react'
 import { catalogApi } from '@/api/catalog'
 import { Etiqueta, NivelBadge, Vacio, precioTexto, tramoDe } from '@/componentes/base'
 
@@ -8,108 +21,151 @@ const CATEGORIAS = [
     detalle: 'Modelos, automatización y análisis',
     codigo: '01',
     icono: 'data',
+    tecnologias: ['PYTHON', 'SQL', 'JAVASCRIPT', 'TYPESCRIPT'],
   },
-  { nombre: 'Desarrollo web', detalle: 'Frontend, backend y APIs', codigo: '02', icono: 'web' },
-  { nombre: 'Cloud', detalle: 'Infraestructura y despliegues', codigo: '03', icono: 'cloud' },
+  {
+    nombre: 'Desarrollo web',
+    detalle: 'Frontend, backend y APIs',
+    codigo: '02',
+    icono: 'web',
+    tecnologias: ['HTML', 'CSS', 'EXPRESS'],
+  },
+  {
+    nombre: 'Cloud',
+    detalle: 'Infraestructura y despliegues',
+    codigo: '03',
+    icono: 'cloud',
+    tecnologias: ['AWS', 'AZURE', 'GCP'],
+  },
   {
     nombre: 'Productividad',
     detalle: 'Herramientas para trabajar mejor',
     codigo: '04',
     icono: 'productivity',
+    tecnologias: ['NOTION', 'EXCEL', 'GIT'],
   },
   {
     nombre: 'Seguridad',
     detalle: 'Sistemas confiables desde el diseño',
     codigo: '05',
     icono: 'security',
+    tecnologias: ['SECURITY', 'CYBERSECURITY'],
   },
   {
     nombre: 'Fundamentos',
     detalle: 'La base para seguir avanzando',
     codigo: '06',
     icono: 'fundamentals',
+    tecnologias: ['FUNDAMENTOS', 'BASH', 'GIT'],
   },
 ]
 
-const SearchIcon = (): JSX.Element => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="catalog-icon">
-    <path d="m20 20-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />
-  </svg>
-)
+const SearchIcon = (): JSX.Element => <Search aria-hidden="true" className="catalog-icon" />
 
-const ArrowIcon = (): JSX.Element => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="catalog-icon">
-    <path d="M5 12h13m-5-5 5 5-5 5" />
-  </svg>
-)
+const ArrowIcon = (): JSX.Element => <ArrowRight aria-hidden="true" className="catalog-icon" />
+
+const CursoPortada = ({
+  tecnologia,
+  indice,
+}: {
+  tecnologia: string
+  indice: number
+}): JSX.Element => {
+  const codigo = tecnologia.toLocaleLowerCase('es')
+  const portada = codigo.includes('css')
+    ? { tono: 'violet', etiqueta: 'ESTILOS / UI', corto: 'CSS', titulo: 'VISUAL SYSTEM' }
+    : codigo.includes('html')
+      ? { tono: 'cyan', etiqueta: 'WEB / CORE', corto: 'HTML', titulo: 'PAGE STRUCTURE' }
+      : codigo.includes('express')
+        ? { tono: 'lime', etiqueta: 'BACKEND / API', corto: 'API', titulo: 'SERVER FLOW' }
+        : { tono: 'cyan', etiqueta: 'TECH / CORE', corto: 'LAB', titulo: 'BUILD SKILLS' }
+
+  return (
+    <div className={`tech-course-cover ${portada.tono}`}>
+      <div className="tech-course-cover__topline">
+        <span>CURSO / 0{indice + 1}</span>
+        <span>{portada.etiqueta}</span>
+      </div>
+      <svg className="tech-course-cover__art" viewBox="0 0 400 180" aria-hidden="true">
+        <path
+          className="tech-course-cover__grid"
+          d="M0 30h400M0 90h400M0 150h400M80 0v180M200 0v180M320 0v180"
+        />
+        {portada.corto === 'HTML' && (
+          <>
+            <rect x="62" y="33" width="276" height="112" rx="14" />
+            <path d="M62 63h276M88 49h.01M105 49h.01M122 49h.01" />
+            <path d="m113 99 24 19 24-19M180 92l-15 28M205 99l24 19 24-19" />
+            <circle cx="290" cy="101" r="17" />
+            <path d="m282 101 6 6 11-13" />
+          </>
+        )}
+        {portada.corto === 'CSS' && (
+          <>
+            <rect x="68" y="38" width="264" height="104" rx="14" />
+            <path d="M68 68h264M95 53h.01M112 53h.01M129 53h.01" />
+            <path d="M104 103h68M104 119h42M205 91h70v34h-70z" />
+            <path d="m224 101 9 9 18-20" />
+            <path d="M300 84v50" />
+          </>
+        )}
+        {portada.corto === 'API' && (
+          <>
+            <rect x="65" y="37" width="270" height="106" rx="14" />
+            <path d="M65 67h270M93 52h.01M110 52h.01M127 52h.01" />
+            <circle cx="116" cy="104" r="18" />
+            <circle cx="284" cy="104" r="18" />
+            <path d="M134 104h132M202 86v36M194 96l8-10 8 10" />
+          </>
+        )}
+        {portada.corto === 'LAB' && (
+          <>
+            <path d="M82 45h236v92H82z" />
+            <path d="M82 72h236M111 57h.01M128 57h.01M145 57h.01" />
+            <path d="m125 105 18 18 34-38M224 111h58" />
+          </>
+        )}
+      </svg>
+      <div className="tech-course-cover__bottomline">
+        <strong>{portada.corto}</strong>
+        <span>{portada.titulo}</span>
+      </div>
+    </div>
+  )
+}
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  data: LayoutGrid,
+  web: Code2,
+  cloud: Cloud,
+  productivity: CheckSquare,
+  security: ShieldCheck,
+  fundamentals: BookOpen,
+}
 
 const CategoryIcon = ({ icono }: { icono: string }): JSX.Element => {
-  if (icono === 'data') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-        <path d="M9 35V20m10 15V12m10 23V24m10 11V8" />
-        <path d="M6 39h36" />
-        <circle cx="9" cy="20" r="3" />
-        <circle cx="19" cy="12" r="3" />
-        <circle cx="29" cy="24" r="3" />
-        <circle cx="39" cy="8" r="3" />
-      </svg>
-    )
-  }
-  if (icono === 'web') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-        <rect x="7" y="9" width="34" height="29" rx="6" />
-        <path d="M7 17h34M14 13h.01M19 13h.01M24 13h.01m-8 12 5 5 10-10" />
-      </svg>
-    )
-  }
-  if (icono === 'cloud') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-        <path d="M15 36h21a8 8 0 0 0 1-15.9A12 12 0 0 0 14 18a9 9 0 0 0 1 18Z" />
-        <path d="M24 18v17m0 0 6-6m-6 6-6-6" />
-      </svg>
-    )
-  }
-  if (icono === 'productivity') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-        <rect x="8" y="9" width="32" height="30" rx="6" />
-        <path d="m15 24 6 6 12-13" />
-      </svg>
-    )
-  }
-  if (icono === 'security') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-        <path d="M24 7 38 13v10c0 9-6 15-14 19-8-4-14-10-14-19V13l14-6Z" />
-        <path d="m17 24 5 5 10-11" />
-      </svg>
-    )
-  }
-  return (
-    <svg aria-hidden="true" viewBox="0 0 48 48" className="catalog-category-icon">
-      <path d="m18 15-8 9 8 9m12-18 8 9-8 9M27 9l-6 30" />
-    </svg>
-  )
+  const Icon = CATEGORY_ICONS[icono] ?? BookOpen
+  return <Icon aria-hidden="true" className="catalog-category-icon" />
 }
 
 const FALLBACK_RUTAS = [
   {
     id: 'ruta-desarrollo-web',
+    slug: 'ruta-desarrollo-web',
     titulo: 'Ruta de desarrollo web',
     descripcion: 'De tu primera etiqueta HTML a una aplicación completa.',
     cantidad: 8,
   },
   {
     id: 'ruta-datos-ia',
+    slug: 'ruta-datos-ia',
     titulo: 'Ruta de datos e IA',
     descripcion: 'Aprende a convertir datos en decisiones y productos útiles.',
     cantidad: 6,
   },
   {
     id: 'ruta-cloud',
+    slug: 'ruta-cloud',
     titulo: 'Ruta de fundamentos cloud',
     descripcion: 'Entiende la nube y despliega con criterio técnico.',
     cantidad: 5,
@@ -117,7 +173,13 @@ const FALLBACK_RUTAS = [
 ]
 
 type Props = {
-  searchParams: Promise<{ q?: string; tecnologia?: string; tramo?: string; precio?: string }>
+  searchParams: Promise<{
+    q?: string
+    tecnologia?: string
+    tramo?: string
+    precio?: string
+    area?: string
+  }>
 }
 
 const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
@@ -128,6 +190,14 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
   ])
 
   const tecnologias = [...new Set(cursos.map(c => c.tecnologia))].sort()
+  const categoriasActivas = CATEGORIAS.filter(categoria =>
+    categoria.tecnologias.some(tecnologia =>
+      cursos.some(
+        curso => curso.tecnologia.toLocaleLowerCase('es') === tecnologia.toLocaleLowerCase('es'),
+      ),
+    ),
+  )
+  const areaSeleccionada = CATEGORIAS.find(categoria => categoria.nombre === filtros.area)
   const busqueda = filtros.q?.trim().toLocaleLowerCase('es') ?? ''
   const visibles = cursos.filter(curso => {
     if (busqueda) {
@@ -135,6 +205,15 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
         .join(' ')
         .toLocaleLowerCase('es')
       if (!indice.includes(busqueda)) return false
+    }
+    if (
+      areaSeleccionada &&
+      !areaSeleccionada.tecnologias.some(
+        tecnologia =>
+          curso.tecnologia.toLocaleLowerCase('es') === tecnologia.toLocaleLowerCase('es'),
+      )
+    ) {
+      return false
     }
     if (filtros.tecnologia && curso.tecnologia !== filtros.tecnologia) return false
     if (filtros.tramo && tramoDe(curso.nivelMin) !== filtros.tramo) return false
@@ -146,6 +225,7 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
     carreras.length > 0
       ? carreras.map(carrera => ({
           id: carrera.id,
+          slug: carrera.slug,
           titulo: carrera.titulo,
           descripcion: carrera.descripcion,
           cantidad: carrera.cursos.length,
@@ -160,69 +240,34 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
     return query ? `/cursos?${query}` : '/cursos'
   }
 
-  const Filtro = ({
-    texto,
-    activo,
-    href,
-  }: {
-    texto: string
-    activo: boolean
-    href: string
-  }): JSX.Element => (
-    <Link
-      href={href}
-      className={`catalog-filter ${activo ? 'is-active' : ''}`}
-      aria-pressed={activo}
-    >
-      {texto}
-    </Link>
-  )
-
   return (
     <div className="catalog-public">
       <div className="catalog-layout">
         <aside className="tech-sidebar" aria-label="Explorar catálogo">
-          <div className="tech-sidebar-label">WORKSPACE</div>
-          <h2>Explorar EdTech</h2>
+          <h2>Explorar catálogo</h2>
           <nav className="tech-sidebar-nav">
             <a href="#categorias" className="is-active">
               <span aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" />
-                </svg>
+                <LayoutGrid />
               </span>{' '}
               Áreas
             </a>
             <a href="#cursos">
               <span aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" />
-                </svg>
+                <BookOpen />
               </span>{' '}
               Cursos
             </a>
             <a href="#rutas">
               <span aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M6 6h8a4 4 0 0 1 4 4v8M18 14l3 4-3 4" />
-                </svg>
+                <Route />
               </span>{' '}
               Rutas
-            </a>
-            <a href="#credenciales">
-              <span aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="m12 4 7 4v8l-7 4-7-4V8l7-4Zm0 4v12M5 8l7 4 7-4" />
-                </svg>
-              </span>{' '}
-              Credenciales
             </a>
           </nav>
           <div className="tech-sidebar-note">
             <span className="tech-sidebar-note-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />
-              </svg>
+              <Sparkles />
             </span>
             <strong>Aprende con intención</strong>
             <p>Elige una ruta. Construye algo. Repite.</p>
@@ -233,21 +278,21 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
           <section id="categorias" className="tech-section catalog-discovery-section">
             <div className="tech-section-heading catalog-section-heading">
               <div>
-                <p className="tech-section-kicker">01 / ÁREAS DE APRENDIZAJE</p>
                 <h1>¿Qué quieres explorar?</h1>
                 <p className="catalog-section-intro">
                   Encuentra una habilidad, una ruta y el siguiente proyecto que quieres construir.
                 </p>
               </div>
               <span className="tech-section-meta">
-                <b>{CATEGORIAS.length}</b> áreas activas
+                <b>{categoriasActivas.length}</b>{' '}
+                {categoriasActivas.length === 1 ? 'área activa' : 'áreas activas'}
               </span>
             </div>
             <div className="catalog-category-grid">
-              {CATEGORIAS.map(categoria => (
+              {categoriasActivas.map(categoria => (
                 <Link
                   key={categoria.nombre}
-                  href={enlace({ tecnologia: categoria.nombre })}
+                  href={enlace({ area: categoria.nombre, tecnologia: undefined })}
                   className="catalog-category-card"
                 >
                   <span
@@ -271,7 +316,6 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
           <section id="cursos" className="tech-section catalog-course-section">
             <div className="tech-section-heading catalog-course-heading">
               <div>
-                <p className="tech-section-kicker">02 / CATÁLOGO</p>
                 <h2>Aprende haciendo</h2>
                 <p className="catalog-count">
                   {visibles.length}{' '}
@@ -304,54 +348,43 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
               </button>
             </form>
 
-            <div className="catalog-filters" role="group" aria-label="Filtros del catálogo">
-              <div>
+            <form className="catalog-filters" action="/cursos" method="get">
+              {filtros.q && <input type="hidden" name="q" value={filtros.q} />}
+              {filtros.area && <input type="hidden" name="area" value={filtros.area} />}
+              <label>
                 <span>Tecnología</span>
-                <Filtro
-                  texto="Todas"
-                  activo={!filtros.tecnologia}
-                  href={enlace({ tecnologia: undefined })}
-                />
-                {tecnologias.map(t => (
-                  <Filtro
-                    key={t}
-                    texto={t}
-                    activo={filtros.tecnologia === t}
-                    href={enlace({ tecnologia: t })}
-                  />
-                ))}
-              </div>
-              <div>
+                <select name="tecnologia" defaultValue={filtros.tecnologia ?? ''}>
+                  <option value="">Todas</option>
+                  {tecnologias.map(tecnologia => (
+                    <option key={tecnologia} value={tecnologia}>
+                      {tecnologia}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 <span>Nivel</span>
-                <Filtro texto="Todos" activo={!filtros.tramo} href={enlace({ tramo: undefined })} />
-                {['Fundamentos', 'Intermedio', 'Avanzado', 'Profesional'].map(t => (
-                  <Filtro
-                    key={t}
-                    texto={t}
-                    activo={filtros.tramo === t}
-                    href={enlace({ tramo: t })}
-                  />
-                ))}
-              </div>
-              <div>
+                <select name="tramo" defaultValue={filtros.tramo ?? ''}>
+                  <option value="">Todos</option>
+                  {['Fundamentos', 'Intermedio', 'Avanzado', 'Profesional'].map(nivel => (
+                    <option key={nivel} value={nivel}>
+                      {nivel}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 <span>Precio</span>
-                <Filtro
-                  texto="Todos"
-                  activo={!filtros.precio}
-                  href={enlace({ precio: undefined })}
-                />
-                <Filtro
-                  texto="Gratis"
-                  activo={filtros.precio === 'gratis'}
-                  href={enlace({ precio: 'gratis' })}
-                />
-                <Filtro
-                  texto="De pago"
-                  activo={filtros.precio === 'pago'}
-                  href={enlace({ precio: 'pago' })}
-                />
-              </div>
-            </div>
+                <select name="precio" defaultValue={filtros.precio ?? ''}>
+                  <option value="">Todos</option>
+                  <option value="gratis">Gratis</option>
+                  <option value="pago">De pago</option>
+                </select>
+              </label>
+              <button type="submit" className="catalog-filter-submit">
+                Aplicar
+              </button>
+            </form>
 
             {visibles.length === 0 ? (
               <Vacio
@@ -367,12 +400,7 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
                     href={`/cursos/${curso.slug}`}
                     className="catalog-course-card"
                   >
-                    <div className={`tech-course-visual ${['cyan', 'violet', 'lime'][indice % 3]}`}>
-                      <span className="tech-course-index">0{indice + 1}</span>
-                      <span className="tech-course-glyph" aria-hidden="true">
-                        {indice % 2 === 0 ? '</>' : 'API'}
-                      </span>
-                    </div>
+                    <CursoPortada tecnologia={curso.tecnologia} indice={indice} />
                     <div className="tech-course-body">
                       <div className="flex flex-wrap items-center gap-2">
                         <Etiqueta>{curso.tecnologia}</Etiqueta>
@@ -399,14 +427,13 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
           <section id="rutas" className="tech-section">
             <div className="tech-section-heading">
               <div>
-                <p className="tech-section-kicker">03 / LONG GAME</p>
                 <h2>Construye una trayectoria</h2>
               </div>
               <span className="tech-section-meta">Rutas por objetivo</span>
             </div>
             <div className="tech-route-grid">
               {rutas.map((ruta, indice) => (
-                <Link key={ruta.id} href="/cursos" className="tech-route-card">
+                <Link key={ruta.id} href={`/rutas/${ruta.slug}`} className="tech-route-card">
                   <div className="tech-route-topline">
                     <span>0{indice + 1}</span>
                     <span>{ruta.cantidad} cursos</span>
@@ -426,27 +453,22 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
             </div>
           </section>
 
-          <section id="credenciales" className="tech-build-banner">
+          <section id="nivel" className="tech-build-banner">
             <div>
-              <p className="tech-section-kicker">04 / OUTPUT</p>
-              <h2>Tu próxima versión se construye aquí.</h2>
+              <h2>Encuentra el punto de partida correcto.</h2>
               <p>
-                Completa proyectos, consigue insignias y demuestra que puedes resolver problemas
-                reales.
+                Haz un diagnóstico breve para descubrir qué curso se adapta mejor a tus
+                conocimientos actuales.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/diagnostico" className="tech-build-button">
                 Diagnóstico previo{' '}
-                <svg className="inline-icon inline-arrow" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M5 12h13m-5-5 5 5-5 5" />
-                </svg>
+                <ArrowRight aria-hidden="true" className="inline-icon inline-arrow" />
               </Link>
               <Link href="/nivelacion" className="tech-build-button">
                 Encontrar mi nivel{' '}
-                <svg className="inline-icon inline-arrow" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M5 12h13m-5-5 5 5-5 5" />
-                </svg>
+                <ArrowRight aria-hidden="true" className="inline-icon inline-arrow" />
               </Link>
             </div>
           </section>

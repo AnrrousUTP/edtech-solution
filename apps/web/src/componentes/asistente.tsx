@@ -14,8 +14,14 @@ const INITIAL_MESSAGE: AssistantMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Hola, soy el asistente de EdTech. Puedo explicarte cómo funcionan los cursos, las rutas y las insignias. ¿Qué te gustaría conocer?',
+    'Hola, soy tu guía de EdTech. ¿Buscas un curso, una ruta o ayuda con lo que estás aprendiendo?',
 }
+
+const QUICK_PROMPTS = [
+  '¿Qué curso me conviene para empezar?',
+  '¿Cómo funcionan las rutas?',
+  '¿Qué incluye un curso?',
+]
 
 const getErrorMessage = async (response: Response, fallback: string): Promise<string> => {
   try {
@@ -153,8 +159,8 @@ const AssistantWidget = (): JSX.Element => {
     }
   }
 
-  const sendMessage = async (): Promise<void> => {
-    const content = draft.trim()
+  const sendMessage = async (prompt?: string): Promise<void> => {
+    const content = (prompt ?? draft).trim()
     if (!content || isSending || isRecording || isTranscribing) return
 
     const userMessage: AssistantMessage = {
@@ -177,6 +183,14 @@ const AssistantWidget = (): JSX.Element => {
             role,
             content: messageContent,
           })),
+          context: {
+            pathname: window.location.pathname,
+            pageTitle: document.querySelector('h1')?.textContent?.trim() || document.title,
+            pageSummary:
+              document
+                .querySelector<HTMLElement>('[data-assistant-context]')
+                ?.textContent?.trim() || undefined,
+          },
         }),
       })
 
@@ -224,8 +238,8 @@ const AssistantWidget = (): JSX.Element => {
         >
           <header className="assistant-header">
             <div>
-              <p className="assistant-kicker">EDTECH / SUPPORT</p>
               <h2 id="assistant-title">Asistente EdTech</h2>
+              <p className="assistant-subtitle">Respuestas breves para avanzar</p>
             </div>
             <button
               type="button"
@@ -251,6 +265,20 @@ const AssistantWidget = (): JSX.Element => {
                 <p>{message.content}</p>
               </div>
             ))}
+            {messages.length === 1 && !isSending && (
+              <div className="assistant-quick-prompts" aria-label="Preguntas sugeridas">
+                {QUICK_PROMPTS.map(prompt => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    className="assistant-quick-prompt"
+                    onClick={() => void sendMessage(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
             {(isSending || isTranscribing) && (
               <p className="assistant-status">
                 <span>{isTranscribing ? 'Transcribiendo audio' : 'Pensando'}</span>

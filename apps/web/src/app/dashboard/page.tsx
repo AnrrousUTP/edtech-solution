@@ -13,23 +13,118 @@ import {
 import { perfilSesion } from '@/lib/sesion'
 
 // Pantalla 10: dashboard con racha, puntos, insignias, certificados y cursos.
-const CRITERIOS: { criterio: string; nombre: string; comoSeGana: string }[] = [
-  { criterio: 'PRIMER_CURSO', nombre: 'Primer curso', comoSeGana: 'Completa tu primer curso' },
-  { criterio: 'CURSO_COMPLETADO', nombre: 'Curso completado', comoSeGana: 'Completa un curso' },
+type IconoInsignia = 'inicio' | 'dominio' | 'ruta' | 'precision' | 'racha'
+
+type MetaInsignia = {
+  criterio: string
+  nombre: string
+  categoria: string
+  descripcion: string
+  comoSeGana: string
+  icono: IconoInsignia
+}
+
+const CRITERIOS: MetaInsignia[] = [
+  {
+    criterio: 'PRIMER_CURSO',
+    nombre: 'Primer despegue',
+    categoria: 'Inicio',
+    descripcion: 'Tu primera ruta de aprendizaje ya está en marcha.',
+    comoSeGana: 'Completa tu primer curso',
+    icono: 'inicio',
+  },
+  {
+    criterio: 'CURSO_COMPLETADO',
+    nombre: 'Ruta completada',
+    categoria: 'Progreso',
+    descripcion: 'Llegaste al final de un curso con todo el recorrido resuelto.',
+    comoSeGana: 'Completa un curso',
+    icono: 'ruta',
+  },
   {
     criterio: 'CARRERA_COMPLETADA',
-    nombre: 'Carrera completa',
+    nombre: 'Maestría de ruta',
+    categoria: 'Dominio',
+    descripcion: 'Un recorrido completo demuestra constancia y visión de conjunto.',
     comoSeGana: 'Completa una carrera entera',
+    icono: 'dominio',
   },
   {
     criterio: 'EVALUACION_PERFECTA',
-    nombre: 'Evaluación perfecta',
+    nombre: 'Mente precisa',
+    categoria: 'Dominio',
+    descripcion: 'Cada respuesta estuvo en el lugar correcto.',
     comoSeGana: 'Saca 100% en una evaluación',
+    icono: 'precision',
   },
-  { criterio: 'RACHA_7', nombre: 'Racha de 7', comoSeGana: 'Estudia 7 días seguidos' },
-  { criterio: 'RACHA_30', nombre: 'Racha de 30', comoSeGana: 'Estudia 30 días seguidos' },
-  { criterio: 'RACHA_100', nombre: 'Racha de 100', comoSeGana: 'Estudia 100 días seguidos' },
+  {
+    criterio: 'RACHA_7',
+    nombre: 'Ritmo de 7',
+    categoria: 'Constancia',
+    descripcion: 'Una semana seguida convierte el estudio en un hábito.',
+    comoSeGana: 'Estudia 7 días seguidos',
+    icono: 'racha',
+  },
+  {
+    criterio: 'RACHA_30',
+    nombre: 'Ritmo de 30',
+    categoria: 'Constancia',
+    descripcion: 'Treinta días de práctica sostienen un avance real.',
+    comoSeGana: 'Estudia 30 días seguidos',
+    icono: 'racha',
+  },
+  {
+    criterio: 'RACHA_100',
+    nombre: 'Ritmo legendario',
+    categoria: 'Constancia',
+    descripcion: 'Cien días de continuidad: tu disciplina habla por ti.',
+    comoSeGana: 'Estudia 100 días seguidos',
+    icono: 'racha',
+  },
 ]
+
+const IconoLogro = ({ tipo }: { tipo: IconoInsignia }): JSX.Element => {
+  const contenido = {
+    inicio: (
+      <>
+        <path d="M24 5 29 16l12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1 5-11Z" />
+        <path d="m24 12 1.8 4.1 4.5.4-3.4 3 1 4.4-3.9-2.3-3.9 2.3 1-4.4-3.4-3 4.5-.4L24 12Z" />
+      </>
+    ),
+    dominio: (
+      <>
+        <path d="M24 5 39 11v11c0 9-6.4 16.1-15 20-8.6-3.9-15-11-15-20V11l15-6Z" />
+        <path d="m16 24 5 5 11-12" />
+      </>
+    ),
+    ruta: (
+      <>
+        <path d="M12 9h24v28H12z" />
+        <path d="M18 9V5h12v4M18 17h12M18 24h12M18 31h7" />
+        <path d="m31 31 3 3 5-6" />
+      </>
+    ),
+    precision: (
+      <>
+        <circle cx="24" cy="24" r="17" />
+        <circle cx="24" cy="24" r="10" />
+        <path d="m24 7 2.2 6.8L33 16l-6.8 2.2L24 25l-2.2-6.8L15 16l6.8-2.2L24 7Z" />
+      </>
+    ),
+    racha: (
+      <>
+        <path d="M28 5c1 7-5 9-4 15 1-2 3-3 5-3 4 0 7 3 7 8 0 7-5 12-12 12S12 32 12 25c0-5 3-9 8-13-1 5 1 7 3 8-1-7 1-11 5-15Z" />
+        <path d="M24 28c-2 2-3 4-3 6 0 2 1 3 3 3s3-1 3-3c0-2-1-4-3-6Z" />
+      </>
+    ),
+  }[tipo]
+
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      {contenido}
+    </svg>
+  )
+}
 
 const Dashboard = async (): Promise<JSX.Element> => {
   const sesion = await perfilSesion()
@@ -52,6 +147,12 @@ const Dashboard = async (): Promise<JSX.Element> => {
 
   const slugDe = (cursoId: string): string | undefined => cursos.find(c => c.id === cursoId)?.slug
   const obtenidas = new Set((gamificacion?.insignias ?? []).map(i => i.criterio))
+  const insigniasPorCriterio = new Map(
+    (gamificacion?.insignias ?? []).map(insignia => [insignia.criterio, insignia]),
+  )
+  const insigniasGanadas = CRITERIOS.filter(insignia => obtenidas.has(insignia.criterio)).length
+  const siguienteInsignia = CRITERIOS.find(insignia => !obtenidas.has(insignia.criterio))
+  const porcentajeInsignias = Math.round((insigniasGanadas / CRITERIOS.length) * 100)
 
   return (
     <div className="tech-dashboard space-y-12">
@@ -137,34 +238,77 @@ const Dashboard = async (): Promise<JSX.Element> => {
       </section>
 
       <section>
-        <h2 className="text-xl font-extrabold text-slate-900">Insignias</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Las que aún no tienes muestran cómo se ganan: saber qué falta motiva más que ver un hueco.
-        </p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="achievement-board__heading">
+          <div>
+            <span className="eyebrow">Colección de logros</span>
+            <h2 className="mt-2 text-2xl font-extrabold text-slate-900">Tu vitrina de progreso</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Cada insignia representa una forma distinta de avanzar: empezar, dominar, completar y
+              mantener tu ritmo.
+            </p>
+          </div>
+          <div
+            className="achievement-board__score"
+            aria-label={`${insigniasGanadas} de ${CRITERIOS.length} insignias obtenidas`}
+          >
+            <span className="achievement-board__score-number">{insigniasGanadas}</span>
+            <span className="achievement-board__score-total">/{CRITERIOS.length}</span>
+            <span className="achievement-board__score-label">desbloqueadas</span>
+          </div>
+        </div>
+
+        <div
+          className="achievement-board__progress"
+          aria-label={`Colección completada al ${porcentajeInsignias}%`}
+        >
+          <div className="achievement-board__progress-copy">
+            <span>Progreso de colección</span>
+            <strong>{porcentajeInsignias}%</strong>
+          </div>
+          <div className="achievement-board__progress-track">
+            <span style={{ width: `${porcentajeInsignias}%` }} />
+          </div>
+          <p>
+            {siguienteInsignia
+              ? `Siguiente objetivo: ${siguienteInsignia.nombre}. ${siguienteInsignia.comoSeGana}.`
+              : 'Colección completa. Ya desbloqueaste todos los logros disponibles.'}
+          </p>
+        </div>
+
+        <ul className="achievement-board__grid mt-5">
           {CRITERIOS.map(insignia => {
             const ganada = obtenidas.has(insignia.criterio)
+            const obtenidaAt = insigniasPorCriterio.get(insignia.criterio)?.otorgadaAt
             return (
               <li
                 key={insignia.criterio}
-                className={`tarjeta p-4 text-center ${ganada ? 'border-acento-400/50 bg-acento-100/40' : ''}`}
+                className={`achievement-card ${ganada ? 'is-earned' : 'is-locked'}`}
+                aria-label={`${insignia.nombre}: ${ganada ? 'desbloqueada' : 'bloqueada'}`}
               >
-                <span
-                  className={`text-3xl ${ganada ? '' : 'opacity-30 grayscale'}`}
-                  aria-hidden="true"
-                >
-                  <svg className="badge-icon" viewBox="0 0 48 48" aria-hidden="true">
-                    <path d="M14 6h20v11a10 10 0 0 1-20 0V6ZM18 31l-4 11 10-5 10 5-4-11" />
-                  </svg>
-                </span>
-                <p
-                  className={`mt-2 text-sm font-bold ${ganada ? 'text-slate-900' : 'text-slate-500'}`}
-                >
-                  {insignia.nombre}
+                <div className="achievement-card__topline">
+                  <span className="achievement-card__category">{insignia.categoria}</span>
+                  <span className="achievement-card__state">
+                    {ganada ? 'Desbloqueada' : 'Bloqueada'}
+                  </span>
+                </div>
+                <div className="achievement-card__medallion-wrap">
+                  <span className="achievement-card__medallion">
+                    <IconoLogro tipo={insignia.icono} />
+                  </span>
+                  {ganada && <span className="achievement-card__ribbon">LOGRO</span>}
+                </div>
+                <h3>{insignia.nombre}</h3>
+                <p className="achievement-card__description">
+                  {ganada ? insignia.descripcion : insignia.comoSeGana}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {ganada ? 'Obtenida' : insignia.comoSeGana}
-                </p>
+                <div className="achievement-card__footer">
+                  <span>
+                    {ganada && obtenidaAt
+                      ? `Conseguida el ${new Date(obtenidaAt).toLocaleDateString('es-PE')}`
+                      : 'Sigue avanzando'}
+                  </span>
+                  <span aria-hidden="true">{ganada ? '✓' : '···'}</span>
+                </div>
               </li>
             )
           })}

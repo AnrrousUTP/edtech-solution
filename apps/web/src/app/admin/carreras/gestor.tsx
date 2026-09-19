@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { ArrowDown, ArrowUp, GripVertical } from 'lucide-react'
 import type { CarreraResumen } from '@/api/catalog'
 
 export const GestorCarreras = ({
@@ -9,7 +10,14 @@ export const GestorCarreras = ({
   cursos,
 }: {
   carreras: CarreraResumen[]
-  cursos: { id: string; titulo: string }[]
+  cursos: {
+    id: string
+    titulo: string
+    tecnologia: string
+    nivelMin: string
+    nivelMax: string
+    estado: string
+  }[]
 }): JSX.Element => {
   const router = useRouter()
   const [seleccion, setSeleccion] = useState<string | null>(null)
@@ -32,7 +40,20 @@ export const GestorCarreras = ({
       descripcion: carrera.descripcion,
       imagenUrl: carrera.imagenUrl ?? '',
       publicar: carrera.estado === 'PUBLICADO',
-      cursos: carrera.cursos.sort((a, b) => a.orden - b.orden).map(c => c.cursoId),
+      cursos: [...carrera.cursos].sort((a, b) => a.orden - b.orden).map(c => c.cursoId),
+    })
+  }
+  const moverCurso = (cursoId: string, direccion: -1 | 1): void => {
+    setForm(actualForm => {
+      const indice = actualForm.cursos.indexOf(cursoId)
+      const destino = indice + direccion
+      if (indice < 0 || destino < 0 || destino >= actualForm.cursos.length) return actualForm
+      const cursosOrdenados = [...actualForm.cursos]
+      ;[cursosOrdenados[indice], cursosOrdenados[destino]] = [
+        cursosOrdenados[destino],
+        cursosOrdenados[indice],
+      ]
+      return { ...actualForm, cursos: cursosOrdenados }
     })
   }
   const guardar = async (e: React.FormEvent): Promise<void> => {
@@ -66,7 +87,6 @@ export const GestorCarreras = ({
   return (
     <div className="admin-two-column">
       <section className="tech-admin-card">
-        <div className="admin-section-kicker">ROUTES / PATHS</div>
         <div className="flex items-center justify-between gap-3">
           <h2>Rutas de aprendizaje</h2>
           <button
@@ -108,7 +128,6 @@ export const GestorCarreras = ({
         </div>
       </section>
       <form className="tech-admin-card" onSubmit={guardar}>
-        <div className="admin-section-kicker">EDITOR / ROUTE</div>
         <h2>{actual ? 'Editar ruta' : 'Crear ruta'}</h2>
         <div className="admin-form-grid">
           <label>
@@ -144,8 +163,52 @@ export const GestorCarreras = ({
             />
           </label>
         </div>
+        <fieldset className="admin-course-picker admin-route-sequence">
+          <legend>Orden de la ruta</legend>
+          <p className="admin-help">Define la secuencia que seguirá el estudiante.</p>
+          {form.cursos.length ? (
+            form.cursos.map((cursoId, indice) => {
+              const curso = cursos.find(item => item.id === cursoId)
+              if (!curso) return null
+              return (
+                <div key={curso.id} className="admin-route-course-row">
+                  <GripVertical aria-hidden="true" className="admin-route-course-grip" />
+                  <span className="admin-route-course-order">{indice + 1}</span>
+                  <span className="admin-route-course-copy">
+                    <strong>{curso.titulo}</strong>
+                    <small>
+                      {curso.tecnologia} · Nivel {curso.nivelMin}–{curso.nivelMax} · {curso.estado}
+                    </small>
+                  </span>
+                  <span className="admin-route-course-actions">
+                    <button
+                      type="button"
+                      className="admin-icon-button"
+                      onClick={() => moverCurso(curso.id, -1)}
+                      disabled={indice === 0}
+                      aria-label={`Subir ${curso.titulo}`}
+                    >
+                      <ArrowUp aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-icon-button"
+                      onClick={() => moverCurso(curso.id, 1)}
+                      disabled={indice === form.cursos.length - 1}
+                      aria-label={`Bajar ${curso.titulo}`}
+                    >
+                      <ArrowDown aria-hidden="true" />
+                    </button>
+                  </span>
+                </div>
+              )
+            })
+          ) : (
+            <p className="admin-help">Selecciona cursos para construir el recorrido.</p>
+          )}
+        </fieldset>
         <fieldset className="admin-course-picker">
-          <legend>Cursos de la ruta</legend>
+          <legend>Cursos disponibles</legend>
           {cursos.map(curso => (
             <label key={curso.id}>
               <input
@@ -160,7 +223,12 @@ export const GestorCarreras = ({
                   })
                 }
               />
-              {curso.titulo}
+              <span>
+                <strong>{curso.titulo}</strong>
+                <small>
+                  {curso.tecnologia} · Nivel {curso.nivelMin}–{curso.nivelMax} · {curso.estado}
+                </small>
+              </span>
             </label>
           ))}
         </fieldset>

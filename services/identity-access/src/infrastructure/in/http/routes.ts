@@ -83,5 +83,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     responder(res, r)
   })
 
+  router.get('/usuarios', auth, requiereRol('admin'), async (_req, res) => {
+    const r = await queries.dispatch({ _tag: 'ListarUsuarios' })
+    responder(res, r)
+  })
+
   return router
 }

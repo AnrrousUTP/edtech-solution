@@ -18,9 +18,6 @@ export const AuthShell = ({
     <div className="auth-page-grid" aria-hidden="true" />
     <div className="auth-layout">
       <section className="auth-intro">
-        <p className="auth-eyebrow">
-          <span /> EDTECH / AUTH SYSTEM
-        </p>
         <h1>{title}</h1>
         <p className="auth-detail">{detail}</p>
         <div className="auth-terminal">

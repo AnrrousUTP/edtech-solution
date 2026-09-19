@@ -25,10 +25,12 @@ const linksEstudiante = [
 ] as const
 
 const linksAdmin = [
-  { href: '/admin', label: 'Control', index: '01', key: 'admin' },
-  { href: '/admin/cursos/nuevo', label: 'Cursos', index: '02', key: 'courses' },
-  { href: '/admin/bancos', label: 'Evaluaciones', index: '03', key: 'assessments' },
-  { href: '/admin/flashcards', label: 'Flashcards', index: '04', key: 'hitl' },
+  { href: '/admin', label: 'Panel', index: '01', key: 'admin' },
+  { href: '/admin/usuarios', label: 'Estudiantes', index: '02', key: 'students' },
+  { href: '/admin/cursos/nuevo', label: 'Cursos', index: '03', key: 'courses' },
+  { href: '/admin/carreras', label: 'Rutas', index: '04', key: 'routes' },
+  { href: '/admin/bancos', label: 'Evaluaciones', index: '05', key: 'assessments' },
+  { href: '/admin/metricas', label: 'Métricas', index: '06', key: 'metrics' },
 ] as const
 
 const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
@@ -47,11 +49,17 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
   const activeKey = esAdmin
     ? pathname === '/admin'
       ? 'admin'
-      : pathname.startsWith('/admin/cursos')
-        ? 'courses'
-        : pathname.startsWith('/admin/bancos')
-          ? 'assessments'
-          : 'hitl'
+      : pathname.startsWith('/admin/usuarios')
+        ? 'students'
+        : pathname.startsWith('/admin/cursos')
+          ? 'courses'
+          : pathname.startsWith('/admin/carreras')
+            ? 'routes'
+            : pathname.startsWith('/admin/bancos')
+              ? 'assessments'
+              : pathname.startsWith('/admin/metricas')
+                ? 'metrics'
+                : 'admin'
     : perfil
       ? pathname === '/dashboard'
         ? 'dashboard'
@@ -72,13 +80,21 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
     <header className="site-header sticky top-0 z-40">
       <nav
         className="header-space-nav mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4"
-        aria-label="Principal"
+        aria-label={
+          esAdmin
+            ? 'Navegación administrativa'
+            : perfil
+              ? 'Navegación del estudiante'
+              : 'Navegación pública'
+        }
       >
         <Link href="/" className="header-space-context" aria-label="EdTech, inicio">
           <EdtechLogo />
+          {esAdmin && <span className="header-mode-label">Administración</span>}
+          {perfil && !esAdmin && <span className="header-mode-label">Mi aprendizaje</span>}
         </Link>
 
-        <div className="header-public-nav" aria-label="Navegación pública">
+        <div className="header-public-nav">
           {links.map(link => (
             <Link
               key={link.key}

@@ -89,9 +89,10 @@ export const Checkout = ({
   if (fase === 'listo') {
     return (
       <div className="tarjeta aparece mt-6 border-exito-500/40 bg-exito-100/40 p-8 text-center">
-        <p className="text-5xl" aria-hidden="true">
-          ✅
-        </p>
+        <svg className="result-icon" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="18" />
+          <path d="m14 24 7 7 14-15" />
+        </svg>
         <h2 className="mt-4 text-xl font-extrabold text-slate-900">¡Curso habilitado!</h2>
         <p className="mt-2 text-slate-700">Ya puedes empezar cuando quieras.</p>
         <Link href={`/aprender/${cursoSlug}`} className="boton-exito mt-6">

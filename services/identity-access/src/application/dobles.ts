@@ -10,6 +10,10 @@ export class InMemoryUsuarioRepository implements UsuarioRepository {
     return this.guardados.get(id.valor) ?? null
   }
 
+  async todos(): Promise<Usuario[]> {
+    return [...this.guardados.values()]
+  }
+
   async guardar(usuario: Usuario): Promise<void> {
     this.guardados.set(usuario.id.valor, usuario)
   }

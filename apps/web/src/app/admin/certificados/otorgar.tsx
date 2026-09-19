@@ -34,7 +34,6 @@ export const OtorgarCredencial = (): JSX.Element => {
   }
   return (
     <form className="tech-admin-card mt-8 max-w-3xl" onSubmit={guardar}>
-      <div className="admin-section-kicker">CREDENTIALS / MANUAL AWARD</div>
       <h2>Otorgar certificado o insignia</h2>
       <p className="admin-help">
         Usa esta acción para correcciones manuales o reconocimientos extraordinarios. El servicio

@@ -11,6 +11,9 @@ export class InMemoryPerfilRepository implements PerfilRepository {
   async porUsuario(usuarioId: UniqueId): Promise<PerfilGamificacion | null> {
     return this.perfiles.get(usuarioId.valor) ?? null
   }
+  async todos(): Promise<PerfilGamificacion[]> {
+    return [...this.perfiles.values()]
+  }
   async guardar(perfil: PerfilGamificacion): Promise<void> {
     this.perfiles.set(perfil.usuarioId.valor, perfil)
   }
