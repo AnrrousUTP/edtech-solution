@@ -3,6 +3,8 @@ import { OrdenCreadaEvent } from '../events/orden-creada.event'
 import { PagoConfirmadoEvent } from '../events/pago-confirmado.event'
 import { PagoFallidoEvent } from '../events/pago-fallido.event'
 import { PagoReembolsadoEvent } from '../events/pago-reembolsado.event'
+import { VentaReferidaConfirmadaEvent } from '../events/venta-referida-confirmada.event'
+import type { AtribucionReferida } from '../ports-out/atribucion.port'
 import { OrdenExpiradaError, OrdenNoCapturableError, type PaymentsError } from '../module.errors'
 import type { Dinero } from '../value-objects/dinero.vo'
 
@@ -27,6 +29,9 @@ type Props = {
   neto: Dinero | null
   expiraAt: Date
   createdAt: Date
+  atribucion?: AtribucionReferida | null
+  cursoTitulo?: string
+  reembolsos?: { id: string; centavos: number }[]
 }
 
 export class Orden extends AggregateRoot {
@@ -42,6 +47,8 @@ export class Orden extends AggregateRoot {
     ahora: Date
     /** `ahora + MS_EXPIRACION_ORDEN`, calculado por el handler. */
     expiraAt: Date
+    atribucion?: AtribucionReferida | null
+    cursoTitulo?: string
   }): Orden {
     const o = new Orden({
       id: UniqueId.nuevo(),
@@ -56,6 +63,9 @@ export class Orden extends AggregateRoot {
       neto: null,
       expiraAt: datos.expiraAt,
       createdAt: datos.ahora,
+      atribucion: datos.atribucion ?? null,
+      cursoTitulo: datos.cursoTitulo ?? '',
+      reembolsos: [],
     })
     o.record(
       new OrdenCreadaEvent(
@@ -113,6 +123,20 @@ export class Orden extends AggregateRoot {
         datos.ahora,
       ),
     )
+    if (this.props.atribucion && this.props.monto.moneda === 'USD') {
+      this.record(
+        new VentaReferidaConfirmadaEvent(
+          this.props.id.valor,
+          this.props.atribucion,
+          this.props.cursoId.valor,
+          this.props.cursoTitulo ?? '',
+          Math.round(this.props.monto.monto * 100),
+          this.props.monto.moneda,
+          datos.capturaId,
+          datos.ahora,
+        ),
+      )
+    }
     return Ok({ nueva: true })
   }
 
@@ -130,8 +154,16 @@ export class Orden extends AggregateRoot {
   }
 
   registrarReembolso(reembolsoId: string, monto: Dinero): boolean {
-    if (this.props.estado === 'REEMBOLSADA') return false
-    this.props.estado = 'REEMBOLSADA'
+    if (this.props.estado !== 'CAPTURADA' && this.props.estado !== 'REEMBOLSADA') return false
+    const reembolsos = this.props.reembolsos ?? []
+    if (reembolsos.some(r => r.id === reembolsoId)) return false
+    if (monto.moneda !== this.props.monto.moneda || monto.monto <= 0) return false
+    reembolsos.push({ id: reembolsoId, centavos: Math.round(monto.monto * 100) })
+    this.props.reembolsos = reembolsos
+    if (
+      reembolsos.reduce((sum, r) => sum + r.centavos, 0) >= Math.round(this.props.monto.monto * 100)
+    )
+      this.props.estado = 'REEMBOLSADA'
     this.record(
       new PagoReembolsadoEvent(
         this.props.id.valor,
@@ -162,6 +194,15 @@ export class Orden extends AggregateRoot {
 
   get id(): UniqueId {
     return this.props.id
+  }
+  get atribucion(): AtribucionReferida | null {
+    return this.props.atribucion ?? null
+  }
+  get cursoTitulo(): string {
+    return this.props.cursoTitulo ?? ''
+  }
+  get reembolsos(): { id: string; centavos: number }[] {
+    return this.props.reembolsos ?? []
   }
   get usuarioId(): UniqueId {
     return this.props.usuarioId

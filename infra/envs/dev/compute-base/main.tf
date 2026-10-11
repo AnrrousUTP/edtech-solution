@@ -39,6 +39,7 @@ data "terraform_remote_state" "security" {
 module "compute_base" {
   source            = "../../../modules/compute-base"
   entorno           = "dev"
+  habilitar_alb     = false # apagado para cumplir el tope de créditos; se debe recrear para publicar tráfico HTTP
   vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
   subredes_publicas = data.terraform_remote_state.network.outputs.subredes_publicas
   sg_alb_id         = data.terraform_remote_state.security.outputs.sg_alb_id

@@ -5,6 +5,11 @@ variable "entorno" { type = string }
 variable "vpc_id" { type = string }
 variable "subredes_publicas" { type = list(string) }
 variable "sg_alb_id" { type = string }
+variable "habilitar_alb" {
+  description = "Provisiona el balanceador público. Deshabilitar corta el acceso HTTP y las reglas ECS asociadas."
+  type        = bool
+  default     = true
+}
 
 resource "aws_ecs_cluster" "principal" {
   name = "edtech-${var.entorno}-cluster"
@@ -20,6 +25,7 @@ resource "aws_ecs_cluster_capacity_providers" "spot" {
 }
 
 resource "aws_lb" "principal" {
+  count              = var.habilitar_alb ? 1 : 0
   name               = "edtech-${var.entorno}-alb"
   load_balancer_type = "application"
   security_groups    = [var.sg_alb_id]
@@ -27,7 +33,8 @@ resource "aws_lb" "principal" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.principal.arn
+  count             = var.habilitar_alb ? 1 : 0
+  load_balancer_arn = aws_lb.principal[0].arn
   port              = 80
   protocol          = "HTTP"
 
@@ -43,6 +50,6 @@ resource "aws_lb_listener" "http" {
 
 output "cluster_arn" { value = aws_ecs_cluster.principal.arn }
 output "cluster_name" { value = aws_ecs_cluster.principal.name }
-output "alb_arn" { value = aws_lb.principal.arn }
-output "alb_dns" { value = aws_lb.principal.dns_name }
-output "listener_arn" { value = aws_lb_listener.http.arn }
+output "alb_arn" { value = try(aws_lb.principal[0].arn, null) }
+output "alb_dns" { value = try(aws_lb.principal[0].dns_name, null) }
+output "listener_arn" { value = try(aws_lb_listener.http[0].arn, null) }

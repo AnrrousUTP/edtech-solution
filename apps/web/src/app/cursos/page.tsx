@@ -179,6 +179,7 @@ type Props = {
     tramo?: string
     precio?: string
     area?: string
+    referido?: string
   }>
 }
 
@@ -242,6 +243,21 @@ const Catalogo = async ({ searchParams }: Props): Promise<JSX.Element> => {
 
   return (
     <div className="catalog-public">
+      {filtros.referido === 'registrado' && (
+        <p className="affiliate-notice">
+          Llegaste por una recomendación. Explora los cursos y elige qué aprender.
+        </p>
+      )}
+      {filtros.referido === 'inactivo' && (
+        <p className="affiliate-notice">
+          Esta recomendación ya no está activa. Puedes seguir explorando los cursos.
+        </p>
+      )}
+      {filtros.referido === 'error' && (
+        <p className="affiliate-notice" role="alert">
+          No pudimos guardar la recomendación. Vuelve a abrir el enlace para intentarlo nuevamente.
+        </p>
+      )}
       <div className="catalog-layout">
         <aside className="tech-sidebar" aria-label="Explorar catálogo">
           <h2>Explorar catálogo</h2>

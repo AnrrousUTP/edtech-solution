@@ -1,0 +1,11 @@
+{
+  "name": "@edtech-app/terminal-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@edtech/shared-kernel": "workspace:*",
+    "@aws-sdk/client-iot-data-plane": "^3.658.0",
+    "mqtt": "^5.10.0"
+  }
+}

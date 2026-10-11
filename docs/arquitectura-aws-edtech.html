@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Arquitectura AWS · EdTech</title>
+  <style>
+    :root {
+      --ink: #17253b;
+      --muted: #53647a;
+      --line: #d7e0eb;
+      --paper: #f4f7fb;
+      --card: #fff;
+      --blue: #174ea6;
+      --blue-soft: #eaf2ff;
+      --teal: #087e8b;
+      --teal-soft: #e7f7f7;
+      --amber: #9a5b00;
+      --amber-soft: #fff5df;
+      --red: #a73535;
+      --red-soft: #fff0ef;
+      --green: #18724b;
+      --green-soft: #eaf7ef;
+      --shadow: 0 12px 34px rgba(22, 45, 78, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; line-height: 1.55; }
+    a { color: #174ea6; text-underline-offset: 3px; }
+    a:hover { color: #0b367b; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #7c3aed; outline-offset: 3px; }
+    .topbar { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .topbar-inner { max-width: 1320px; margin: auto; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { font-weight: 800; letter-spacing: -.03em; white-space: nowrap; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .nav a { min-height: 40px; padding: 8px 11px; border-radius: 9px; color: var(--muted); text-decoration: none; font-size: .88rem; }
+    .nav a:hover { background: var(--blue-soft); color: var(--blue); }
+    main { max-width: 1320px; margin: auto; padding: 34px 24px 76px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr); gap: 26px; align-items: end; padding: 18px 0 30px; }
+    .eyebrow { color: var(--blue); font-size: .77rem; text-transform: uppercase; letter-spacing: .14em; font-weight: 800; }
+    h1 { margin: 7px 0 12px; font-size: clamp(2.1rem, 4.3vw, 3.8rem); line-height: 1.02; letter-spacing: -.055em; }
+    h2 { margin: 0 0 9px; font-size: clamp(1.45rem, 2.4vw, 2rem); letter-spacing: -.035em; line-height: 1.18; }
+    h3 { margin: 0 0 6px; font-size: 1.05rem; letter-spacing: -.015em; }
+    p { margin: 0 0 12px; }
+    .lead { max-width: 850px; color: var(--muted); font-size: 1.08rem; }
+    .hero-side { padding: 18px; border: 1px solid #c7d8f2; border-radius: 16px; background: linear-gradient(145deg,#edf4ff,#fff 72%); box-shadow: var(--shadow); }
+    .hero-side strong { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+    .small { color: var(--muted); font-size: .89rem; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 999px; font-size: .78rem; line-height: 1.25; font-weight: 750; }
+    .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .live { color: var(--green); background: var(--green-soft); }
+    .paused { color: #785000; background: var(--amber-soft); }
+    .missing { color: var(--red); background: var(--red-soft); }
+    .planned { color: #545b68; background: #edf0f4; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: clamp(18px, 3vw, 30px); margin: 18px 0; }
+    .section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; }
+    .section-head p { max-width: 710px; color: var(--muted); margin: 0; }
+    .notice { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 15px 17px; border-radius: 8px 12px 12px 8px; color: #533700; }
+    .notice strong { color: #422c00; }
+    .diagram-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #fbfdff; }
+    .diagram { display: block; width: 100%; min-width: 960px; height: auto; }
+    .diagram .lane { fill: #f7faff; stroke: #d8e3f1; stroke-width: 1.5; }
+    .diagram .node { fill: white; stroke: #b8c9df; stroke-width: 1.7; }
+    .diagram .node-blue { fill: #eef4ff; stroke: #5d8dd5; }
+    .diagram .node-teal { fill: #e9f8f8; stroke: #48a5a7; }
+    .diagram .node-amber { fill: #fff6e3; stroke: #dda940; }
+    .diagram .node-red { fill: #fff0ef; stroke: #d57a73; }
+    .diagram .title { font-size: 17px; font-weight: 800; fill: #17253b; }
+    .diagram .text { font-size: 13px; fill: #53647a; }
+    .diagram .tiny { font-size: 11px; fill: #53647a; }
+    .diagram .line { stroke: #55718f; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+    .diagram .dashed { stroke: #c4443f; stroke-width: 2.6; stroke-dasharray: 8 7; fill: none; marker-end: url(#arrow-red); }
+    .diagram .async-line { stroke: #13828c; stroke-width: 2.2; stroke-dasharray: 5 5; fill: none; marker-end: url(#arrow-teal); }
+    .diagram .label { font-size: 11px; font-weight: 750; fill: #334a66; }
+    .diagram .warning { font-size: 12px; font-weight: 800; fill: #a73535; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 12px 2px 0; color: var(--muted); font-size: .82rem; }
+    .legend span { display: inline-flex; gap: 7px; align-items: center; }
+    .legend i { width: 12px; height: 12px; display: inline-block; border-radius: 3px; border: 1px solid; }
+    .legend .l-live { background: var(--green-soft); border-color: var(--green); }
+    .legend .l-pause { background: var(--amber-soft); border-color: #b37b12; }
+    .legend .l-missing { background: var(--red-soft); border-color: var(--red); }
+    .summary-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+    .metric { padding: 15px; border-radius: 13px; background: #f6f9fd; border: 1px solid var(--line); }
+    .metric b { display: block; font-size: 1.18rem; letter-spacing: -.03em; }
+    .metric span { color: var(--muted); font-size: .82rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+    .card { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: white; }
+    .card p:last-child { margin-bottom: 0; }
+    .card-blue { border-top: 4px solid var(--blue); }
+    .card-teal { border-top: 4px solid var(--teal); }
+    .card-amber { border-top: 4px solid #c48711; }
+    .card-red { border-top: 4px solid var(--red); }
+    .tagrow { display:flex; gap:7px; flex-wrap:wrap; margin: 9px 0 12px; }
+    .tag { padding: 4px 8px; border-radius: 7px; background: #f0f4f8; color: #465870; font-size: .75rem; font-weight: 700; }
+    .choice { position: relative; }
+    .choice .choice-label { display: inline-block; margin-bottom: 10px; padding: 4px 8px; border-radius: 7px; background: var(--blue-soft); color: var(--blue); text-transform: uppercase; font-size: .7rem; letter-spacing: .08em; font-weight: 850; }
+    .verdict { border: 1px solid #b9ddc8; background: var(--green-soft); padding: 17px 19px; border-radius: 13px; margin-top: 15px; }
+    .verdict strong { color: #135638; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: .91rem; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f1f5fa; color: #344860; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 750; }
+    .cost { font-weight: 800; white-space: nowrap; color: #8b4b00; }
+    details { border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px; background: #fff; }
+    details + details { margin-top: 9px; }
+    summary { cursor: pointer; font-weight: 750; min-height: 32px; display: flex; align-items: center; }
+    details p { color: var(--muted); margin: 10px 0 2px; }
+    .steps { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; counter-reset: step; }
+    .step { position: relative; padding: 16px 15px 14px 48px; min-height: 112px; background: #f7faff; border: 1px solid var(--line); border-radius: 13px; }
+    .step::before { counter-increment: step; content: counter(step); position: absolute; left: 14px; top: 14px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--blue); font-weight: 800; font-size: .8rem; }
+    .step b { display: block; margin-bottom: 4px; }
+    .step span { color: var(--muted); font-size: .86rem; }
+    .sources { display: flex; flex-wrap: wrap; gap: 8px; }
+    .sources a { padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: white; text-decoration: none; font-size: .82rem; }
+    footer { padding: 18px 0 4px; color: var(--muted); font-size: .82rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .muted { color: var(--muted); }
+    .risk { color: var(--red); font-weight: 750; }
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .grid-3 { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .section-head { display: block; }
+      .section-head p { margin-top: 7px; }
+    }
+    @media (max-width: 600px) {
+      .topbar-inner { align-items: flex-start; flex-direction: column; padding: 10px 16px; }
+      .nav { justify-content: flex-start; }
+      main { padding: 24px 15px 54px; }
+      .summary-grid, .grid-2, .steps { grid-template-columns: 1fr; }
+      .panel { padding: 17px; border-radius: 14px; }
+      .diagram { min-width: 900px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+    @media print {
+      .topbar { position: static; }
+      .nav { display: none; }
+      body { background: #fff; }
+      main { max-width: none; padding: 10px; }
+      .panel, .hero-side { box-shadow: none; break-inside: avoid; }
+      .diagram-wrap { overflow: visible; }
+      .diagram { min-width: 0; }
+      a { color: #174ea6; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">EDTECH <span class="muted">/ Arquitectura AWS</span></div>
+      <nav class="nav" aria-label="Secciones del documento">
+        <a href="#mapa">Mapa actual</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#alb-apigw">ALB o API Gateway</a>
+        <a href="#costos">Costos</a>
+        <a href="#decision">Propuesta</a>
+        <a href="#migracion">Esfuerzo de migración</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="titulo">
+      <div>
+        <div class="eyebrow">Documento para revisar el diseño y reducir gasto</div>
+        <h1 id="titulo">La arquitectura EdTech<br>en AWS</h1>
+        <p class="lead">Mapa de entrada web, balanceo, microservicios, datos, eventos e IoT. Distingue lo que está creado en la cuenta, lo que está pausado y las opciones para quitar costos fijos.</p>
+      </div>
+      <aside class="hero-side">
+        <strong>Estado que confirmé en AWS</strong>
+        <span class="pill paused">Aplicado, demo pausada</span>
+        <p class="small" style="margin-top:10px">Cuenta del proyecto · us-east-1 · revisión 11 oct 2026. API Gateway existe; su backend configurado apunta al ALB retirado. El endpoint no debe tomarse como la web publicada.</p>
+      </aside>
+    </section>
+
+    <section class="panel" id="mapa" aria-labelledby="mapa-title">
+      <div class="section-head">
+        <div><div class="eyebrow">01 · Recorrido real</div><h2 id="mapa-title">Qué pasa hoy cuando alguien entra</h2></div>
+        <p>Las cajas verdes representan recursos creados; ámbar, recursos detenidos o con reglas apagadas; rojo, la pieza que se retiró y corta el flujo.</p>
+      </div>
+      <div class="notice"><strong>Hallazgo central:</strong> ya hay una HTTP API de API Gateway, pero no reemplazó al ALB. Está configurada como proxy al DNS del ALB, que ahora no existe. También están detenidas las tareas ECS y la regla de IoT. Por eso hay un endpoint de API, pero no una plataforma operativa accesible.</div>
+      <div class="diagram-wrap" style="margin-top:18px" role="region" aria-label="Diagrama desplazable de la arquitectura AWS actual" tabindex="0">
+        <svg class="diagram" viewBox="0 0 1420 790" role="img" aria-labelledby="svg-title svg-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="svg-title">Arquitectura AWS actual de EdTech con recursos pausados</title>
+          <desc id="svg-desc">Usuarios entran por QR o web hacia API Gateway, que todavía reenvía al ALB retirado. Diez servicios ECS están en cero. La base Aurora, los buckets S3, colas y recursos IoT permanecen creados; la regla IoT está desactivada.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#55718f"/></marker>
+            <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#c4443f"/></marker>
+            <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#13828c"/></marker>
+          </defs>
+          <rect x="18" y="20" width="1384" height="355" rx="18" class="lane"/>
+          <text x="42" y="53" class="label">TRÁFICO WEB Y SERVICIOS DE APLICACIÓN</text>
+          <rect x="35" y="129" width="170" height="150" rx="14" class="node"/>
+          <text x="55" y="162" class="title">Personas</text>
+          <text x="55" y="188" class="text">Afiliado · estudiante</text>
+          <text x="55" y="211" class="text">QR permanente → enlace</text>
+          <text x="55" y="234" class="text">Visita → compra → comisión</text>
+          <text x="55" y="257" class="text">web / navegador móvil</text>
+
+          <rect x="251" y="93" width="245" height="242" rx="15" class="node-blue"/>
+          <text x="273" y="126" class="title">Borde HTTPS</text>
+          <rect x="271" y="146" width="205" height="69" rx="10" class="node"/>
+          <text x="286" y="171" class="label">API Gateway · HTTP API</text>
+          <text x="286" y="194" class="tiny">Existe · proxy HTTP activo</text>
+          <text x="273" y="239" class="tiny">URL: 7if9q98464.execute-api</text>
+          <text x="273" y="257" class="tiny">.us-east-1.amazonaws.com</text>
+          <rect x="271" y="276" width="205" height="42" rx="9" class="node-amber"/>
+          <text x="286" y="302" class="label">CloudFront + WAF: apagado</text>
+          <path d="M205 202 H246" class="line"/>
+          <text x="211" y="191" class="tiny">HTTPS</text>
+
+          <rect x="543" y="129" width="185" height="150" rx="14" class="node-red"/>
+          <text x="565" y="165" class="title">ALB</text>
+          <text x="565" y="190" class="text">Rutas por servicio</text>
+          <text x="565" y="214" class="text">Health checks · targets</text>
+          <text x="565" y="250" class="warning">RETIRADO</text>
+          <path d="M496 181 H538" class="dashed"/>
+          <text x="498" y="166" class="tiny">proxy al DNS</text>
+
+          <rect x="774" y="92" width="296" height="243" rx="15" class="node-amber"/>
+          <text x="798" y="126" class="title">ECS Fargate</text>
+          <text x="798" y="151" class="text">10 servicios creados · todos 0/0</text>
+          <rect x="794" y="170" width="122" height="47" rx="9" class="node"/>
+          <text x="808" y="190" class="label">Web · Next SSR</text><text x="808" y="207" class="tiny">sin tareas activas</text>
+          <rect x="928" y="170" width="122" height="47" rx="9" class="node"/>
+          <text x="942" y="190" class="label">Payments</text><text x="942" y="207" class="tiny">sin tareas activas</text>
+          <rect x="794" y="228" width="122" height="47" rx="9" class="node"/>
+          <text x="808" y="248" class="label">Affiliates</text><text x="808" y="265" class="tiny">sin tareas activas</text>
+          <rect x="928" y="228" width="122" height="47" rx="9" class="node"/>
+          <text x="942" y="248" class="label">IoT · terminal</text><text x="942" y="265" class="tiny">sin tareas activas</text>
+          <text x="798" y="306" class="tiny">+ identity · catalog · enrollment · gamification · flashcards</text>
+          <path d="M728 202 H769" class="dashed"/>
+          <text x="734" y="190" class="warning">entrada cortada</text>
+
+          <rect x="1100" y="92" width="272" height="110" rx="14" class="node-teal"/>
+          <text x="1122" y="126" class="title">Aurora PostgreSQL</text>
+          <text x="1122" y="152" class="text">Serverless v2 · min 0 ACU</text>
+          <text x="1122" y="176" class="text">pausa compute tras 300 s</text>
+          <path d="M1071 174 H1095" class="line"/>
+          <text x="1074" y="161" class="tiny">SQL/IAM</text>
+
+          <rect x="1100" y="221" width="272" height="114" rx="14" class="node"/>
+          <text x="1122" y="255" class="title">S3 · archivos</text>
+          <text x="1122" y="281" class="text">media privado + estáticos privado</text>
+          <text x="1122" y="305" class="text">ECR conserva imágenes (~265 MB)</text>
+          <path d="M1071 272 H1095" class="line"/>
+
+          <rect x="18" y="400" width="1384" height="356" rx="18" class="lane"/>
+          <text x="42" y="435" class="label">EVENTOS, AFILIADOS Y TERMINAL IoT</text>
+
+          <rect x="49" y="488" width="208" height="134" rx="14" class="node-blue"/>
+          <text x="70" y="522" class="title">Payments</text>
+          <text x="70" y="548" class="text">confirma una venta</text>
+          <text x="70" y="572" class="text">aplica idempotencia</text>
+          <text x="70" y="596" class="text">emite evento de venta</text>
+
+          <rect x="332" y="488" width="218" height="134" rx="14" class="node"/>
+          <text x="354" y="522" class="title">EventBridge + SQS</text>
+          <text x="354" y="548" class="text">eventos de dominio</text>
+          <text x="354" y="572" class="text">colas y DLQ cifradas</text>
+          <text x="354" y="596" class="text">asincronía / reintentos</text>
+          <path d="M257 555 H327" class="async-line"/>
+
+          <rect x="625" y="488" width="210" height="134" rx="14" class="node-amber"/>
+          <text x="647" y="522" class="title">AWS IoT Core</text>
+          <text x="647" y="548" class="text">Thing: terminal-demo-01</text>
+          <text x="647" y="572" class="text">Device Shadow + avisos</text>
+          <text x="647" y="596" class="warning">regla de telemetría off</text>
+
+          <rect x="911" y="488" width="205" height="134" rx="14" class="node-amber"/>
+          <text x="933" y="522" class="title">Terminal virtual</text>
+          <text x="933" y="548" class="text">imagen en ECR</text>
+          <text x="933" y="572" class="text">servicio ECS 0/0</text>
+          <text x="933" y="596" class="text">sin heartbeat activo</text>
+          <path d="M911 555 H840" class="async-line"/>
+          <text x="850" y="540" class="tiny">Shadow / IoT API</text>
+
+          <rect x="1191" y="488" width="180" height="134" rx="14" class="node-teal"/>
+          <text x="1210" y="522" class="title">Afiliados</text>
+          <text x="1210" y="548" class="text">5% de comisión</text>
+          <text x="1210" y="572" class="text">ingresos + aviso</text>
+          <text x="1210" y="596" class="text">sin retiros</text>
+          <path d="M550 555 H620" class="async-line"/>
+          <path d="M1116 555 H1186" class="async-line"/>
+
+          <rect x="49" y="665" width="1322" height="58" rx="11" class="node"/>
+          <text x="70" y="690" class="label">Identidad y protección</text>
+          <text x="70" y="710" class="tiny">Cognito · IAM por tarea · Secrets Manager · 2 claves KMS de cliente · security groups · CloudWatch (logs 7 días)</text>
+          <text x="966" y="690" class="label">VPC sin NAT</text>
+          <text x="966" y="710" class="tiny">S3/DynamoDB Gateway endpoints; las subredes privadas no tienen salida general a Internet.</text>
+        </svg>
+      </div>
+      <div class="legend" aria-label="Leyenda del diagrama">
+        <span><i class="l-live"></i> Creado / configurado</span><span><i class="l-pause"></i> Pausado o deshabilitado</span><span><i class="l-missing"></i> Retirado; rompe el flujo</span>
+      </div>
+      <div class="summary-grid">
+        <div class="metric"><b>10 · 0/0</b><span>servicios ECS detenidos</span></div>
+        <div class="metric"><b>Sin ALB ni NAT</b><span>sin cargo por esos gateways mientras están ausentes</span></div>
+        <div class="metric"><b>IoT rule: off</b><span>no se procesa telemetría desde el simulador</span></div>
+        <div class="metric"><b>CloudFront: off</b><span>módulo guardado, no aplicado; cuenta requiere verificación</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="servicios" aria-labelledby="servicios-title">
+      <div class="section-head"><div><div class="eyebrow">02 · Responsabilidad por capa</div><h2 id="servicios-title">Para qué sirve cada pieza</h2></div><p>Así se entiende por qué la arquitectura tiene varias cajas y cuáles conviene revisar primero para bajar la factura.</p></div>
+      <div class="grid-3">
+        <article class="card card-blue"><h3>Entrada y contenido</h3><div class="tagrow"><span class="tag">API Gateway</span><span class="tag">ALB</span><span class="tag">S3</span><span class="tag">CloudFront / WAF</span></div><p>API Gateway publica HTTPS y puede aplicar controles de API. ALB reparte solicitudes entre servicios ECS y enruta por path. S3 guarda estáticos y medios. CloudFront serviría contenido en el borde; en este entorno está apagado.</p></article>
+        <article class="card card-blue"><h3>Aplicación y pagos</h3><div class="tagrow"><span class="tag">ECS Fargate</span><span class="tag">ECR</span><span class="tag">Cognito</span></div><p>Web Next.js SSR, identity, catálogo, matrícula, gamificación, flashcards, pagos, afiliados, servicio IoT y terminal virtual. ECR conserva las imágenes. Cognito administra identidad de usuarios. Los servicios están aplicados, con desired/running en cero.</p></article>
+        <article class="card card-teal"><h3>Datos y eventos</h3><div class="tagrow"><span class="tag">Aurora PostgreSQL</span><span class="tag">EventBridge</span><span class="tag">SQS + DLQ</span></div><p>Aurora persiste cursos, órdenes y comisiones; EventBridge y SQS desacoplan los eventos entre dominios y permiten reintentos. Aurora puede pausar el cómputo; almacenamiento, respaldos y otros recursos siguen siendo persistentes.</p></article>
+        <article class="card card-teal"><h3>Terminal IoT</h3><div class="tagrow"><span class="tag">IoT Core</span><span class="tag">Thing / Shadow</span><span class="tag">Rule → SQS</span></div><p>El terminal virtual consulta su configuración, reporta estado y recibe avisos. IoT Core enruta telemetría a una cola por una regla. Thing y Shadow están creados, pero la regla está deshabilitada y el simulador ECS está detenido.</p></article>
+        <article class="card card-amber"><h3>Seguridad</h3><div class="tagrow"><span class="tag">IAM</span><span class="tag">KMS</span><span class="tag">Secrets Manager</span><span class="tag">VPC</span></div><p>Roles temporales por servicio, secretos externos, claves de cifrado y security groups. IAM no tiene cobro por usuario/rol, pero las claves KMS creadas por el cliente y los secretos guardados sí pueden mantener un coste mensual.</p></article>
+        <article class="card card-amber"><h3>Operación y despliegue</h3><div class="tagrow"><span class="tag">CloudWatch</span><span class="tag">Terraform state S3</span><span class="tag">DynamoDB lock</span></div><p>Logs con retención corta ayudan a diagnosticar; Terraform conserva estado remoto versionado y bloqueos. Revisar retención, versiones antiguas, snapshots, ECR y secretos evita “costos zombie” aun con aplicaciones apagadas.</p></article>
+      </div>
+    </section>
+
+    <section class="panel" id="alb-apigw" aria-labelledby="alb-title">
+      <div class="section-head"><div><div class="eyebrow">03 · Decisión de borde</div><h2 id="alb-title">¿API Gateway reemplaza al ALB?</h2></div><p>Depende de dónde termina el tráfico. API Gateway administra APIs; ALB distribuye tráfico entre destinos de aplicación. Se superponen en algunas funciones, pero no son un reemplazo directo en todas las arquitecturas.</p></div>
+      <div class="grid-3">
+        <article class="card card-red"><span class="choice-label">Hoy en el código</span><h3>API Gateway → ALB → ECS</h3><p>La HTTP API actual recibe HTTPS y hace proxy hacia el ALB, donde viven las reglas por ruta. AWS confirmó la integración HTTP_PROXY al DNS del ALB retirado. Si se restaura ese ALB, no hace falta cambiar la app para esa topología.</p><div class="tagrow"><span class="pill live">API Gateway existe</span><span class="pill missing">ALB no existe</span></div><p class="small">El endpoint público detectado es <span class="mono">https://7if9q98464.execute-api.us-east-1.amazonaws.com</span>; su integración apunta a <span class="mono">edtech-dev-alb-253365714.us-east-1.elb.amazonaws.com</span>, que fue retirado.</p></article>
+        <article class="card card-amber"><span class="choice-label">Mantener contenedores</span><h3>API Gateway → VPC Link → Cloud Map/ECS</h3><p>HTTP API puede integrar en privado con un servicio ECS registrado en Cloud Map. Eso permite quitar ALB y enrutar a tareas por descubrimiento. Requiere crear VPC Link, service discovery y revisar registros SRV/Service Connect, health y permisos.</p><p class="small"><strong>Ventaja:</strong> mantiene ECS y evita el cargo del ALB. <strong>Trade-off:</strong> VPC Link/ENI y Fargate mientras ejecuta siguen costando; tampoco resuelve la salida a AWS APIs desde las subredes privadas.</p></article>
+        <article class="card card-teal"><span class="choice-label">Menor coste ocioso</span><h3>API Gateway → Lambda</h3><p>HTTP API puede llamar Lambda directamente sin ALB ni VPC Link. Para tráfico esporádico, API Gateway y Lambda cobran principalmente por invocaciones/duración; la capa de entrada no queda cobrando por hora como un ALB encendido.</p><p class="small"><strong>Trade-off:</strong> no es cambiar una casilla: hay que adaptar los controladores/servicios al modelo Lambda y resolver acceso a Aurora, límites de conexión y el frontend Next SSR.</p></article>
+      </div>
+      <div class="verdict"><strong>Mi recomendación:</strong> no cambiar ALB por API Gateway en Terraform hasta elegir el modelo de cómputo. Para conservar estos microservicios ECS, evaluar HTTP API + VPC Link + Cloud Map y calcular el coste de enlace/horas. Si el requisito principal es demo ocasional y presupuesto muy bajo, diseñar una porción serverless API Gateway + Lambda, dejando claro que requiere adaptar la aplicación. La mejor opción depende de cuánto queremos refactorizar.</div>
+      <div class="notice" style="margin-top:14px"><strong>API Gateway no sustituye NAT.</strong> NAT resuelve salida de tareas privadas hacia servicios/endpoints públicos; ALB resuelve distribución de solicitudes entrantes. Si se quita el NAT, hay que diseñar egress separado para que Fargate tire de ECR, lea secretos, escriba logs y llegue a IoT/SQS. API Gateway solo cubre el camino de entrada a la API.</div>
+    </section>
+
+    <section class="panel" id="costos" aria-labelledby="costos-title">
+      <div class="section-head"><div><div class="eyebrow">04 · Revisión económica</div><h2 id="costos-title">Qué puede seguir consumiendo créditos</h2></div><p>Referencias públicas de AWS, no una cotización de esta cuenta. La factura real depende de región, créditos elegibles, volumen y recursos existentes; confirma todo en Billing/Cost Explorer.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Servicio o recurso</th><th>Modelo de coste</th><th>Estado en este proyecto</th><th>Acción para el límite USD 10–15</th></tr></thead>
+          <tbody>
+            <tr><td>ALB</td><td>Por hora o fracción + LCU por capacidad/tráfico.</td><td>Retirado. AWS publica ejemplos con USD 0.0225/h de componente horario en us-east-1; la LCU se suma.</td><td class="cost">Alta prioridad: no dejarlo encendido entre pruebas.</td></tr>
+            <tr><td>NAT Gateway</td><td>Por hora + GB procesado + transferencia de datos.</td><td>Retirado. Ejemplo publicado por AWS: USD 0.045/h más uso.</td><td class="cost">Alta prioridad: suele pesar más que una API con pocas llamadas.</td></tr>
+            <tr><td>API Gateway HTTP API</td><td>Por solicitudes y transferencia; free tier sólo si la cuenta califica.</td><td>HTTP API existente, proxy al ALB ausente.</td><td>Dejar; medir requests. No soluciona conectividad de salida de ECS.</td></tr>
+            <tr><td>VPC Link / endpoints Interface</td><td>Red privada por hora y datos procesados, según modo y AZ.</td><td>No se detectó VPC Link para la API existente; endpoints Interface de dev apagados.</td><td>Crear sólo después de cotizar número de AZ y tiempo encendido.</td></tr>
+            <tr><td>Fargate</td><td>vCPU y memoria por segundo mientras las tareas corren; más red/logs asociados.</td><td>10 servicios; todos 0/0.</td><td>Mantener 0 salvo una ventana de demostración medida.</td></tr>
+            <tr><td>Aurora PostgreSQL</td><td>Cómputo (puede auto pausarse), almacenamiento, backups y transferencia.</td><td>Serverless v2 min 0 ACU; auto-pausa a 300 s. Datos/almacenamiento no se borran.</td><td>Revisar costo de storage y backups en factura real.</td></tr>
+            <tr><td>KMS + Secrets Manager</td><td>Claves administradas por cliente por mes; secretos almacenados por mes + llamadas.</td><td>Terraform define 2 claves de cliente, varias credenciales DB y secretos de afiliado.</td><td>Auditar claves/secretos reales; no borrar secretos usados por tareas sin retirar referencias.</td></tr>
+            <tr><td>ECR + S3</td><td>GB-mes almacenados, solicitudes y transferencia; versiones antiguas persisten.</td><td>~265 MB en las cinco imágenes nuevas; 2 buckets app y un bucket de estado Terraform.</td><td>Conservar lifecycle, revisar tags y versiones/bloqueos antes de limpiar.</td></tr>
+            <tr><td>IoT Core, SQS, EventBridge, logs</td><td>Principalmente mensajes, operaciones, GB y retención; algunas claves/logs persisten.</td><td>Colas vacías, Thing y regla deshabilitada; logs con retención 7 días.</td><td>Uso de demo pequeño; confirmar mensajes, KMS y CloudWatch en Billing.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small" style="margin-top:13px">Con las tarifas de ejemplo mencionadas, 30 días de ALB (~USD 16.20 antes de LCU) más un NAT (~USD 32.40 antes de procesamiento) rondarían USD 48.60 de cargos horarios. Es una comparación orientativa: la tarifa precisa debe confirmarse con el Pricing Calculator de us-east-1. El tope de créditos no es un corte automático.</p>
+    </section>
+
+    <section class="panel" id="decision" aria-labelledby="decision-title">
+      <div class="section-head"><div><div class="eyebrow">05 · Camino sugerido</div><h2 id="decision-title">Separar arquitectura de producción y modo de demostración</h2></div><p>La arquitectura completa enseña microservicios, mensajería e IoT; puede quedarse como referencia aplicada en pausa. La demo debe activar sólo las piezas necesarias durante un tiempo controlado.</p></div>
+      <div class="grid-2">
+        <article class="card card-blue"><h3>Camino A · Continuar con ECS</h3><p>Conservar los 10 contenedores y sus límites por servicio; usar API Gateway + VPC Link/Cloud Map o recuperar ALB sólo para la ventana de prueba. Diseñar por separado una salida para ECR, Secrets Manager, CloudWatch, SQS e IoT.</p><p class="small"><strong>Elige esto si:</strong> el objetivo es demostrar los microservicios y la integración cloud tal como fueron construidos. Implica medir Fargate y red por hora y retirar recursos de cobro horario al terminar.</p></article>
+        <article class="card card-teal"><h3>Camino B · Recortar para bajo tráfico</h3><p>Mover rutas HTTP de bajo uso a Lambda detrás de API Gateway HTTP, y consumidores/eventos a Lambda + SQS/EventBridge. Mantener Aurora mientras el modelo relacional aporte valor o evaluar una tabla DynamoDB en una fase aparte. El terminal IoT puede seguir siendo virtual.</p><p class="small"><strong>Elige esto si:</strong> prima gastar sólo durante la demo. Requiere trabajo de adaptación y no se resuelve reemplazando ALB con un toggle.</p></article>
+      </div>
+      <div class="verdict"><strong>Secuencia segura para continuar:</strong> 1) obtener un corte actualizado en Cost Explorer para identificar gastos persistentes; 2) decidir entre mantener ECS o diseñar el slice serverless; 3) actualizar Terraform y comprobar el plan; 4) hacer una prueba breve del QR, venta, comisión e IoT; 5) volver a aplicar modo pausado y revisar la factura después de su demora de contabilización.</div>
+      <div class="steps" style="margin-top:15px">
+        <div class="step"><b>Escaneo y atribución</b><span>QR fijo con ID de afiliado; web registra visita.</span></div>
+        <div class="step"><b>Compra y comisión</b><span>Payments confirma evento único; Affiliates registra el 5%.</span></div>
+        <div class="step"><b>Aviso IoT</b><span>Evento a cola/terminal; Thing recibe configuración y confirma señal.</span></div>
+        <div class="step"><b>Rentabilidad</b><span>Panel cuenta visitas, ventas netas y comisión; coste AWS se revisa aparte.</span></div>
+      </div>
+      <div class="notice" style="margin-top:15px"><strong>Limitación verificada:</strong> CloudFront + WAF está escrito en Terraform con <span class="mono">habilitar_cloudfront = false</span>, porque AWS aún debe verificar la cuenta para crear la distribución. La web actual es Next.js SSR en ECS; alojarla como archivos S3 necesitaría convertirla a export estático o migrar su SSR a otro runtime.</div>
+    </section>
+
+    <section class="panel" id="migracion" aria-labelledby="migracion-title">
+      <div class="section-head"><div><div class="eyebrow">06 · Estado y esfuerzo de migración</div><h2 id="migracion-title">Qué cambia para pasar a un backend bajo demanda</h2></div><p>Evaluación del código y Terraform del repositorio, contrastados con el último inventario AWS disponible (11 oct 2026). Es un análisis local; antes de retirar recursos hay que confirmar el estado y la factura actuales en la cuenta.</p></div>
+      <div class="notice"><strong>Conclusión:</strong> retirar ALB y Fargate es sencillo como decisión de arquitectura, pero migrar los diez servicios no es un cambio de Terraform. La complejidad está en convertir APIs Express, workers que hoy viven en procesos permanentes y acceso a PostgreSQL. Para la demo recomiendo migrar primero el flujo QR → visita → compra simulada → comisión y dejar el resto pausado.</div>
+
+      <div class="grid-2" style="margin-top:15px">
+        <article class="card card-amber">
+          <span class="choice-label">Estado actual</span>
+          <h3>Diez servicios ECS/Fargate preparados, cero tareas activas</h3>
+          <p>Web Next.js SSR y nueve servicios adicionales: identity-access, catalog, enrollment-progress, gamification, flashcards, payments, affiliates, iot-terminals y terminal-simulator. Los módulos ECS declaran tareas de 0,5 vCPU y 1 GB; todos tienen desired count 0 en el entorno revisado.</p>
+          <p>Cada servicio tiene su propio directorio de infraestructura/estado Terraform. Las APIs usan Express y Drizzle sobre PostgreSQL/Aurora. La API Gateway HTTP existente conserva una integración HTTP_PROXY hacia el DNS del ALB retirado, por lo que el endpoint no llega a esos servicios.</p>
+        </article>
+        <article class="card card-teal">
+          <span class="choice-label">Destino propuesto</span>
+          <h3>Web y funciones sin contenedores siempre encendidos</h3>
+          <p>Amplify aloja la web Next.js; API Gateway HTTP enruta las llamadas a funciones Lambda. IoT Core invoca Lambda desde una regla. DynamoDB puede guardar atribución y comisiones del demo, o se conserva Aurora al principio si evitar migración de datos tiene más valor.</p>
+          <p>Ya no hay ALB, VPC Link ni NAT para ese flujo. La modularidad se conserva en el código; no es necesario mantener diez servicios ECS desplegados para presentarla.</p>
+        </article>
+      </div>
+
+      <div class="section-head" style="margin-top:22px"><div><div class="eyebrow">Complejidad por componente</div><h3>La adaptación principal está en el runtime y los procesos de fondo</h3></div><p>“Media” supone migrar solo la demo. “Alta” supone convertir todo el backend y conservar todos los comportamientos actuales.</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Componente</th><th>Qué existe</th><th>Cambio requerido</th><th>Complejidad</th></tr></thead>
+          <tbody>
+            <tr><td>Web</td><td>Next.js con SSR, hoy empaquetado como imagen ECS standalone.</td><td>Conectar Amplify al repositorio, configurar build y variables; validar callbacks de Cognito y que las llamadas usen la nueva API.</td><td class="cost">Media</td></tr>
+            <tr><td>APIs de dominio</td><td>Ocho servicios HTTP Express con entrada <span class="mono">main.ts</span> que abre un puerto.</td><td>Crear handlers Lambda para rutas y eventos. Se puede usar un adaptador Express al inicio; para todo el sistema conviene consolidar un backend modular o agrupar funciones por dominio.</td><td class="cost">Alta en todo el sistema; media en el flujo QR</td></tr>
+            <tr><td>Workers y tareas periódicas</td><td>Payments y Affiliates tienen pollers SQS/outbox y temporizadores; IoT terminal hace polling y flush periódico.</td><td>Reemplazar loops por triggers SQS→Lambda, eventos IoT→Lambda y EventBridge Scheduler para expiración. Diseñar reintentos e idempotencia.</td><td class="cost">Alta en pagos; media en afiliados/IoT</td></tr>
+            <tr><td>Base de datos</td><td>Aurora PostgreSQL, Drizzle, varios esquemas relacionales e IAM DB auth.</td><td>Opción de menor cambio: conservar Aurora auto-pausada y limitar conexiones Lambda. Opción de menor costo ocioso: pasar el slice QR/afiliados a DynamoDB, adaptando repositorios y consultas.</td><td class="cost">Media si se conserva; alta si se migra</td></tr>
+            <tr><td>Mensajería e IoT</td><td>SQS, DLQ, EventBridge y una regla IoT configurada hacia cola; la regla está desactivada.</td><td>Se pueden conservar colas/eventos y cambiar consumidores a Lambda. Para la demo, IoT Core puede invocar una función y registrar la telemetría/conversión.</td><td class="cost">Baja-media</td></tr>
+            <tr><td>Terraform y retiro</td><td>Estados separados por servicio, roles IAM, secretos, KMS, red, ECR y recursos compartidos.</td><td>Crear estados/módulos serverless, mover las rutas y permisos, probar; después retirar ALB/ECS sobrantes sin borrar datos o estado Terraform.</td><td class="cost">Media-alta, por dependencias y estados</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head" style="margin-top:22px"><div><div class="eyebrow">Ruta por fases</div><h3>Migrar un flujo vertical, no todos los servicios de golpe</h3></div><p>Así se valida el ahorro y se reduce el riesgo de rehacer dominios que no se van a mostrar en clase.</p></div>
+      <div class="steps">
+        <div class="step"><b>Congelar inventario</b><span>Confirmar factura, recursos y plan de cuenta; respaldar datos y fijar el alcance de la demo.</span></div>
+        <div class="step"><b>Adaptar afiliados</b><span>API Gateway + Lambda para resolver QR, atribución de visita e ingresos/comisión simulada.</span></div>
+        <div class="step"><b>Conectar web e IoT</b><span>Amplify publica Next; regla IoT llama Lambda. El simulador puede correr local con Docker.</span></div>
+        <div class="step"><b>Validar y retirar</b><span>Probar extremo a extremo; luego sacar de Terraform los componentes ECS/ALB/NAT que ya no use el demo.</span></div>
+      </div>
+      <div class="verdict"><strong>Estimación cualitativa:</strong> demo QR + comisión + un evento IoT, dificultad media y acotable a una migración incremental. Trasladar las nueve APIs, pagos reales, aprendizaje, workers y base de datos completa a serverless, dificultad alta y no recomendable como primer paso para una exposición de curso.</div>
+      <p class="small" style="margin-top:12px"><strong>Decisión sobre datos:</strong> mover toda Aurora fuera de AWS no es el primer ahorro que perseguiría. Primero mediría storage/backups y verificaría la auto-pausa. Para máxima economía, el dato nuevo del QR puede ir a DynamoDB; no migraría todas las tablas PostgreSQL sin necesidad funcional.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="fuentes-title">
+      <div class="section-head"><div><div class="eyebrow">Fuentes oficiales</div><h2 id="fuentes-title">Tarifas y capacidades de AWS</h2></div><p>Consultadas el 11 de octubre de 2026. Abren documentación y páginas de precios oficiales.</p></div>
+      <div class="sources">
+        <a href="https://aws.amazon.com/elasticloadbalancing/pricing/" target="_blank" rel="noreferrer">Precio ALB y LCU</a>
+        <a href="https://aws.amazon.com/vpc/pricing/" target="_blank" rel="noreferrer">Precio NAT y VPC</a>
+        <a href="https://aws.amazon.com/api-gateway/pricing/" target="_blank" rel="noreferrer">Precio API Gateway</a>
+        <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-private.html" target="_blank" rel="noreferrer">HTTP API → ALB / Cloud Map</a>
+        <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-vpc-links-v2.html" target="_blank" rel="noreferrer">API Gateway VPC Link v2</a>
+        <a href="https://aws.amazon.com/fargate/pricing/" target="_blank" rel="noreferrer">Precio Fargate</a>
+        <a href="https://aws.amazon.com/rds/aurora/pricing/" target="_blank" rel="noreferrer">Precio Aurora</a>
+        <a href="https://docs.aws.amazon.com/amplify/latest/userguide/ssr-amplify-support.html" target="_blank" rel="noreferrer">Amplify · Next.js SSR</a>
+        <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html" target="_blank" rel="noreferrer">HTTP API → Lambda</a>
+        <a href="https://docs.aws.amazon.com/iot/latest/developerguide/iot-rule-actions.html" target="_blank" rel="noreferrer">IoT Rule → Lambda</a>
+        <a href="https://aws.amazon.com/dynamodb/pricing/" target="_blank" rel="noreferrer">Precio DynamoDB</a>
+        <a href="https://aws.amazon.com/secrets-manager/pricing/" target="_blank" rel="noreferrer">Precio Secrets Manager</a>
+        <a href="https://aws.amazon.com/kms/pricing/" target="_blank" rel="noreferrer">Precio KMS</a>
+        <a href="https://docs.aws.amazon.com/decision-guides/latest/decision-guides/fargate-or-lambda.html" target="_blank" rel="noreferrer">Decisión Fargate o Lambda</a>
+      </div>
+      <footer>Documento de análisis del proyecto EdTech · Región configurada: us-east-1 · La vista representa la configuración e inventario revisados; cualquier reemplazo requiere ajustar código, rutas, IAM, red y Terraform y luego probarlo en AWS.</footer>
+    </section>
+  </main>
+</body>
+</html>

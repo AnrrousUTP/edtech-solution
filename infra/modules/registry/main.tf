@@ -2,7 +2,8 @@
 locals {
   repos = [
     "identity-access", "catalog", "enrollment-progress",
-    "gamification", "flashcards", "payments", "web"
+    "gamification", "flashcards", "payments", "web", "affiliates",
+    "iot-terminals", "terminal-simulator"
   ]
 }
 

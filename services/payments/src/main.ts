@@ -15,10 +15,12 @@ if (app.workerWebhooks) void app.workerWebhooks.iniciar()
 
 // Job de expiración de órdenes PENDIENTE (doc 09 §8)
 const expiracion = setInterval(() => void app.expirarOrdenes(), 15 * 60 * 1000)
+const publicar = setInterval(() => void app.outbox.flush(), 1000)
 
 const apagar = async (senal: string): Promise<void> => {
   log.info('apagando', { senal })
   clearInterval(expiracion)
+  clearInterval(publicar)
   servidor.close()
   await app.cerrar()
   process.exit(0)

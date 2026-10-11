@@ -8,6 +8,7 @@ import EdtechLogo from '@/componentes/edtech-logo'
 
 type SiteHeaderProps = {
   perfil: PerfilSesion | null
+  afiliadosHabilitados?: boolean
 }
 
 const linksPublicos = [
@@ -33,7 +34,7 @@ const linksAdmin = [
   { href: '/admin/metricas', label: 'Métricas', index: '06', key: 'metrics' },
 ] as const
 
-const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
+const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): JSX.Element => {
   const pathname = usePathname()
   const [hash, setHash] = useState('')
 
@@ -44,44 +45,66 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
     return () => window.removeEventListener('hashchange', updateHash)
   }, [])
 
-  const esAdmin = perfil?.roles.includes('admin') ?? false
-  const links = esAdmin ? linksAdmin : perfil ? linksEstudiante : linksPublicos
-  const activeKey = esAdmin
-    ? pathname === '/admin'
-      ? 'admin'
-      : pathname.startsWith('/admin/usuarios')
-        ? 'students'
-        : pathname.startsWith('/admin/cursos')
-          ? 'courses'
-          : pathname.startsWith('/admin/carreras')
-            ? 'routes'
-            : pathname.startsWith('/admin/bancos')
-              ? 'assessments'
-              : pathname.startsWith('/admin/metricas')
-                ? 'metrics'
-                : 'admin'
-    : perfil
-      ? pathname === '/dashboard'
-        ? 'dashboard'
-        : pathname === '/nivelacion'
-          ? 'level'
-          : pathname === '/diagnostico'
-            ? 'diagnostic'
-            : 'catalog'
-      : pathname === '/cursos' || pathname.startsWith('/cursos/')
-        ? 'catalog'
-        : pathname === '/' && hash === '#rutas'
-          ? 'paths'
-          : pathname === '/' && hash === '#faq'
-            ? 'faq'
-            : 'home'
+  // El encabezado representa el área abierta, no solo el rol guardado en la
+  // cookie: así /dashboard conserva la navegación de estudiante incluso si
+  // otra pestaña del mismo navegador inició sesión como administrador.
+  const mostrarNavegacionAdmin =
+    pathname.startsWith('/admin') && (perfil?.roles.includes('admin') ?? false)
+  const linksBase = mostrarNavegacionAdmin ? linksAdmin : perfil ? linksEstudiante : linksPublicos
+  const links =
+    afiliadosHabilitados && perfil
+      ? [
+          ...linksBase,
+          {
+            href: mostrarNavegacionAdmin ? '/admin/afiliados' : '/afiliados',
+            label: 'Afiliados',
+            index: '07',
+            key: 'affiliates',
+          },
+        ]
+      : linksBase
+  const activeKey =
+    pathname.startsWith('/afiliados') ||
+    pathname.startsWith('/admin/afiliados') ||
+    pathname.startsWith('/admin/comisiones') ||
+    pathname.startsWith('/admin/terminales')
+      ? 'affiliates'
+      : mostrarNavegacionAdmin
+        ? pathname === '/admin'
+          ? 'admin'
+          : pathname.startsWith('/admin/usuarios')
+            ? 'students'
+            : pathname.startsWith('/admin/cursos')
+              ? 'courses'
+              : pathname.startsWith('/admin/carreras')
+                ? 'routes'
+                : pathname.startsWith('/admin/bancos')
+                  ? 'assessments'
+                  : pathname.startsWith('/admin/metricas')
+                    ? 'metrics'
+                    : 'admin'
+        : perfil
+          ? pathname === '/dashboard'
+            ? 'dashboard'
+            : pathname === '/nivelacion'
+              ? 'level'
+              : pathname === '/diagnostico'
+                ? 'diagnostic'
+                : 'catalog'
+          : pathname === '/cursos' || pathname.startsWith('/cursos/')
+            ? 'catalog'
+            : pathname === '/' && hash === '#rutas'
+              ? 'paths'
+              : pathname === '/' && hash === '#faq'
+                ? 'faq'
+                : 'home'
 
   return (
     <header className="site-header sticky top-0 z-40">
       <nav
         className="header-space-nav mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4"
         aria-label={
-          esAdmin
+          mostrarNavegacionAdmin
             ? 'Navegación administrativa'
             : perfil
               ? 'Navegación del estudiante'
@@ -90,8 +113,10 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
       >
         <Link href="/" className="header-space-context" aria-label="EdTech, inicio">
           <EdtechLogo />
-          {esAdmin && <span className="header-mode-label">Administración</span>}
-          {perfil && !esAdmin && <span className="header-mode-label">Mi aprendizaje</span>}
+          {mostrarNavegacionAdmin && <span className="header-mode-label">Administración</span>}
+          {perfil && !mostrarNavegacionAdmin && (
+            <span className="header-mode-label">Mi aprendizaje</span>
+          )}
         </Link>
 
         <div className="header-public-nav">
@@ -115,7 +140,10 @@ const SiteHeader = ({ perfil }: SiteHeaderProps): JSX.Element => {
           </Link>
           {perfil !== null ? (
             <>
-              <Link href={esAdmin ? '/admin' : '/dashboard'} className="header-profile-name">
+              <Link
+                href={mostrarNavegacionAdmin ? '/admin' : '/dashboard'}
+                className="header-profile-name"
+              >
                 {perfil.nombre}
               </Link>
               <a href="/api/auth/logout" className="header-login-button">

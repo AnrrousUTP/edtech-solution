@@ -30,6 +30,8 @@ module.exports = {
     { name: 'sin-ciclos', severity: 'error', from: {}, to: { circular: true } },
   ],
   options: {
+    // Terraform provider caches live below each service directory and aren't source modules.
+    exclude: '(^|[/\\\\])\\.terraform([/\\\\]|$)',
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.base.json' },

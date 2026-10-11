@@ -8,7 +8,7 @@ REVOKE ALL ON DATABASE edtech FROM PUBLIC;
 DO $$
 DECLARE s text;
 BEGIN
-  FOREACH s IN ARRAY ARRAY['identity','catalog','enrollment','gamification','flashcards','payments'] LOOP
+  FOREACH s IN ARRAY ARRAY['identity','catalog','enrollment','gamification','flashcards','payments','affiliates','iot_terminals'] LOOP
     EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', s);
     BEGIN
       EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', 'svc_' || s, 'local');

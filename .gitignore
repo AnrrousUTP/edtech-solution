@@ -5,7 +5,10 @@ credentials.md
 node_modules/
 .next/
 dist/
-out/
+/out/
+/output/
+/.local/
+*.tsbuildinfo
 coverage/
 *.log
 .DS_Store

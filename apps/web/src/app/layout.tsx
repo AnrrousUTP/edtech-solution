@@ -3,6 +3,7 @@ import { JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
 import { perfilSesion } from '@/lib/sesion'
+import { config } from '@/lib/config'
 import SiteHeader from './site-header'
 import AssistantWidget from '@/componentes/asistente'
 import EdtechLogo from '@/componentes/edtech-logo'
@@ -39,7 +40,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
           Saltar al contenido
         </a>
 
-        <SiteHeader perfil={perfil} />
+        <SiteHeader perfil={perfil} afiliadosHabilitados={config.affiliatesEnabled} />
 
         <main id="contenido" className="app-main mx-auto max-w-7xl px-4 py-8">
           {children}

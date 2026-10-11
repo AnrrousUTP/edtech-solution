@@ -20,10 +20,12 @@ export interface QueryHandler<Q extends Query, T, E> {
 export class CommandBus {
   #handlers = new Map<string, CommandHandler<Command, unknown, unknown>>()
 
-  register(h: CommandHandler<never, unknown, unknown>): void {
+  register<C extends Command, T, E>(h: CommandHandler<C, T, E>): void {
     this.#handlers.set(h.handles, h as CommandHandler<Command, unknown, unknown>)
   }
 
+  dispatch<T, E>(cmd: Command): Promise<Result<T, E>>
+  dispatch<T, E>(cmd: Command & { readonly [key: string]: unknown }): Promise<Result<T, E>>
   dispatch<T, E>(cmd: Command): Promise<Result<T, E>> {
     const h = this.#handlers.get(cmd._tag)
     if (!h) throw new Error(`Sin handler para ${cmd._tag}`) // error de arranque, no de negocio
@@ -34,10 +36,12 @@ export class CommandBus {
 export class QueryBus {
   #handlers = new Map<string, QueryHandler<Query, unknown, unknown>>()
 
-  register(h: QueryHandler<never, unknown, unknown>): void {
+  register<Q extends Query, T, E>(h: QueryHandler<Q, T, E>): void {
     this.#handlers.set(h.handles, h as QueryHandler<Query, unknown, unknown>)
   }
 
+  dispatch<T, E>(query: Query): Promise<Result<T, E>>
+  dispatch<T, E>(query: Query & { readonly [key: string]: unknown }): Promise<Result<T, E>>
   dispatch<T, E>(query: Query): Promise<Result<T, E>> {
     const h = this.#handlers.get(query._tag)
     if (!h) throw new Error(`Sin handler para ${query._tag}`)

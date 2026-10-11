@@ -1,0 +1,6 @@
+# Configuración funcional para convivir con otros proyectos en Anrrous Dev.
+# Los puertos se definen en tools/local/anrrous-dev.env.
+services:
+  payments:
+    environment:
+      PAYPAL_MODE: fake

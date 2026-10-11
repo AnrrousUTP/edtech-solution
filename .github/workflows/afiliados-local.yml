@@ -1,0 +1,42 @@
+name: Afiliados e IoT local
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'services/affiliates/**'
+      - 'services/iot-terminals/**'
+      - 'services/payments/**'
+      - 'apps/terminal-simulator/**'
+      - 'apps/web/**'
+      - 'packages/shared-kernel/**'
+      - 'tools/local/**'
+      - 'tools/e2e-afiliados.ts'
+      - 'tools/eventos.json'
+      - 'docker-compose*.yml'
+      - 'bun.lock'
+      - '.github/workflows/afiliados-local.yml'
+permissions:
+  contents: read
+concurrency:
+  group: afiliados-local-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir y arrancar el entorno sin AWS
+        run: bash tools/local/afiliados.sh up
+      - name: Comprobar tipos de los servicios y el simulador
+        run: |
+          for app in services/affiliates services/iot-terminals services/payments apps/terminal-simulator; do
+            bash tools/local/bun-docker.sh x tsc --noEmit -p "$app"
+          done
+      - name: Cargar los cursos de prueba
+        run: bash tools/local/afiliados.sh seed
+      - name: Verificar QR, compra, comisión e IoT
+        run: bash tools/local/afiliados.sh test
+      - name: Detener conservando los datos
+        if: always()
+        run: bash tools/local/afiliados.sh stop

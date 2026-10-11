@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["afiliadoId", "usuarioId", "refId"],
+  "properties": {
+    "afiliadoId": { "type": "string", "format": "uuid" },
+    "usuarioId": { "type": "string", "format": "uuid" },
+    "refId": { "type": "string", "pattern": "^[a-f0-9]{36}$" }
+  }
+}

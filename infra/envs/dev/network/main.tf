@@ -22,6 +22,7 @@ module "network" {
   source                        = "../../../modules/network"
   entorno                       = "dev"
   habilitar_endpoints_interface = false # doc 16 §2: en dev, solo Gateway
+  habilitar_nat                 = false # apagado para cumplir el tope de créditos; subredes privadas sin salida a internet
 }
 
 output "vpc_id" { value = module.network.vpc_id }

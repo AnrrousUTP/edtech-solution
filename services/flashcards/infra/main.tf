@@ -64,19 +64,22 @@ data "terraform_remote_state" "storage" {
 module "servicio" {
   source = "../../../infra/modules/service"
 
-  entorno           = "dev"
-  nombre            = "flashcards"
-  imagen            = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/flashcards:${var.image_tag}"
-  vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
-  subredes_privadas = data.terraform_remote_state.network.outputs.subredes_privadas
-  sg_ecs_tasks_id   = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
-  cluster_arn       = data.terraform_remote_state.compute.outputs.cluster_arn
-  cluster_name      = data.terraform_remote_state.compute.outputs.cluster_name
-  listener_arn      = data.terraform_remote_state.compute.outputs.listener_arn
-  rol_execution_arn = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
-  path_pattern      = "/api/flashcards/*"
-  prioridad         = 50
-  spot              = true
+  entorno                = "dev"
+  nombre                 = "flashcards"
+  imagen                 = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/flashcards:${var.image_tag}"
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  subredes_privadas      = data.terraform_remote_state.network.outputs.subredes_privadas
+  sg_ecs_tasks_id        = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
+  cluster_arn            = data.terraform_remote_state.compute.outputs.cluster_arn
+  cluster_name           = data.terraform_remote_state.compute.outputs.cluster_name
+  desired_count          = 0
+  habilitar_balanceador  = false
+  habilitar_autoescalado = false
+  listener_arn           = try(data.terraform_remote_state.compute.outputs.listener_arn, null)
+  rol_execution_arn      = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
+  path_pattern           = "/api/flashcards/*"
+  prioridad              = 50
+  spot                   = true
 
   env = {
     PORT                 = "3000"
@@ -91,8 +94,8 @@ module "servicio" {
     BEDROCK_AGENT_ID       = data.terraform_remote_state.ai.outputs.agent_id
     BEDROCK_AGENT_ALIAS_ID = data.terraform_remote_state.ai.outputs.agent_alias_id
     BEDROCK_MODEL_ID       = data.terraform_remote_state.ai.outputs.modelo
-    COGNITO_ISSUER       = data.terraform_remote_state.cognito.outputs.issuer
-    LOG_LEVEL            = "info"
+    COGNITO_ISSUER         = data.terraform_remote_state.cognito.outputs.issuer
+    LOG_LEVEL              = "info"
   }
 
   # Minimo privilegio (doc 07 s10): solo lo que flashcards usa
@@ -103,38 +106,38 @@ module "servicio" {
       resources = ["arn:aws:bedrock:us-east-1:${local.cuenta}:agent-alias/${data.terraform_remote_state.ai.outputs.agent_id}/${data.terraform_remote_state.ai.outputs.agent_alias_id}"]
     }] : [],
     [
-    {
-      actions   = ["events:PutEvents"]
-      resources = [data.terraform_remote_state.messaging.outputs.bus_arn]
-    },
-    {
-      actions = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:SendMessage"]
-      resources = [
-        data.terraform_remote_state.messaging.outputs.colas["flashcards"].arn,
-        data.terraform_remote_state.messaging.outputs.colas["flashcards-generacion"].arn,
-      ]
-    },
-    {
-      actions = ["secretsmanager:GetSecretValue"]
-      resources = [
-        data.terraform_remote_state.database.outputs.secretos_db["flashcards"],
-      ]
-    },
-    {
-      actions   = ["s3:GetObject"]
-      resources = ["${data.terraform_remote_state.storage.outputs.bucket_media_arn}/contenido/*"]
-    },
-    {
-      actions = ["kms:Decrypt", "kms:GenerateDataKey"]
-      resources = [
-        data.terraform_remote_state.security.outputs.kms_datos_arn,
-        data.terraform_remote_state.security.outputs.kms_mensajeria_arn,
-      ]
-    },
-    {
-      actions   = ["rds-db:connect"]
-      resources = ["arn:aws:rds-db:us-east-1:${local.cuenta}:dbuser:${data.terraform_remote_state.database.outputs.cluster_resource_id}/svc_flashcards"]
-    },
+      {
+        actions   = ["events:PutEvents"]
+        resources = [data.terraform_remote_state.messaging.outputs.bus_arn]
+      },
+      {
+        actions = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:SendMessage"]
+        resources = [
+          data.terraform_remote_state.messaging.outputs.colas["flashcards"].arn,
+          data.terraform_remote_state.messaging.outputs.colas["flashcards-generacion"].arn,
+        ]
+      },
+      {
+        actions = ["secretsmanager:GetSecretValue"]
+        resources = [
+          data.terraform_remote_state.database.outputs.secretos_db["flashcards"],
+        ]
+      },
+      {
+        actions   = ["s3:GetObject"]
+        resources = ["${data.terraform_remote_state.storage.outputs.bucket_media_arn}/contenido/*"]
+      },
+      {
+        actions = ["kms:Decrypt", "kms:GenerateDataKey"]
+        resources = [
+          data.terraform_remote_state.security.outputs.kms_datos_arn,
+          data.terraform_remote_state.security.outputs.kms_mensajeria_arn,
+        ]
+      },
+      {
+        actions   = ["rds-db:connect"]
+        resources = ["arn:aws:rds-db:us-east-1:${local.cuenta}:dbuser:${data.terraform_remote_state.database.outputs.cluster_resource_id}/svc_flashcards"]
+      },
   ])
 }
 

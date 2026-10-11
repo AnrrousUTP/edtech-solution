@@ -47,9 +47,11 @@ const noAutorizado = (res: Response, message: string): void => {
   res.status(401).json({ error: { code: 'NO_AUTORIZADO', message } })
 }
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    auth?: { usuarioId: string; roles: string[]; email?: string; nombreVisible?: string }
+declare global {
+  namespace Express {
+    interface Request {
+      auth?: { usuarioId: string; roles: string[]; email?: string; nombreVisible?: string }
+    }
   }
 }
 

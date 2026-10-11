@@ -1,10 +1,39 @@
 {
   "$comment": "Fuente única de la topología de mensajería (doc 05). De acá se generan el init de LocalStack (tools/gen-localstack-init.ts) y las reglas del módulo Terraform messaging/. No editar los dos lados por separado.",
   "bus": "edtech-domain-events",
-  "colas": ["identity", "enrollment", "gamification", "flashcards", "payments", "notifications"],
-  "colasInternas": ["payments-webhooks", "gamification-certificados", "flashcards-generacion"],
+  "colas": [
+    "identity",
+    "enrollment",
+    "gamification",
+    "flashcards",
+    "payments",
+    "notifications",
+    "affiliates",
+    "iot-terminals"
+  ],
+  "colasInternas": [
+    "payments-webhooks",
+    "gamification-certificados",
+    "flashcards-generacion",
+    "iot-telemetry"
+  ],
   "visibilidadPorCola": { "flashcards": 600, "flashcards-generacion": 600 },
   "reglas": [
+    {
+      "nombre": "affiliates-desde-payments",
+      "detailTypes": ["payments.venta-referida-confirmada.v1", "payments.pago-reembolsado.v1"],
+      "destino": "affiliates"
+    },
+    {
+      "nombre": "affiliates-desde-catalog",
+      "detailTypes": ["catalog.curso-publicado.v1", "catalog.curso-despublicado.v1"],
+      "destino": "affiliates"
+    },
+    {
+      "nombre": "terminales-desde-affiliates",
+      "detailTypes": ["affiliates.afiliado-activado.v1", "affiliates.comision-registrada.v1"],
+      "destino": "iot-terminals"
+    },
     {
       "nombre": "enrollment-desde-payments",
       "detailTypes": ["payments.pago-confirmado.v1", "payments.pago-reembolsado.v1"],

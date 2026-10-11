@@ -56,6 +56,10 @@ data "terraform_remote_state" "edge" {
   backend = "s3"
   config  = merge(local.estado, { key = "dev/edge/terraform.tfstate" })
 }
+data "terraform_remote_state" "affiliates" {
+  backend = "s3"
+  config  = merge(local.estado, { key = "dev/services/affiliates/terraform.tfstate" })
+}
 
 data "aws_secretsmanager_secret" "paypal" {
   name = "edtech/dev/paypal"
@@ -64,31 +68,35 @@ data "aws_secretsmanager_secret" "paypal" {
 module "servicio" {
   source = "../../../infra/modules/service"
 
-  entorno           = "dev"
-  nombre            = "payments"
-  imagen            = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/payments:${var.image_tag}"
-  vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
-  subredes_privadas = data.terraform_remote_state.network.outputs.subredes_privadas
-  sg_ecs_tasks_id   = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
-  cluster_arn       = data.terraform_remote_state.compute.outputs.cluster_arn
-  cluster_name      = data.terraform_remote_state.compute.outputs.cluster_name
-  listener_arn      = data.terraform_remote_state.compute.outputs.listener_arn
-  rol_execution_arn = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
-  path_pattern      = "/api/payments/*"
-  prioridad         = 60
-  spot              = false # doc 07 §6: payments no va en Spot
+  entorno                = "dev"
+  nombre                 = "payments"
+  imagen                 = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/payments:${var.image_tag}"
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  subredes_privadas      = data.terraform_remote_state.network.outputs.subredes_privadas
+  sg_ecs_tasks_id        = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
+  cluster_arn            = data.terraform_remote_state.compute.outputs.cluster_arn
+  cluster_name           = data.terraform_remote_state.compute.outputs.cluster_name
+  desired_count          = 0
+  habilitar_balanceador  = false
+  habilitar_autoescalado = false
+  listener_arn           = try(data.terraform_remote_state.compute.outputs.listener_arn, null)
+  rol_execution_arn      = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
+  path_pattern           = "/api/payments/*"
+  prioridad              = 60
+  spot                   = false # doc 07 §6: payments no va en Spot
 
   env = {
-    PORT               = "3000"
-    AWS_REGION         = "us-east-1"
-    EVENT_BUS_NAME     = data.terraform_remote_state.messaging.outputs.bus_name
-    DB_SECRET_NAME     = "edtech/dev/db/payments"
-    PAYPAL_SECRET_NAME = "edtech/dev/paypal"
-    QUEUE_URL          = data.terraform_remote_state.messaging.outputs.colas["payments"].url
-    QUEUE_WEBHOOKS_URL = data.terraform_remote_state.messaging.outputs.colas["payments-webhooks"].url
-    COGNITO_ISSUER     = data.terraform_remote_state.cognito.outputs.issuer
-    URL_BASE           = data.terraform_remote_state.edge.outputs.url
-    LOG_LEVEL          = "info"
+    PORT                              = "3000"
+    AWS_REGION                        = "us-east-1"
+    EVENT_BUS_NAME                    = data.terraform_remote_state.messaging.outputs.bus_name
+    DB_SECRET_NAME                    = "edtech/dev/db/payments"
+    PAYPAL_SECRET_NAME                = "edtech/dev/paypal"
+    QUEUE_URL                         = data.terraform_remote_state.messaging.outputs.colas["payments"].url
+    QUEUE_WEBHOOKS_URL                = data.terraform_remote_state.messaging.outputs.colas["payments-webhooks"].url
+    COGNITO_ISSUER                    = data.terraform_remote_state.cognito.outputs.issuer
+    URL_BASE                          = data.terraform_remote_state.edge.outputs.url
+    REFERRAL_VERIFICATION_SECRET_NAME = "edtech/dev/referral-verification"
+    LOG_LEVEL                         = "info"
   }
 
   # Mínimo privilegio (doc 07 §10): payments es el ÚNICO con acceso al secreto
@@ -110,6 +118,7 @@ module "servicio" {
       resources = [
         data.terraform_remote_state.database.outputs.secretos_db["payments"],
         data.aws_secretsmanager_secret.paypal.arn,
+        data.terraform_remote_state.affiliates.outputs.verification_secret_arn,
       ]
     },
     {

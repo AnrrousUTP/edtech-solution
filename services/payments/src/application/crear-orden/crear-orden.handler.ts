@@ -15,6 +15,7 @@ import {
   CursoNoDisponibleError,
   YaCompradoError,
   type PaymentsError,
+  AtribucionInvalidaError,
 } from '../../domain/module.errors'
 import type {
   OrdenRepository,
@@ -22,6 +23,7 @@ import type {
 } from '../../domain/ports-out/orden.repository'
 import type { PasarelaPagoPort } from '../../domain/ports-out/pasarela-pago.port'
 import { Dinero } from '../../domain/value-objects/dinero.vo'
+import type { VerificadorAtribucionPort } from '../../domain/ports-out/atribucion.port'
 
 export type CrearOrdenCommand = Command & {
   readonly _tag: 'CrearOrden'
@@ -29,6 +31,7 @@ export type CrearOrdenCommand = Command & {
   readonly cursoId: string
   readonly urlRetorno: string
   readonly urlCancelacion: string
+  readonly pruebaAtribucion?: string
 }
 
 export type CrearOrdenResponse = {
@@ -53,6 +56,7 @@ export class CrearOrdenHandler implements CommandHandler<
     private readonly pasarela: PasarelaPagoPort,
     private readonly publisher: IEventPublisher,
     private readonly reloj: Reloj,
+    private readonly atribuciones?: VerificadorAtribucionPort,
   ) {}
 
   async execute(cmd: CrearOrdenCommand): Promise<Result<CrearOrdenResponse, PaymentsError>> {
@@ -94,6 +98,11 @@ export class CrearOrdenHandler implements CommandHandler<
       })
     }
 
+    const referencia = cmd.pruebaAtribucion
+      ? await this.atribuciones?.verificar(cmd.pruebaAtribucion, cmd.usuarioId)
+      : null
+    if (cmd.pruebaAtribucion && !referencia) return Err(new AtribucionInvalidaError())
+    if (referencia && isErr(referencia)) return Err(referencia.error)
     const orden = Orden.crear({
       usuarioId,
       cursoId,
@@ -101,6 +110,8 @@ export class CrearOrdenHandler implements CommandHandler<
       versionPrecio: precio.versionPrecio,
       ahora,
       expiraAt: new Date(ahora.getTime() + MS_EXPIRACION_ORDEN),
+      atribucion: referencia?.ok && monto.value.moneda === 'USD' ? referencia.value : null,
+      cursoTitulo: precio.titulo,
     })
 
     const r = await this.pasarela.crearOrden({

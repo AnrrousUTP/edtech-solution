@@ -21,6 +21,16 @@ variable "desired_count" {
   type    = number
   default = 1
 }
+variable "habilitar_balanceador" {
+  description = "Asocia el servicio a una ruta pública. En modo pausado se desactiva junto con ALB."
+  type        = bool
+  default     = true
+}
+variable "habilitar_autoescalado" {
+  description = "Permite que Application Auto Scaling cambie desired_count. Debe ser false para mantener ECS pausado."
+  type        = bool
+  default     = true
+}
 variable "env" {
   type    = map(string)
   default = {}
@@ -97,10 +107,10 @@ resource "aws_ecs_task_definition" "servicio" {
 
   container_definitions = jsonencode(concat([
     {
-      name        = var.nombre
-      image       = var.imagen
-      essential   = true
-      stopTimeout = 30
+      name         = var.nombre
+      image        = var.imagen
+      essential    = true
+      stopTimeout  = 30
       portMappings = [{ containerPort = 3000, protocol = "tcp" }]
       environment = concat(
         [for k, v in var.env : { name = k, value = v }],
@@ -159,6 +169,7 @@ resource "aws_lb_target_group" "servicio" {
 }
 
 resource "aws_lb_listener_rule" "servicio" {
+  count        = var.habilitar_balanceador ? 1 : 0
   listener_arn = var.listener_arn
   priority     = var.prioridad
 
@@ -191,10 +202,13 @@ resource "aws_ecs_service" "servicio" {
     assign_public_ip = false
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.servicio.arn
-    container_name   = var.nombre
-    container_port   = 3000
+  dynamic "load_balancer" {
+    for_each = var.habilitar_balanceador ? [1] : []
+    content {
+      target_group_arn = aws_lb_target_group.servicio.arn
+      container_name   = var.nombre
+      container_port   = 3000
+    }
   }
 
   # La migración corre al arrancar; darle tiempo antes de matar la tarea
@@ -203,19 +217,21 @@ resource "aws_ecs_service" "servicio" {
 
 # Auto scaling por CPU al 70%, 1-3 tareas (doc 07 §6)
 resource "aws_appautoscaling_target" "servicio" {
+  count              = var.habilitar_autoescalado ? 1 : 0
   max_capacity       = 3
-  min_capacity       = 1
+  min_capacity       = var.desired_count == 0 ? 0 : 1
   resource_id        = "service/${var.cluster_name}/${aws_ecs_service.servicio.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
+  count              = var.habilitar_autoescalado ? 1 : 0
   name               = "cpu-70"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.servicio.resource_id
-  scalable_dimension = aws_appautoscaling_target.servicio.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.servicio.service_namespace
+  resource_id        = aws_appautoscaling_target.servicio[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.servicio[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.servicio[0].service_namespace
 
   target_tracking_scaling_policy_configuration {
     target_value = 70

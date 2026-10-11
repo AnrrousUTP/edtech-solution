@@ -21,6 +21,7 @@ const MAPA: Record<string, number> = {
   PASARELA_ERROR: 502,
   FIRMA_INVALIDA: 401,
   ID_INVALIDO: 400,
+  ATRIBUCION_INVALIDA: 400,
 }
 const codigoHttp = (code: string): number => MAPA[code] ?? 500
 
@@ -60,6 +61,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
         cursoId: String(b.cursoId ?? ''),
         urlRetorno: String(b.urlRetorno ?? `${cfg.urlBase}/pago/retorno`),
         urlCancelacion: String(b.urlCancelacion ?? `${cfg.urlBase}/pago/cancelado`),
+        ...(typeof b.pruebaAtribucion === 'string' ? { pruebaAtribucion: b.pruebaAtribucion } : {}),
       }),
       201,
     )

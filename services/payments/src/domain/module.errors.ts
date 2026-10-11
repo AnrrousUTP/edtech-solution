@@ -2,6 +2,13 @@ export abstract class PaymentsError extends Error {
   abstract readonly code: string
 }
 
+export class AtribucionInvalidaError extends PaymentsError {
+  readonly code = 'ATRIBUCION_INVALIDA'
+  constructor() {
+    super('La referencia de afiliado no es válida para este comprador; vuelve a iniciar la compra')
+  }
+}
+
 export class OrdenNoEncontradaError extends PaymentsError {
   readonly code = 'ORDEN_NO_ENCONTRADA'
   constructor(ref: string) {

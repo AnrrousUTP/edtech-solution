@@ -1,6 +1,7 @@
 // Configuración del servidor. El access token NUNCA llega al navegador
 // (doc 08 §7): estas variables se leen solo en Server Components y Route Handlers.
 export const config = {
+  affiliatesEnabled: process.env.EDTECH_AFFILIATES_ENABLED === 'true',
   apiBase: process.env.API_BASE ?? 'http://localhost:8080',
   /** En local puede apuntar al gateway mientras Catálogo corre directo en otro puerto. */
   servicesApiBase:

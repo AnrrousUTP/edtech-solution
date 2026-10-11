@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["afiliadoId", "usuarioId", "refId", "ordenId", "comisionCentavos"],
+  "properties": {
+    "afiliadoId": { "type": "string", "format": "uuid" },
+    "usuarioId": { "type": "string", "format": "uuid" },
+    "refId": { "type": "string", "pattern": "^[a-f0-9]{36}$" },
+    "ordenId": { "type": "string", "format": "uuid" },
+    "comisionCentavos": { "type": "integer", "minimum": 0 }
+  }
+}

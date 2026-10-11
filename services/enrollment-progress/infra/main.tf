@@ -55,19 +55,22 @@ data "terraform_remote_state" "cognito" {
 module "servicio" {
   source = "../../../infra/modules/service"
 
-  entorno           = "dev"
-  nombre            = "enrollment-progress"
-  imagen            = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/enrollment-progress:${var.image_tag}"
-  vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
-  subredes_privadas = data.terraform_remote_state.network.outputs.subredes_privadas
-  sg_ecs_tasks_id   = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
-  cluster_arn       = data.terraform_remote_state.compute.outputs.cluster_arn
-  cluster_name      = data.terraform_remote_state.compute.outputs.cluster_name
-  listener_arn      = data.terraform_remote_state.compute.outputs.listener_arn
-  rol_execution_arn = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
-  path_pattern      = "/api/enrollment/*"
-  prioridad         = 30
-  spot              = true
+  entorno                = "dev"
+  nombre                 = "enrollment-progress"
+  imagen                 = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/enrollment-progress:${var.image_tag}"
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  subredes_privadas      = data.terraform_remote_state.network.outputs.subredes_privadas
+  sg_ecs_tasks_id        = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
+  cluster_arn            = data.terraform_remote_state.compute.outputs.cluster_arn
+  cluster_name           = data.terraform_remote_state.compute.outputs.cluster_name
+  desired_count          = 0
+  habilitar_balanceador  = false
+  habilitar_autoescalado = false
+  listener_arn           = try(data.terraform_remote_state.compute.outputs.listener_arn, null)
+  rol_execution_arn      = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
+  path_pattern           = "/api/enrollment/*"
+  prioridad              = 30
+  spot                   = true
 
   env = {
     PORT                      = "3000"
@@ -75,7 +78,7 @@ module "servicio" {
     EVENT_BUS_NAME            = data.terraform_remote_state.messaging.outputs.bus_name
     DB_SECRET_NAME            = "edtech/dev/db/enrollment"
     QUEUE_URL                 = data.terraform_remote_state.messaging.outputs.colas["enrollment"].url
-    CATALOG_BASE_URL          = "http://${data.terraform_remote_state.compute.outputs.alb_dns}"
+    CATALOG_BASE_URL          = try(data.terraform_remote_state.compute.outputs.alb_dns, "") == "" ? "" : "http://${data.terraform_remote_state.compute.outputs.alb_dns}"
     INTERNO_TOKEN_SECRET_NAME = "edtech/dev/interno"
     COGNITO_ISSUER            = data.terraform_remote_state.cognito.outputs.issuer
     LOG_LEVEL                 = "info"

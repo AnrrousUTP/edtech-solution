@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 
 type MessageRole = 'user' | 'assistant'
 
@@ -8,6 +9,13 @@ type AssistantMessage = {
   id: string
   role: MessageRole
   content: string
+  actions?: AssistantAction[]
+}
+
+type AssistantAction = {
+  label: string
+  href: string
+  icon: 'catalog' | 'profile' | 'login' | 'register'
 }
 
 const INITIAL_MESSAGE: AssistantMessage = {
@@ -22,6 +30,50 @@ const QUICK_PROMPTS = [
   '¿Cómo funcionan las rutas?',
   '¿Qué incluye un curso?',
 ]
+
+const getAssistantActions = (content: string): AssistantAction[] => {
+  const normalized = content.toLocaleLowerCase('es')
+  const actions: AssistantAction[] = []
+  const add = (action: AssistantAction): void => {
+    if (!actions.some(current => current.href === action.href)) actions.push(action)
+  }
+
+  if (/(catálogo|catalogo|curso|cursos|ruta|rutas|explorar)/.test(normalized)) {
+    add({ label: 'Ver catálogo', href: '/cursos', icon: 'catalog' })
+  }
+  if (/(perfil|progreso|insignia|insignias|certificado|certificados)/.test(normalized)) {
+    add({ label: 'Ir a mi perfil', href: '/dashboard', icon: 'profile' })
+  }
+  if (/(iniciar sesión|iniciar sesion|loguear|login|entrar)/.test(normalized)) {
+    add({ label: 'Iniciar sesión', href: '/login', icon: 'login' })
+  }
+  if (/(crear cuenta|registro|registrarme|registrarse)/.test(normalized)) {
+    add({ label: 'Crear cuenta', href: '/register', icon: 'register' })
+  }
+
+  return actions.slice(0, 2)
+}
+
+const ActionIcon = ({ icon }: { icon: AssistantAction['icon'] }): JSX.Element => {
+  const paths: Record<AssistantAction['icon'], JSX.Element> = {
+    catalog: (
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15.5H6.5A2.5 2.5 0 0 0 4 21V5.5Zm0 0v15.5M8 7h8M8 11h8" />
+    ),
+    profile: (
+      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0M18 15.5h4M20 13.5v4" />
+    ),
+    login: <path d="M14 4h6v16h-6M11 8l4 4-4 4M15 12H4" />,
+    register: (
+      <path d="M12 4v16M4 12h16M7 5.5h10A1.5 1.5 0 0 1 18.5 7v10a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 17V7A1.5 1.5 0 0 1 7 5.5Z" />
+    ),
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {paths[icon]}
+    </svg>
+  )
+}
 
 const getErrorMessage = async (response: Response, fallback: string): Promise<string> => {
   try {
@@ -206,7 +258,12 @@ const AssistantWidget = (): JSX.Element => {
       const assistantText = body.text.trim()
       setMessages(current => [
         ...current,
-        { id: `assistant-${Date.now()}`, role: 'assistant', content: assistantText },
+        {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: assistantText,
+          actions: getAssistantActions(assistantText),
+        },
       ])
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : 'No pude responder ahora.')
@@ -263,6 +320,16 @@ const AssistantWidget = (): JSX.Element => {
                   {message.role === 'user' ? 'Tú' : 'EdTech'}
                 </span>
                 <p>{message.content}</p>
+                {message.actions && message.actions.length > 0 && (
+                  <div className="assistant-message-actions" aria-label="Acciones sugeridas">
+                    {message.actions.map(action => (
+                      <Link key={action.href} className="assistant-action-link" href={action.href}>
+                        <ActionIcon icon={action.icon} />
+                        <span>{action.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {messages.length === 1 && !isSending && (
@@ -293,6 +360,21 @@ const AssistantWidget = (): JSX.Element => {
           </div>
 
           <form className="assistant-composer" onSubmit={handleSubmit}>
+            {(isRecording || isTranscribing) && (
+              <div className="assistant-recording-state" role="status" aria-live="polite">
+                <span className="assistant-recording-indicator" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span>{isRecording ? 'Grabando audio' : 'Transcribiendo audio'}</span>
+                <small>
+                  {isRecording ? 'Pulsa el micrófono para detener' : 'Preparando tu consulta'}
+                </small>
+              </div>
+            )}
             <div className="assistant-composer-row">
               <textarea
                 className="assistant-input"

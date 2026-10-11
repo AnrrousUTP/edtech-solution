@@ -9,6 +9,11 @@ variable "habilitar_endpoints_interface" {
   type    = bool
   default = false
 }
+variable "habilitar_nat" {
+  description = "Provisiona NAT Gateway y ruta de salida privada. Deshabilitar reduce costo, pero deja las subredes privadas sin salida a internet."
+  type        = bool
+  default     = true
+}
 
 data "aws_availability_zones" "disponibles" {
   state = "available"
@@ -48,13 +53,15 @@ resource "aws_subnet" "privadas" {
 }
 
 resource "aws_eip" "nat" {
+  count  = var.habilitar_nat ? 1 : 0
   domain = "vpc"
   tags   = { Name = "edtech-${var.entorno}-nat-eip" }
 }
 
 # Un solo NAT en dev (doc 07 §9); dos en prod, uno por AZ
 resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
+  count         = var.habilitar_nat ? 1 : 0
+  allocation_id = aws_eip.nat[0].id
   subnet_id     = aws_subnet.publicas[0].id
   tags          = { Name = "edtech-${var.entorno}-nat" }
   depends_on    = [aws_internet_gateway.igw]
@@ -71,9 +78,12 @@ resource "aws_route_table" "publica" {
 
 resource "aws_route_table" "privada" {
   vpc_id = aws_vpc.principal.id
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
+  dynamic "route" {
+    for_each = var.habilitar_nat ? [true] : []
+    content {
+      cidr_block     = "0.0.0.0/0"
+      nat_gateway_id = aws_nat_gateway.nat[0].id
+    }
   }
   tags = { Name = "edtech-${var.entorno}-rt-privada" }
 }

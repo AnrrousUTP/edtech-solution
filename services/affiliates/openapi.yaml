@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info: { title: EdTech Affiliates, version: 0.1.0 }
+paths:
+  /api/affiliates/me:
+    get:
+      {
+        summary: Consultar afiliación propia,
+        responses: { '200': { description: Afiliado o null } },
+      }
+    post: { summary: Activar afiliación, responses: { '200': { description: Alta idempotente } } }
+    put: { summary: Configurar destino interno, responses: { '200': { description: Actualizado } } }
+  /api/affiliates/ingresos:
+    get:
+      {
+        summary: Totales e historial propio con filtros desde/hasta/cursor,
+        responses: { '200': { description: Ingresos USD } },
+      }
+  /api/affiliates/atribucion:
+    post:
+      {
+        summary: Prueba firmada vinculada al comprador autenticado,
+        responses: { '200': { description: Prueba o null } },
+      }
+  /api/affiliates/notificaciones:
+    get: { summary: Notificaciones propias, responses: { '200': { description: Historial } } }
+  /api/affiliates/admin:
+    get:
+      {
+        summary: Lectura global exclusiva de administrador,
+        responses: { '200': { description: Afiliados y comisiones } },
+      }

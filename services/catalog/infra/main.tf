@@ -59,29 +59,32 @@ data "terraform_remote_state" "cognito" {
 module "servicio" {
   source = "../../../infra/modules/service"
 
-  entorno           = "dev"
-  nombre            = "catalog"
-  imagen            = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/catalog:${var.image_tag}"
-  vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
-  subredes_privadas = data.terraform_remote_state.network.outputs.subredes_privadas
-  sg_ecs_tasks_id   = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
-  cluster_arn       = data.terraform_remote_state.compute.outputs.cluster_arn
-  cluster_name      = data.terraform_remote_state.compute.outputs.cluster_name
-  listener_arn      = data.terraform_remote_state.compute.outputs.listener_arn
-  rol_execution_arn = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
-  path_pattern      = "/api/catalog/*"
-  prioridad         = 20
-  spot              = true
+  entorno                = "dev"
+  nombre                 = "catalog"
+  imagen                 = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/catalog:${var.image_tag}"
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  subredes_privadas      = data.terraform_remote_state.network.outputs.subredes_privadas
+  sg_ecs_tasks_id        = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
+  cluster_arn            = data.terraform_remote_state.compute.outputs.cluster_arn
+  cluster_name           = data.terraform_remote_state.compute.outputs.cluster_name
+  desired_count          = 0
+  habilitar_balanceador  = false
+  habilitar_autoescalado = false
+  listener_arn           = try(data.terraform_remote_state.compute.outputs.listener_arn, null)
+  rol_execution_arn      = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
+  path_pattern           = "/api/catalog/*"
+  prioridad              = 20
+  spot                   = true
 
   env = {
-    PORT                     = "3000"
-    AWS_REGION               = "us-east-1"
-    EVENT_BUS_NAME           = data.terraform_remote_state.messaging.outputs.bus_name
-    DB_SECRET_NAME           = "edtech/dev/db/catalog"
-    BUCKET_MEDIA             = data.terraform_remote_state.storage.outputs.bucket_media
-    COGNITO_ISSUER           = data.terraform_remote_state.cognito.outputs.issuer
+    PORT                      = "3000"
+    AWS_REGION                = "us-east-1"
+    EVENT_BUS_NAME            = data.terraform_remote_state.messaging.outputs.bus_name
+    DB_SECRET_NAME            = "edtech/dev/db/catalog"
+    BUCKET_MEDIA              = data.terraform_remote_state.storage.outputs.bucket_media
+    COGNITO_ISSUER            = data.terraform_remote_state.cognito.outputs.issuer
     INTERNO_TOKEN_SECRET_NAME = "edtech/dev/interno"
-    LOG_LEVEL                = "info"
+    LOG_LEVEL                 = "info"
   }
 
   # Mínimo privilegio (doc 07 §10): solo lo que catalog usa
@@ -102,7 +105,7 @@ module "servicio" {
       resources = ["${data.terraform_remote_state.storage.outputs.bucket_media_arn}/contenido/*"]
     },
     {
-      actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+      actions = ["kms:Decrypt", "kms:GenerateDataKey"]
       resources = [
         data.terraform_remote_state.security.outputs.kms_datos_arn,
         data.terraform_remote_state.security.outputs.kms_mensajeria_arn,

@@ -8,6 +8,7 @@
     "db:generate": "bunx drizzle-kit generate"
   },
   "dependencies": {
+    "jose": "^5.9.0",
     "@edtech/shared-kernel": "workspace:*",
     "@aws-sdk/client-sqs": "^3.658.0",
     "@aws-sdk/rds-signer": "^3.658.0",

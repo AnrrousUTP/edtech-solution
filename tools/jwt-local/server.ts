@@ -47,6 +47,20 @@ usuarios.set('admin@edtech.test', {
   grupos: ['admin'],
 })
 
+// Cuentas de demostración exclusivamente locales; no existen en Cognito.
+for (const [email, sub, nombre, password] of [
+  ['ana@edtech.test', '00000000-0000-4000-8000-000000000002', 'Ana Demo', 'AnaDemo123'],
+  ['bruno@edtech.test', '00000000-0000-4000-8000-000000000003', 'Bruno Demo', 'BrunoDemo123'],
+])
+  usuarios.set(email!, {
+    sub: sub!,
+    email: email!,
+    nombre: nombre!,
+    passwordHash: await passwordHash(password!),
+    confirmado: true,
+    grupos: ['estudiante'],
+  })
+
 const par = await crypto.subtle.generateKey(
   {
     name: 'RSASSA-PKCS1-v1_5',

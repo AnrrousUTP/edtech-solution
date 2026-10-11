@@ -56,20 +56,23 @@ data "terraform_remote_state" "edge" {
 module "servicio" {
   source = "../../../infra/modules/service"
 
-  entorno           = "dev"
-  nombre            = "web"
-  imagen            = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/web:${var.image_tag}"
-  vpc_id            = data.terraform_remote_state.network.outputs.vpc_id
-  subredes_privadas = data.terraform_remote_state.network.outputs.subredes_privadas
-  sg_ecs_tasks_id   = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
-  cluster_arn       = data.terraform_remote_state.compute.outputs.cluster_arn
-  cluster_name      = data.terraform_remote_state.compute.outputs.cluster_name
-  listener_arn      = data.terraform_remote_state.compute.outputs.listener_arn
-  rol_execution_arn = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
-  path_pattern      = "/*"
-  prioridad         = 100 # después de todas las reglas /api/… (A-23)
-  spot              = true
-  health_check_path = "/"
+  entorno                = "dev"
+  nombre                 = "web"
+  imagen                 = "${local.cuenta}.dkr.ecr.us-east-1.amazonaws.com/edtech/web:${var.image_tag}"
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  subredes_privadas      = data.terraform_remote_state.network.outputs.subredes_privadas
+  sg_ecs_tasks_id        = data.terraform_remote_state.security.outputs.sg_ecs_tasks_id
+  cluster_arn            = data.terraform_remote_state.compute.outputs.cluster_arn
+  cluster_name           = data.terraform_remote_state.compute.outputs.cluster_name
+  desired_count          = 0
+  habilitar_balanceador  = false
+  habilitar_autoescalado = false
+  listener_arn           = try(data.terraform_remote_state.compute.outputs.listener_arn, null)
+  rol_execution_arn      = data.terraform_remote_state.security.outputs.rol_ecs_execution_arn
+  path_pattern           = "/*"
+  prioridad              = 100 # después de todas las reglas /api/… (A-23)
+  spot                   = true
+  health_check_path      = "/"
   # El frontend no emite segmentos propios: no monta el kernel de Express, y su
   # parte de la traza ya la ve el ALB. Sin sidecar (doc 07 §8 traza los servicios).
   xray = false
@@ -77,13 +80,14 @@ module "servicio" {
   env = {
     PORT = "3000"
     # Server-side: el salto interno al ALB no sale a internet
-    API_BASE = "http://${data.terraform_remote_state.compute.outputs.alb_dns}"
+    API_BASE = try(data.terraform_remote_state.compute.outputs.alb_dns, "") == "" ? "" : "http://${data.terraform_remote_state.compute.outputs.alb_dns}"
     # Lo que usa el navegador: el borde HTTPS (A-34/A-35)
-    NEXT_PUBLIC_API_BASE = trimsuffix(data.terraform_remote_state.edge.outputs.url, "/")
-    APP_URL              = trimsuffix(data.terraform_remote_state.edge.outputs.url, "/")
-    COGNITO_DOMINIO      = data.terraform_remote_state.cognito.outputs.hosted_ui_dominio
-    COGNITO_CLIENT_ID    = data.terraform_remote_state.cognito.outputs.client_web_id
-    COGNITO_REGION       = "us-east-1"
+    NEXT_PUBLIC_API_BASE      = trimsuffix(data.terraform_remote_state.edge.outputs.url, "/")
+    APP_URL                   = trimsuffix(data.terraform_remote_state.edge.outputs.url, "/")
+    EDTECH_AFFILIATES_ENABLED = "true"
+    COGNITO_DOMINIO           = data.terraform_remote_state.cognito.outputs.hosted_ui_dominio
+    COGNITO_CLIENT_ID         = data.terraform_remote_state.cognito.outputs.client_web_id
+    COGNITO_REGION            = "us-east-1"
   }
 
   # El frontend no habla con AWS: todo lo hace a través de la API.

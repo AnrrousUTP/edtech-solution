@@ -2,8 +2,11 @@ import { describe, expect, test } from 'bun:test'
 import { tiposDeEventoConocidos, validarContra } from './validador'
 
 describe('validador de contratos de eventos', () => {
-  test('el catálogo tiene exactamente 26 eventos (doc 05 §2)', () => {
-    expect(tiposDeEventoConocidos()).toHaveLength(26)
+  test('el catálogo mantiene los 26 originales y 3 contratos de afiliados', () => {
+    expect(tiposDeEventoConocidos()).toHaveLength(29)
+    expect(tiposDeEventoConocidos()).toContain('payments.venta-referida-confirmada.v1')
+    expect(tiposDeEventoConocidos()).toContain('affiliates.comision-registrada.v1')
+    expect(tiposDeEventoConocidos()).toContain('affiliates.afiliado-activado.v1')
   })
 
   test('un payload válido de pago-confirmado valida', () => {

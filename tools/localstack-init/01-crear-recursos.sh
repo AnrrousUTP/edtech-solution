@@ -16,12 +16,33 @@ awslocal sqs create-queue --queue-name edtech-dev-payments-dlq --attributes Mess
 awslocal sqs create-queue --queue-name edtech-dev-payments --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-payments-dlq\",\"maxReceiveCount\":\"5\"}"}'
 awslocal sqs create-queue --queue-name edtech-dev-notifications-dlq --attributes MessageRetentionPeriod=1209600
 awslocal sqs create-queue --queue-name edtech-dev-notifications --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-notifications-dlq\",\"maxReceiveCount\":\"5\"}"}'
+awslocal sqs create-queue --queue-name edtech-dev-affiliates-dlq --attributes MessageRetentionPeriod=1209600
+awslocal sqs create-queue --queue-name edtech-dev-affiliates --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-affiliates-dlq\",\"maxReceiveCount\":\"5\"}"}'
+awslocal sqs create-queue --queue-name edtech-dev-iot-terminals-dlq --attributes MessageRetentionPeriod=1209600
+awslocal sqs create-queue --queue-name edtech-dev-iot-terminals --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-iot-terminals-dlq\",\"maxReceiveCount\":\"5\"}"}'
 awslocal sqs create-queue --queue-name edtech-dev-payments-webhooks-dlq --attributes MessageRetentionPeriod=1209600
 awslocal sqs create-queue --queue-name edtech-dev-payments-webhooks --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-payments-webhooks-dlq\",\"maxReceiveCount\":\"5\"}"}'
 awslocal sqs create-queue --queue-name edtech-dev-gamification-certificados-dlq --attributes MessageRetentionPeriod=1209600
 awslocal sqs create-queue --queue-name edtech-dev-gamification-certificados --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-gamification-certificados-dlq\",\"maxReceiveCount\":\"5\"}"}'
 awslocal sqs create-queue --queue-name edtech-dev-flashcards-generacion-dlq --attributes MessageRetentionPeriod=1209600
 awslocal sqs create-queue --queue-name edtech-dev-flashcards-generacion --attributes '{"VisibilityTimeout":"600","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-flashcards-generacion-dlq\",\"maxReceiveCount\":\"5\"}"}'
+awslocal sqs create-queue --queue-name edtech-dev-iot-telemetry-dlq --attributes MessageRetentionPeriod=1209600
+awslocal sqs create-queue --queue-name edtech-dev-iot-telemetry --attributes '{"VisibilityTimeout":"180","MessageRetentionPeriod":"345600","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:edtech-dev-iot-telemetry-dlq\",\"maxReceiveCount\":\"5\"}"}'
+
+awslocal events put-rule --event-bus-name edtech-domain-events --name edtech-dev-affiliates-desde-payments \
+  --event-pattern '{"detail-type":["payments.venta-referida-confirmada.v1","payments.pago-reembolsado.v1"]}'
+awslocal events put-targets --event-bus-name edtech-domain-events --rule edtech-dev-affiliates-desde-payments \
+  --targets 'Id=1,Arn=arn:aws:sqs:us-east-1:000000000000:edtech-dev-affiliates'
+
+awslocal events put-rule --event-bus-name edtech-domain-events --name edtech-dev-affiliates-desde-catalog \
+  --event-pattern '{"detail-type":["catalog.curso-publicado.v1","catalog.curso-despublicado.v1"]}'
+awslocal events put-targets --event-bus-name edtech-domain-events --rule edtech-dev-affiliates-desde-catalog \
+  --targets 'Id=1,Arn=arn:aws:sqs:us-east-1:000000000000:edtech-dev-affiliates'
+
+awslocal events put-rule --event-bus-name edtech-domain-events --name edtech-dev-terminales-desde-affiliates \
+  --event-pattern '{"detail-type":["affiliates.afiliado-activado.v1","affiliates.comision-registrada.v1"]}'
+awslocal events put-targets --event-bus-name edtech-domain-events --rule edtech-dev-terminales-desde-affiliates \
+  --targets 'Id=1,Arn=arn:aws:sqs:us-east-1:000000000000:edtech-dev-iot-terminals'
 
 awslocal events put-rule --event-bus-name edtech-domain-events --name edtech-dev-enrollment-desde-payments \
   --event-pattern '{"detail-type":["payments.pago-confirmado.v1","payments.pago-reembolsado.v1"]}'

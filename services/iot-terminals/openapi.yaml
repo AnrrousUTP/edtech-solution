@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info: { title: EdTech IoT terminals local, version: 0.1.0 }
+paths:
+  /api/iot/me:
+    get:
+      {
+        summary: Terminal y solicitud del propietario,
+        responses: { '200': { description: Estado } },
+      }
+    put:
+      {
+        summary: Configuración remota con control de versión,
+        responses: { '200': { description: Actualizado }, '409': { description: Conflicto } },
+      }
+  /api/iot/solicitud:
+    post:
+      { summary: Solicitar terminal, responses: { '200': { description: Solicitud registrada } } }
+  /api/iot/admin:
+    get:
+      {
+        summary: Inventario para administradores,
+        responses: { '200': { description: Inventario } },
+      }
+  /api/iot/admin/asignacion:
+    put:
+      {
+        summary: Asignar o desactivar terminal demo,
+        responses: { '200': { description: Actualizado } },
+      }
+  /api/iot/vista/{id}:
+    get:
+      {
+        summary: Vista pública limitada mediante token revocable,
+        responses: { '200': { description: Promoción sin datos privados } },
+      }

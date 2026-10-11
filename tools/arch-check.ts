@@ -13,6 +13,8 @@ export const SERVICIOS = [
   'gamification',
   'flashcards',
   'payments',
+  'affiliates',
+  'iot-terminals',
 ] as const
 
 export const SCHEMA_DE: Record<string, string> = {
@@ -22,6 +24,8 @@ export const SCHEMA_DE: Record<string, string> = {
   gamification: 'gamification',
   flashcards: 'flashcards',
   payments: 'payments',
+  affiliates: 'affiliates',
+  'iot-terminals': 'iot_terminals',
 }
 
 const normalizar = (p: string): string => p.replaceAll('\\', '/')
@@ -64,6 +68,17 @@ const sinComentarios = (contenido: string, esSql: boolean): string =>
 
 export function verificarArquitectura(raiz: string): string[] {
   const violaciones: string[] = []
+  // Los nombres de contratos públicos de eventos no son accesos a schemas SQL.
+  const tiposEventos = archivosDe(
+    join(raiz, 'packages', 'shared-kernel', 'src', 'events', 'schemas'),
+    '*.json',
+  ).map(p =>
+    p
+      .replaceAll('\\', '/')
+      .split('/')
+      .at(-1)!
+      .replace(/\.json$/, ''),
+  )
 
   for (const svc of SERVICIOS) {
     const dirSvc = join(raiz, 'services', svc)
@@ -137,7 +152,13 @@ export function verificarArquitectura(raiz: string): string[] {
       ...archivosDe(join(dirSvc, 'migrations'), '**/*.sql'),
     ]
     for (const archivo of archivosPersistencia) {
-      const contenido = sinComentarios(readFileSync(archivo, 'utf8'), archivo.endsWith('.sql'))
+      let contenido = sinComentarios(readFileSync(archivo, 'utf8'), archivo.endsWith('.sql'))
+      if (!archivo.endsWith('.sql')) {
+        for (const tipo of tiposEventos) {
+          for (const quote of ["'", '"', '`'])
+            contenido = contenido.replaceAll(`${quote}${tipo}${quote}`, `${quote}${quote}`)
+        }
+      }
       for (const ajeno of schemasAjenos) {
         if (new RegExp(`\\b${ajeno}\\.`).test(contenido)) {
           violaciones.push(`[A5] ${normalizar(archivo)} menciona el schema ajeno "${ajeno}."`)

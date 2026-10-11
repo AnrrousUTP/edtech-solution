@@ -228,14 +228,14 @@ resource "aws_cognito_user_pool_client" "web" {
   # admin (doc 08 §6) no puede existir: Cognito responde "Access Token does not
   # have required scopes". El alcance es el propio usuario y nada más, y el token
   # solo se usa desde Route Handlers del servidor (doc 08 §7) — A-57.
-  allowed_oauth_scopes = ["openid", "profile", "email", "aws.cognito.signin.user.admin"]
-  callback_urls                        = var.callback_urls
-  logout_urls                          = var.logout_urls
-  supported_identity_providers         = local.proveedores
+  allowed_oauth_scopes         = ["openid", "profile", "email", "aws.cognito.signin.user.admin"]
+  callback_urls                = var.callback_urls
+  logout_urls                  = var.logout_urls
+  supported_identity_providers = local.proveedores
   # Con la rotación activada, Cognito PROHIBE ALLOW_REFRESH_TOKEN_AUTH: el
   # refresh pasa por el endpoint de token del Hosted UI, que es justo por donde
   # lo hace el Route Handler del servidor (doc 08 §7).
-  explicit_auth_flows                  = []
+  explicit_auth_flows = []
 
   access_token_validity  = 60
   id_token_validity      = 60
@@ -251,8 +251,8 @@ resource "aws_cognito_user_pool_client" "web" {
   # reutilización delata el robo. La gracia de 60 s evita que una petición que
   # se reintenta por un corte de red deje al usuario fuera.
   refresh_token_rotation {
-    feature                     = "ENABLED"
-    retry_grace_period_seconds  = 60
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 60
   }
 }
 

@@ -13,13 +13,14 @@ TOKEN=$(aws rds generate-db-auth-token --hostname "$HOST" --port 5432 --username
 
 docker run --rm -i -e PGPASSWORD="$TOKEN" postgres:16-alpine \
   psql "host=$HOST port=5432 user=postgres dbname=edtech sslmode=require" -v ON_ERROR_STOP=1 <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS citext;
 REVOKE ALL ON DATABASE edtech FROM PUBLIC;
 
 DO $$
 DECLARE s text;
 BEGIN
-  FOREACH s IN ARRAY ARRAY['identity','catalog','enrollment','gamification','flashcards','payments'] LOOP
+  FOREACH s IN ARRAY ARRAY['identity','catalog','enrollment','gamification','flashcards','payments','affiliates','iot_terminals'] LOOP
     EXECUTE format('CREATE SCHEMA IF NOT EXISTS %I', s);
     BEGIN
       EXECUTE format('CREATE ROLE %I LOGIN', 'svc_' || s);
@@ -39,4 +40,4 @@ BEGIN
 END $$;
 SQL
 
-echo "Bootstrap OK: 6 schemas + 6 roles IAM en $HOST"
+echo "Bootstrap OK: 8 schemas + 8 roles IAM en $HOST"

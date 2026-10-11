@@ -11,6 +11,23 @@ servicio en su `services/<servicio>/DECISIONS.md`.
 
 ## Arranque local
 
+### Afiliados por QR y terminal IoT (demo UNI)
+
+El flujo local incluye QR permanente, atribución de compras, comisión del 5%,
+vista de ingresos, notificaciones y un terminal virtual conectado por MQTT.
+No incluye retiros ni transferencias. Usa pagos simulados y no requiere AWS.
+
+```powershell
+.\tools\local\afiliados.ps1 up
+.\tools\local\afiliados.ps1 seed
+.\tools\local\afiliados.ps1 test
+.\tools\local\afiliados.ps1 demo
+```
+
+Abre <http://localhost:3100/afiliados>. Consulta las cuentas de demo, la
+asignación del terminal y los límites del despliegue en
+[`docs/afiliados-iot-local.md`](docs/afiliados-iot-local.md).
+
 ### Docker
 
 ```bash
@@ -218,12 +235,13 @@ no se sabe qué está corriendo ni se puede volver atrás.
 
 ```bash
 tools/aws/pausar-dev.sh      # todas las tareas a 0
-tools/aws/pausar-dev.sh 1    # de vuelta
+tools/aws/pausar-dev.sh 1    # requiere ALB, NAT y reglas restaurados por Terraform
 ```
 
-Probado de ida y vuelta: pausar tarda ~40 s, reactivar ~80 s y el tráfico vuelve
-enseguida. Aurora se pausa sola a los 5 minutos sin conexiones. El detalle de
-costos medidos contra la estimación del doc 16 está en [`CIERRE.md`](CIERRE.md).
+En la configuración actual, el NAT y el ALB están retirados; el comando de
+reactivación verifica la cuenta, la red y las reglas antes de encender ECS.
+Aurora puede pausar su cómputo tras cinco minutos sin conexiones, pero conserva
+el almacenamiento. Revisar los costos residuales antes de la demostración.
 
 ## Mapa del repositorio
 

@@ -161,7 +161,7 @@ resource "aws_bedrockagent_agent_action_group" "generar" {
 }
 
 resource "aws_bedrockagent_agent_alias" "vivo" {
-  count          = local.activo
+  count            = local.activo
   agent_alias_name = "vivo"
   agent_id         = aws_bedrockagent_agent.flashcards[0].agent_id
   description      = "Alias que consume flashcards en dev"

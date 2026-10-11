@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ordenId",
+    "afiliadoId",
+    "afiliadoUsuarioId",
+    "compradorId",
+    "visitaId",
+    "refId",
+    "politica",
+    "tasaBps",
+    "cursoId",
+    "cursoTitulo",
+    "baseCentavos",
+    "moneda",
+    "capturaId",
+    "confirmadoAt"
+  ],
+  "properties": {
+    "ordenId": { "type": "string", "format": "uuid" },
+    "afiliadoId": { "type": "string", "format": "uuid" },
+    "afiliadoUsuarioId": { "type": "string", "format": "uuid" },
+    "compradorId": { "type": "string", "format": "uuid" },
+    "visitaId": { "type": "string", "format": "uuid" },
+    "refId": { "type": "string", "pattern": "^[a-f0-9]{36}$" },
+    "politica": { "const": "ultimo-referido-30d-v1" },
+    "tasaBps": { "const": 500 },
+    "cursoId": { "type": "string", "format": "uuid" },
+    "cursoTitulo": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "baseCentavos": { "type": "integer", "minimum": 1, "maximum": 999999999999 },
+    "moneda": { "const": "USD" },
+    "capturaId": { "type": "string", "minLength": 1 },
+    "confirmadoAt": { "type": "string", "format": "date-time" }
+  }
+}

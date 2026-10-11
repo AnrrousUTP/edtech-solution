@@ -91,6 +91,19 @@ const CURSOS: CursoSeed[] = [
   },
 ]
 
+// Solo bajo solicitud explícita del lanzador de la demo de afiliados.
+if (process.env.EDTECH_SEED_AFILIADOS === 'true')
+  CURSOS.push({
+    id: det(104),
+    slug: 'python-aplicado-demo',
+    titulo: 'Python Aplicado',
+    descripcion: 'Curso de demostración para el programa de recomendaciones EdTech.',
+    tecnologia: 'PYTHON',
+    nivelMin: 'A',
+    nivelMax: 'B',
+    precio: '40.00',
+  })
+
 const NIVELES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
 
 const main = async (): Promise<void> => {
@@ -328,7 +341,9 @@ const main = async (): Promise<void> => {
     }
 
     await c.query('COMMIT')
-    console.log('Seed de catalog aplicado (3 cursos en BORRADOR, bancos completos).')
+    console.log(
+      `Seed de catalog aplicado (${CURSOS.length} cursos, bancos completos; se conserva su estado si ya existían).`,
+    )
     console.log('Para publicarlos (y emitir los eventos): bun run tools/seed/publicar-cursos.ts')
   } catch (err) {
     await c.query('ROLLBACK')

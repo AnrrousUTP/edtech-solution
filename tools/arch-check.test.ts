@@ -56,6 +56,14 @@ beforeAll(() => {
   )
   // Y un archivo LIMPIO, para verificar que no hay falsos positivos
   escribir(
+    'packages/shared-kernel/src/events/schemas/payments.venta-referida-confirmada.v1.json',
+    '{}',
+  )
+  escribir(
+    'services/affiliates/src/infrastructure/out/persistencia/contrato.repository.ts',
+    `export const tipo = 'payments.venta-referida-confirmada.v1'\nexport const query = 'SELECT * FROM affiliates.commissions'`,
+  )
+  escribir(
     'services/gamification/src/domain/entities/limpia.entity.ts',
     `import { AggregateRoot } from '@edtech/shared-kernel'\nexport class Limpia extends AggregateRoot {}`,
   )
@@ -105,5 +113,6 @@ describe('el harness falla ante código que viola las reglas', () => {
   test('el archivo limpio no genera falsos positivos', () => {
     const violaciones = verificarArquitectura(raiz)
     expect(violaciones.some(v => v.includes('limpia.entity'))).toBe(false)
+    expect(violaciones.some(v => v.includes('contrato.repository'))).toBe(false)
   })
 })

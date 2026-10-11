@@ -1,0 +1,143 @@
+# Se combina con docker-compose.yml y el override de Anrrous Dev.
+services:
+  postgres:
+    profiles: ["afiliados-iot"]
+  localstack:
+    profiles: ["afiliados-iot"]
+    volumes:
+      - localstack-affiliates:/var/lib/localstack
+    environment:
+      PERSISTENCE: "1"
+  jwt-local:
+    profiles: ["afiliados-iot"]
+  identity-access:
+    profiles: ["afiliados-iot"]
+  catalog:
+    profiles: ["afiliados-iot"]
+  enrollment-progress:
+    profiles: ["afiliados-iot"]
+  payments:
+    profiles: ["afiliados-iot"]
+    environment:
+      PAYPAL_MODE: fake
+      REFERRAL_VERIFICATION_SECRET_NAME: edtech/dev/referral-verification
+      URL_BASE: ${PUBLIC_APP_BASE_URL:-http://localhost:3100}
+    depends_on:
+      referral-bootstrap: {condition: service_completed_successfully}
+      schemas-bootstrap: {condition: service_completed_successfully}
+  gateway:
+    profiles: ["afiliados-iot"]
+  web:
+    profiles: ["afiliados-iot"]
+    environment:
+      APP_URL: ${PUBLIC_APP_BASE_URL:-http://localhost:3100}
+      EDTECH_AFFILIATES_ENABLED: "true"
+    depends_on:
+      affiliates: {condition: service_healthy}
+      iot-terminals: {condition: service_healthy}
+  schemas-bootstrap:
+    image: postgres:16-alpine
+    profiles: ["afiliados-iot","full"]
+    environment: {PGPASSWORD: local}
+    volumes: ["./tools/seed/00-schemas.sql:/bootstrap.sql:ro"]
+    command: ["psql","-h","postgres","-U","postgres","-d","edtech","-v","ON_ERROR_STOP=1","-f","/bootstrap.sql"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  referral-bootstrap:
+    build: {context: ., dockerfile: tools/local/Dockerfile}
+    profiles: ["afiliados-iot","full"]
+    environment: {AWS_ENDPOINT_URL: "http://localstack:4566"}
+    depends_on:
+      localstack: {condition: service_healthy}
+  afiliados-tools:
+    build: {context: ., dockerfile: tools/local/Dockerfile}
+    profiles: ["tools"]
+    environment:
+      NODE_ENV: development
+      EDTECH_SEED_AFILIADOS: "true"
+      DATABASE_URL: postgres://svc_catalog:local@postgres:5432/edtech
+      AFFILIATES_E2E_API: http://gateway
+      AFFILIATES_E2E_WEB: http://web:3000
+      AFFILIATES_E2E_ORIGIN: ${PUBLIC_APP_BASE_URL:-http://localhost:3100}
+      AFFILIATES_E2E_JWT: http://jwt-local:4599
+      AFFILIATES_E2E_EVENTS: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+  affiliates:
+    build: {context: ., dockerfile: services/affiliates/Dockerfile}
+    profiles: ["afiliados-iot","full"]
+    ports: ["127.0.0.1:${EDTECH_AFFILIATES_PORT:-3108}:3000"]
+    mem_limit: 256m
+    environment:
+      DATABASE_URL: postgres://svc_affiliates:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      EVENT_BUS_NAME: edtech-domain-events
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-affiliates
+      COGNITO_ISSUER: http://jwt-local:4599
+    healthcheck:
+      test: ["CMD","bun","-e","fetch('http://localhost:3000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      schemas-bootstrap: {condition: service_completed_successfully}
+      referral-bootstrap: {condition: service_completed_successfully}
+      jwt-local: {condition: service_started}
+  mqtt:
+    image: eclipse-mosquitto:2
+    profiles: ["afiliados-iot","full"]
+    ports: ["127.0.0.1:${EDTECH_MQTT_PORT:-1884}:1883"]
+    volumes:
+      - ./tools/local/mosquitto:/mosquitto/config:ro
+      - mqtt-affiliates:/mosquitto/data
+    # Valores de demo, no credenciales para AWS ni para un broker público.
+    entrypoint: ["/bin/sh","-c","if [ ! -f /tmp/passwords ]; then mosquitto_passwd -b -c /tmp/passwords bridge local-bridge-demo && mosquitto_passwd -b /tmp/passwords terminal-demo-01 local-terminal-demo; fi && chown mosquitto:mosquitto /tmp/passwords && exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"]
+  iot-terminals:
+    build: {context: ., dockerfile: services/iot-terminals/Dockerfile}
+    profiles: ["afiliados-iot","full"]
+    ports: ["127.0.0.1:${EDTECH_IOT_PORT:-3109}:3000"]
+    mem_limit: 256m
+    environment:
+      DATABASE_URL: postgres://svc_iot_terminals:local@postgres:5432/edtech
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-iot-terminals
+      TELEMETRY_QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-iot-telemetry
+      COGNITO_ISSUER: http://jwt-local:4599
+      MQTT_URL: mqtt://mqtt:1883
+      MQTT_USERNAME: bridge
+      MQTT_PASSWORD: local-bridge-demo
+      IOT_OFFLINE_MS: "90000"
+    healthcheck:
+      test: ["CMD","bun","-e","fetch('http://localhost:3000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      schemas-bootstrap: {condition: service_completed_successfully}
+      localstack: {condition: service_healthy}
+      jwt-local: {condition: service_started}
+      mqtt: {condition: service_started}
+  terminal-simulator:
+    build: {context: ., dockerfile: apps/terminal-simulator/Dockerfile}
+    profiles: ["afiliados-iot","full"]
+    mem_limit: 128m
+    environment:
+      MQTT_URL: mqtt://mqtt:1883
+      MQTT_USERNAME: terminal-demo-01
+      MQTT_PASSWORD: local-terminal-demo
+      IOT_HEARTBEAT_MS: "30000"
+    volumes: ["terminal-affiliates:/data"]
+    depends_on:
+      mqtt: {condition: service_started}
+      iot-terminals: {condition: service_healthy}
+volumes:
+  mqtt-affiliates: {}
+  terminal-affiliates: {}
+  localstack-affiliates: {}
