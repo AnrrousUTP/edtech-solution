@@ -101,13 +101,8 @@ export const Checkout = ({
 
   return (
     <div className="mt-6">
-      <button
-        type="button"
-        onClick={() => void comprar()}
-        disabled={fase === 'comprando'}
-        className="boton-primario w-full"
-      >
-        {fase === 'comprando' ? 'Procesando…' : 'Pagar y comprar'}
+      <button type="button" onClick={() => void comprar()} className="boton-primario w-full">
+        Pagar y comprar
       </button>
 
       {mensajeError && (

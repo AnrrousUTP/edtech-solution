@@ -24,6 +24,7 @@ locals {
   workers_enabled          = local.public_mode && var.enable_workers && var.worker_release_ready
   payments_enabled         = local.public_mode && contains(local.ready_api_domains, "payments")
   payments_workers_enabled = local.payments_enabled && local.workers_enabled
+  enrollment_enabled       = local.public_mode && contains(local.ready_api_domains, "enrollment-progress")
   outbox_enabled           = local.public_mode && var.enable_outbox_publisher && contains(local.ready_api_domains, "payments") && contains(local.ready_api_domains, "affiliates")
   outbox_domains           = setintersection(local.lambda_domains, toset(["payments", "affiliates", "iot-terminals"]))
   ai_enabled               = local.public_mode && var.enable_ai
@@ -310,6 +311,23 @@ resource "aws_sqs_queue" "payments_events" {
     maxReceiveCount     = 4
   })
 }
+resource "aws_sqs_queue" "enrollment_events_dlq" {
+  count                     = local.enrollment_enabled ? 1 : 0
+  name                      = "edtech-lowcost-enrollment-events-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "enrollment_events" {
+  count                      = local.enrollment_enabled ? 1 : 0
+  name                       = "edtech-lowcost-enrollment-events"
+  visibility_timeout_seconds = 180
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.enrollment_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
 resource "aws_sqs_queue" "affiliates_dlq" {
   count                     = local.affiliate_events_enabled ? 1 : 0
   name                      = "edtech-lowcost-affiliates-dlq"
@@ -508,6 +526,47 @@ resource "aws_cloudwatch_event_target" "payments_catalog" {
     maximum_retry_attempts       = 2
   }
 }
+resource "aws_cloudwatch_event_rule" "enrollment_events" {
+  count          = local.enrollment_enabled ? 1 : 0
+  name           = "edtech-lowcost-enrollment-events"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  state          = "ENABLED"
+  event_pattern = jsonencode({
+    "detail-type" = [
+      "payments.pago-confirmado.v1",
+      "payments.pago-reembolsado.v1",
+      "catalog.curso-publicado.v1",
+      "catalog.curso-despublicado.v1",
+      "catalog.contenido-actualizado.v1",
+    ]
+  })
+}
+resource "aws_cloudwatch_event_target" "enrollment_events" {
+  count          = local.enrollment_enabled ? 1 : 0
+  rule           = aws_cloudwatch_event_rule.enrollment_events[0].name
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  target_id      = "enrollment-domain-events"
+  arn            = aws_sqs_queue.enrollment_events[0].arn
+  dead_letter_config { arn = aws_sqs_queue.enrollment_events_dlq[0].arn }
+  retry_policy {
+    maximum_event_age_in_seconds = 3600
+    maximum_retry_attempts       = 2
+  }
+}
+resource "aws_sqs_queue_policy" "enrollment_events" {
+  count     = local.enrollment_enabled ? 1 : 0
+  queue_url = aws_sqs_queue.enrollment_events[0].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.enrollment_events[0].arn
+      Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.enrollment_events[0].arn } }
+    }]
+  })
+}
 resource "aws_sqs_queue_policy" "payments_catalog" {
   count     = local.payments_workers_enabled ? 1 : 0
   queue_url = aws_sqs_queue.payments_events[0].id
@@ -622,6 +681,19 @@ resource "aws_iam_role_policy" "payments_event_consumer" {
       Effect   = "Allow"
       Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
       Resource = aws_sqs_queue.payments_events[0].arn
+    }]
+  })
+}
+resource "aws_iam_role_policy" "enrollment_event_consumer" {
+  count = local.enrollment_enabled ? 1 : 0
+  name  = "consume-payment-and-catalog-events"
+  role  = aws_iam_role.lambda["enrollment-progress"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+      Resource = aws_sqs_queue.enrollment_events[0].arn
     }]
   })
 }
@@ -799,6 +871,20 @@ resource "aws_lambda_event_source_mapping" "payments_events" {
   depends_on = [
     aws_sqs_queue_policy.payments_catalog,
     aws_iam_role_policy.payments_event_consumer,
+  ]
+}
+resource "aws_lambda_event_source_mapping" "enrollment_events" {
+  count                              = local.enrollment_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.enrollment_events[0].arn
+  function_name                      = aws_lambda_function.api["enrollment-progress"].arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 2
+  enabled                            = true
+  depends_on = [
+    aws_sqs_queue_policy.enrollment_events,
+    aws_iam_role_policy.enrollment_event_consumer,
+    aws_iam_role_policy.enrollment_catalog_invoke,
   ]
 }
 
@@ -998,6 +1084,7 @@ resource "aws_lambda_function" "api" {
     aws_iam_role_policy_attachment.lambda_logs,
     aws_iam_role_policy.affiliate_signing_parameter,
     aws_iam_role_policy.payments_parameters,
+    aws_iam_role_policy.enrollment_event_consumer,
     aws_iam_role_policy.iot_data_plane,
     aws_iam_role_policy.enrollment_catalog_invoke,
   ]
