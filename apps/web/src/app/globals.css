@@ -10433,3 +10433,176 @@
 .affiliate-iot-alerts { display: grid; gap: 8px; padding-left: 20px; margin-top: 16px; }
 .affiliate-iot-terminal .affiliate-display { margin-top: 18px; }
 @media (max-width: 768px) { .affiliate-intro, .affiliate-two-cols, .affiliate-metrics { grid-template-columns: 1fr; } .affiliate-heading { gap: 16px; } .affiliate-filter > div { flex: 1 1 140px; } }
+
+/* Mobile polish for the affiliate-to-purchase journey. */
+@media (max-width: 720px) {
+  .auth-layout {
+    align-items: start;
+    gap: 24px;
+    padding: 28px 16px 40px;
+  }
+
+  .auth-intro h1 {
+    margin: 12px 0;
+    font-size: clamp(38px, 11vw, 58px);
+    line-height: 1.02;
+  }
+
+  .auth-detail {
+    font-size: 16px;
+  }
+
+  .auth-terminal {
+    margin-top: 20px;
+  }
+
+  .auth-card {
+    width: 100%;
+    padding: 24px;
+    border-radius: 22px;
+  }
+
+  .auth-card-label {
+    margin-bottom: 18px;
+  }
+
+  .affiliate-shell {
+    gap: 18px;
+  }
+
+  .affiliate-heading {
+    align-items: flex-start;
+  }
+
+  .affiliate-heading h1 {
+    font-size: clamp(28px, 8vw, 40px);
+    line-height: 1.08;
+  }
+
+  .affiliate-rate {
+    padding: 9px 14px;
+    white-space: nowrap;
+  }
+
+  .affiliate-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -16px;
+    padding: 2px 16px 8px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .affiliate-nav a {
+    flex: 0 0 auto;
+    padding-inline: 15px;
+  }
+
+  .affiliate-card {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .affiliate-qr {
+    width: min(100%, 280px);
+  }
+
+  .affiliate-actions > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .affiliate-share input,
+  .affiliate-form input:not([type='checkbox']),
+  .affiliate-form select,
+  .affiliate-filter input {
+    font-size: 16px;
+  }
+
+  .affiliate-filter {
+    align-items: stretch;
+  }
+
+  .affiliate-filter > div,
+  .affiliate-filter > button,
+  .affiliate-filter > a {
+    flex: 1 1 100%;
+  }
+
+  .affiliate-filter > button,
+  .affiliate-filter > a {
+    justify-content: center;
+  }
+
+  .affiliate-table {
+    min-width: 640px;
+  }
+
+  .affiliate-section-head {
+    align-items: flex-start;
+  }
+
+  .course-detail-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .course-detail-stat {
+    justify-content: flex-start;
+    gap: 7px;
+    min-height: 64px;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .course-detail-stat strong {
+    font-size: 15px;
+  }
+
+  .tech-checkout > section {
+    padding: 22px;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-terminal {
+    display: none;
+  }
+
+  .auth-links {
+    gap: 8px 16px;
+    margin-top: 16px;
+  }
+
+  .auth-card {
+    padding: 20px;
+  }
+
+  .affiliate-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .affiliate-card {
+    padding: 18px;
+  }
+
+  .affiliate-metrics strong {
+    font-size: 2.25rem;
+  }
+
+  .course-detail-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .course-detail-stat {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tech-checkout > section {
+    padding: 18px;
+  }
+}
