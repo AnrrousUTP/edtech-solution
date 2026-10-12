@@ -30,7 +30,7 @@ export class VerificadorEd25519 implements VerificadorAtribucionPort {
           k => typeof p[k] === 'string' && uuid.test(String(p[k])),
         ) ||
         typeof p.refId !== 'string' ||
-        !/^[a-f0-9]{36}$/.test(p.refId)
+        !uuid.test(p.refId)
       )
         return Err(new AtribucionInvalidaError())
       return Ok({

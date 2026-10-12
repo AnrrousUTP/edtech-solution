@@ -63,7 +63,9 @@ const manifest = JSON.stringify(
   null,
   2,
 )
-const fixedMtime = new Date('1980-01-01T00:00:00.000Z')
+// fflate encodes the DOS timestamp using local getters. Use noon on Jan 2 UTC
+// so west-of-UTC hosts do not underflow into 1979 and produce an invalid ZIP.
+const fixedMtime = new Date('1980-01-02T12:00:00.000Z')
 const zipFiles: Parameters<typeof zipSync>[0] = {
   'handler.mjs': [bytes, { level: 9, mtime: fixedMtime, os: 3, attrs: 0o644 << 16 }],
   'manifest.json': [

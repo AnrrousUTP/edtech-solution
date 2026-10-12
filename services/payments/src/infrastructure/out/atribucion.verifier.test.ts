@@ -9,7 +9,7 @@ const datos = {
   afiliadoId: '00000000-0000-4000-8000-000000000030',
   afiliadoUsuarioId: affiliate,
   visitaId: '00000000-0000-4000-8000-000000000040',
-  refId: 'a'.repeat(36),
+  refId: '047ced9a-170b-441c-8dbe-ddf93d71ef05',
   compradorId: buyer,
   politica: 'ultimo-referido-30d-v1',
   tasaBps: 500,
@@ -44,5 +44,10 @@ describe('prueba de atribución', () => {
       parts = valid.split('.')
     parts[1] = Buffer.from(JSON.stringify({ ...datos, tasaBps: 1000 })).toString('base64url')
     expect((await verifier.verificar(parts.join('.'), buyer)).ok).toBe(false)
+  })
+  test('rechaza refId que no sea un UUID con guiones', async () => {
+    expect((await verifier.verificar(await prueba({ refId: 'a'.repeat(36) }), buyer)).ok).toBe(
+      false,
+    )
   })
 })

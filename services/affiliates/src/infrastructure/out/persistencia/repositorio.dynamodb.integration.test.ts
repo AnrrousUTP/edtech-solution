@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'bun:test'
 import { CreateTableCommand, DeleteTableCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
+import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb'
 import { DynamoAfiliadosRepository } from './repositorio.dynamodb'
 import type { SobreEvento } from '@edtech/shared-kernel'
 
@@ -68,6 +68,13 @@ if (endpoint) {
       const affiliate = await repo.activar('seller-1')
       const visit = await repo.visitar(affiliate.refId)
       expect(visit.destino).toBe('/cursos')
+      const storedVisit = await document.send(
+        new GetCommand({
+          TableName: tableName,
+          Key: { PK: `VISIT#${visit.visitaId}`, SK: 'VISIT' },
+        }),
+      )
+      expect(Number(storedVisit.Item?.expiresAt)).toBeGreaterThan(Date.now() / 1000 + 29 * 86400)
       const attributed = await repo.atribuir('buyer-1', visit.visitaId)
       expect(attributed?.afiliadoId).toBe(affiliate.id)
 

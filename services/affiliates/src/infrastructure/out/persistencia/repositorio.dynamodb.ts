@@ -224,7 +224,7 @@ export class DynamoAfiliadosRepository implements AfiliadosRepository {
     const visitaId = previousValid ? visitaAnterior! : randomUUID()
     if (!previousValid) {
       const createdAt = nowIso()
-      const expiresAt = epoch(createdAt) + 30 * 60
+      const expiresAt = epoch(createdAt) + 30 * 24 * 60 * 60
       await this.client.send(
         new TransactWriteCommand({
           TransactItems: [

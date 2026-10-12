@@ -16,7 +16,7 @@ const crear = () => {
       afiliadoId: crypto.randomUUID(),
       afiliadoUsuarioId: crypto.randomUUID(),
       visitaId: crypto.randomUUID(),
-      refId: 'a'.repeat(36),
+      refId: '047ced9a-170b-441c-8dbe-ddf93d71ef05',
       compradorId: buyer.valor,
       politica: 'ultimo-referido-30d-v1',
       tasaBps: 500,

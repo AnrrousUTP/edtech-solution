@@ -981,7 +981,7 @@ resource "aws_lambda_function" "stream_publisher" {
   function_name                  = "edtech-lowcost-outbox-publisher"
   role                           = aws_iam_role.stream_publisher.arn
   runtime                        = "nodejs22.x"
-  handler                        = "outbox.handler"
+  handler                        = "handler.handler"
   architectures                  = ["arm64"]
   memory_size                    = 256
   timeout                        = 30

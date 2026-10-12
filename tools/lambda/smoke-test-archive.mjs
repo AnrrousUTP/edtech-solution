@@ -34,4 +34,16 @@ assert.ok(
   !Object.keys(files).some(name => name.endsWith('/')),
   'El ZIP contiene entradas de directorio malformadas',
 )
+if (domain === 'outbox') {
+  const infrastructure = await readFile('infra/envs/lowcost/main.tf', 'utf8')
+  const resource = infrastructure.match(
+    /resource "aws_lambda_function" "stream_publisher"\s*\{([\s\S]*?)\n\}/,
+  )?.[1]
+  assert.ok(resource, 'Terraform debe declarar el publicador Outbox')
+  assert.match(
+    resource,
+    /handler\s*=\s*"handler\.handler"/,
+    'Terraform debe apuntar al handler que está dentro del ZIP',
+  )
+}
 console.log(`${domain} Lambda archive: manifest y archivos de raíz correctos`)

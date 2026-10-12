@@ -24,7 +24,10 @@
     "afiliadoUsuarioId": { "type": "string", "format": "uuid" },
     "compradorId": { "type": "string", "format": "uuid" },
     "visitaId": { "type": "string", "format": "uuid" },
-    "refId": { "type": "string", "pattern": "^[a-f0-9]{36}$" },
+    "refId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
     "politica": { "const": "ultimo-referido-30d-v1" },
     "tasaBps": { "const": 500 },
     "cursoId": { "type": "string", "format": "uuid" },

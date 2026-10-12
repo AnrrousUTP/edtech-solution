@@ -4,8 +4,9 @@ import type { AfiliacionHandler } from '../../../application/afiliacion/afiliaci
 import { AfiliacionError } from '../../../domain/module.errors'
 import type { Config } from '../../config/config'
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const esUuid = (value: string): boolean => uuid.test(value)
 const optionalId = (v: unknown): string | undefined =>
-  typeof v === 'string' && uuid.test(v) ? v : undefined
+  typeof v === 'string' && esUuid(v) ? v : undefined
 const fecha = (v: unknown): string | undefined => {
   if (v === undefined) return undefined
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || !Number.isFinite(Date.parse(v)))
@@ -27,7 +28,7 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   r.post(
     '/referidos/:refId/visitas',
     wrap(async req => {
-      if (!/^[a-f0-9]{36}$/.test(String(req.params.refId)))
+      if (!esUuid(String(req.params.refId)))
         throw new AfiliacionError('REFERIDO_INVALIDO', 'Este enlace no está activo', 404)
       return repo.visitar(String(req.params.refId), optionalId(req.body?.visitaAnterior))
     }),

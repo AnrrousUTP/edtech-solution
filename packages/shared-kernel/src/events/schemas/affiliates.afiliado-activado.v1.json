@@ -6,6 +6,9 @@
   "properties": {
     "afiliadoId": { "type": "string", "format": "uuid" },
     "usuarioId": { "type": "string", "format": "uuid" },
-    "refId": { "type": "string", "pattern": "^[a-f0-9]{36}$" }
+    "refId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
   }
 }
