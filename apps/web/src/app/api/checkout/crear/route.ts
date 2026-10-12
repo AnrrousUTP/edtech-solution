@@ -18,7 +18,7 @@ export const POST = async (peticion: Request): Promise<Response> => {
     const referencia = config.affiliatesEnabled
       ? await afiliadosApi.prueba((await cookies()).get(COOKIE_REFERIDO)?.value)
       : null
-    const compra = await paymentsApi.comprarDirecto(cursoId, referencia?.prueba)
+    const compra = await paymentsApi.comprarDirecto(cursoId, referencia?.prueba ?? undefined)
     return NextResponse.json(compra)
   } catch (err) {
     if (err instanceof ErrorApi) {
