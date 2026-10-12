@@ -293,23 +293,6 @@ resource "aws_sqs_queue" "jobs" {
     maxReceiveCount     = 4
   })
 }
-resource "aws_sqs_queue" "payments_webhooks_dlq" {
-  count                     = local.payments_enabled ? 1 : 0
-  name                      = "edtech-lowcost-payments-webhooks-dlq"
-  message_retention_seconds = 1209600
-  sqs_managed_sse_enabled   = true
-}
-resource "aws_sqs_queue" "payments_webhooks" {
-  count                      = local.payments_enabled ? 1 : 0
-  name                       = "edtech-lowcost-payments-webhooks"
-  visibility_timeout_seconds = 180
-  message_retention_seconds  = 345600
-  sqs_managed_sse_enabled    = true
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.payments_webhooks_dlq[0].arn
-    maxReceiveCount     = 4
-  })
-}
 resource "aws_sqs_queue" "payments_events_dlq" {
   count                     = local.payments_workers_enabled ? 1 : 0
   name                      = "edtech-lowcost-payments-events-dlq"
@@ -602,7 +585,7 @@ resource "aws_iam_role_policy" "affiliate_signing_parameter" {
 }
 resource "aws_iam_role_policy" "payments_parameters" {
   count = local.payments_enabled ? 1 : 0
-  name  = "read-paypal-and-referral-parameters"
+  name  = "read-referral-verification-parameter"
   role  = aws_iam_role.lambda["payments"].id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -610,7 +593,6 @@ resource "aws_iam_role_policy" "payments_parameters" {
       Effect = "Allow"
       Action = ["ssm:GetParameter"]
       Resource = [
-        "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${var.paypal_parameter_name}",
         "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${var.referral_verification_parameter_name}",
       ]
     }]
@@ -630,29 +612,16 @@ resource "aws_iam_role_policy" "enrollment_catalog_invoke" {
     }]
   })
 }
-resource "aws_iam_role_policy" "payments_webhook_queue" {
-  count = local.payments_enabled ? 1 : 0
-  name  = "publish-paypal-webhooks"
-  role  = aws_iam_role.lambda["payments"].id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["sqs:SendMessage"]
-      Resource = aws_sqs_queue.payments_webhooks[0].arn
-    }]
-  })
-}
 resource "aws_iam_role_policy" "payments_event_consumer" {
   count = local.payments_workers_enabled ? 1 : 0
-  name  = "consume-payment-webhooks-and-catalog-events"
+  name  = "consume-catalog-price-events"
   role  = aws_iam_role.lambda["payments"].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
       Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
-      Resource = [aws_sqs_queue.payments_webhooks[0].arn, aws_sqs_queue.payments_events[0].arn]
+      Resource = aws_sqs_queue.payments_events[0].arn
     }]
   })
 }
@@ -818,16 +787,6 @@ resource "aws_lambda_event_source_mapping" "iot_events" {
     aws_sqs_queue_policy.iot_affiliate_events,
     aws_iam_role_policy.iot_event_consumer,
   ]
-}
-resource "aws_lambda_event_source_mapping" "payments_webhooks" {
-  count                              = local.payments_workers_enabled ? 1 : 0
-  event_source_arn                   = aws_sqs_queue.payments_webhooks[0].arn
-  function_name                      = aws_lambda_function.api["payments"].arn
-  batch_size                         = 5
-  function_response_types            = ["ReportBatchItemFailures"]
-  maximum_batching_window_in_seconds = 2
-  enabled                            = true
-  depends_on                         = [aws_iam_role_policy.payments_event_consumer]
 }
 resource "aws_lambda_event_source_mapping" "payments_events" {
   count                              = local.payments_workers_enabled ? 1 : 0
@@ -1014,9 +973,6 @@ resource "aws_lambda_function" "api" {
       COGNITO_JWKS_URI                     = var.cognito_jwks_uri
       REFERRAL_SIGNING_PARAMETER_NAME      = each.key == "affiliates" ? var.referral_signing_parameter_name : ""
       REFERRAL_VERIFICATION_PARAMETER_NAME = each.key == "payments" ? var.referral_verification_parameter_name : ""
-      PAYPAL_MODE                          = each.key == "payments" ? "real" : ""
-      PAYPAL_PARAMETER_NAME                = each.key == "payments" ? var.paypal_parameter_name : ""
-      QUEUE_WEBHOOKS_URL                   = each.key == "payments" ? aws_sqs_queue.payments_webhooks[0].url : ""
       CONTROL_TABLE                        = aws_dynamodb_table.domain["control"].name
       CONTENT_BUCKET                       = aws_s3_bucket.content.bucket
       EVENT_BUS_NAME                       = aws_cloudwatch_event_bus.main.name
@@ -1042,7 +998,6 @@ resource "aws_lambda_function" "api" {
     aws_iam_role_policy_attachment.lambda_logs,
     aws_iam_role_policy.affiliate_signing_parameter,
     aws_iam_role_policy.payments_parameters,
-    aws_iam_role_policy.payments_webhook_queue,
     aws_iam_role_policy.iot_data_plane,
     aws_iam_role_policy.enrollment_catalog_invoke,
   ]

@@ -164,8 +164,6 @@ services:
       EVENT_BUS_NAME: edtech-domain-events
       QUEUE_URL: http://localstack:4566/000000000000/edtech-dev-payments
       QUEUE_WEBHOOKS_URL: http://localstack:4566/000000000000/edtech-dev-payments-webhooks
-      PAYPAL_SECRET_NAME: edtech/dev/paypal
-      PAYPAL_MODE: ${PAYPAL_MODE:-real}
       URL_BASE: http://localhost:${EDTECH_WEB_PORT:-3000}
       COGNITO_ISSUER: http://jwt-local:4599
       LOG_LEVEL: debug

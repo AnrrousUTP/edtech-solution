@@ -139,44 +139,20 @@ assert(
   ).data.prueba === null,
 )
 const cursoId = '00000000-0000-4000-8000-000000000104'
-type O = { ordenId: string; monto: number; reutilizada: boolean }
-const urls = {
-  urlRetorno: 'http://localhost:3100/checkout/python-aplicado-demo',
-  urlCancelacion: 'http://localhost:3100/cursos',
-}
-await wait(
-  'proyección del precio',
+type O = { ordenId: string; cursoId: string; estado: string; monto: number; moneda: string }
+const order = await wait(
+  'compra directa con precio y referencia',
   () =>
-    call<O>('/api/payments/ordenes', buyerToken, 'POST', {
+    call<O>('/api/payments/ordenes/compra-directa', buyerToken, 'POST', {
       cursoId,
-      ...urls,
       pruebaAtribucion: proof.data.prueba,
     }),
   r => r.status === 201,
 )
-const order = await call<O>('/api/payments/ordenes', buyerToken, 'POST', {
-  cursoId,
-  ...urls,
-  pruebaAtribucion: proof.data.prueba,
-})
-assert('orden de USD 40 con referencia', order.status === 201 && order.data.monto === 40)
-assert('doble clic reutiliza la orden', order.data.reutilizada === true)
 assert(
-  'otra cuenta no puede capturar la orden',
-  (await call(`/api/payments/ordenes/${order.data.ordenId}/capturar`, otherToken, 'POST', {}))
-    .status === 403,
+  'compra directa de USD 40 confirmada',
+  order.status === 201 && order.data.monto === 40 && order.data.estado === 'CAPTURADA',
 )
-assert(
-  'ingresos aún cero antes de capturar',
-  (await call<R>('/api/affiliates/ingresos', affToken)).data.totalCentavos === 0,
-)
-const capture = await call<{ capturaId: string }>(
-  `/api/payments/ordenes/${order.data.ordenId}/capturar`,
-  buyerToken,
-  'POST',
-  {},
-)
-assert('compra simulada confirmada', capture.status === 200)
 const income = await wait(
   'comisión',
   () => call<R>('/api/affiliates/ingresos', affToken),
@@ -237,7 +213,7 @@ const payload = {
   cursoTitulo: 'Python Aplicado',
   baseCentavos: 4000,
   moneda: 'USD',
-  capturaId: capture.data.capturaId,
+  capturaId: `DIRECT-${order.data.ordenId}`,
   confirmadoAt: new Date().toISOString(),
 }
 const events = new EventBridgeClient({
@@ -369,55 +345,6 @@ await call('/api/iot/admin/asignacion', adminToken, 'PUT', { usuarioId: afiliado
 assert(
   'reasignación revoca la vista previa',
   (await call(`/api/iot/vista/${t.id}?token=${oldPreview}`)).status === 404,
-)
-const refund = async (monto: string, id: string) => {
-  const r = await fetch(`${API}/api/payments/webhook`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'paypal-transmission-sig': 'local' },
-    body: JSON.stringify({
-      id,
-      event_type: 'PAYMENT.CAPTURE.REFUNDED',
-      resource: {
-        id: `refund-${id}`,
-        custom_id: order.data.ordenId,
-        amount: { value: monto, currency_code: 'USD' },
-        links: [
-          {
-            rel: 'up',
-            href: `https://api.sandbox.paypal.com/v2/payments/captures/${capture.data.capturaId}`,
-          },
-        ],
-      },
-    }),
-  })
-  if (!r.ok) throw new Error('No se pudo simular el reembolso')
-}
-const refund1 = crypto.randomUUID()
-await refund('10.00', refund1)
-await wait(
-  'ajuste parcial',
-  () => call<R>('/api/affiliates/ingresos', affToken),
-  r => r.data.totalCentavos === 150,
-)
-assert(
-  'reembolso parcial deja USD 1.50',
-  (await call<R>('/api/affiliates/ingresos', affToken)).data.historial[0]?.estado === 'AJUSTADA',
-)
-await refund('10.00', refund1)
-await Bun.sleep(2000)
-assert(
-  'reembolso repetido no duplica ajuste',
-  (await call<R>('/api/affiliates/ingresos', affToken)).data.totalCentavos === 150,
-)
-await refund('30.00', crypto.randomUUID())
-await wait(
-  'ajuste total',
-  () => call<R>('/api/affiliates/ingresos', affToken),
-  r => r.data.totalCentavos === 0,
-)
-assert(
-  'historial conserva la venta anulada',
-  (await call<R>('/api/affiliates/ingresos', affToken)).data.historial[0]?.estado === 'ANULADA',
 )
 assert(
   'QR permanece igual tras ventas y cambios',

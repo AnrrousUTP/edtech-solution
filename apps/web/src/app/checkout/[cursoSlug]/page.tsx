@@ -4,7 +4,7 @@ import { ErrorConAccion, precioTexto } from '@/componentes/base'
 import { perfilSesion } from '@/lib/sesion'
 import { Checkout } from './checkout'
 
-// Pantalla 9: checkout con PayPal y espera honesta de la habilitación.
+// Pantalla de compra directa con confirmación del acceso al curso.
 const PaginaCheckout = async ({
   params,
 }: {

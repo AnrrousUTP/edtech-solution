@@ -90,7 +90,6 @@ module "servicio" {
     AWS_REGION                        = "us-east-1"
     EVENT_BUS_NAME                    = data.terraform_remote_state.messaging.outputs.bus_name
     DB_SECRET_NAME                    = "edtech/dev/db/payments"
-    PAYPAL_SECRET_NAME                = "edtech/dev/paypal"
     QUEUE_URL                         = data.terraform_remote_state.messaging.outputs.colas["payments"].url
     QUEUE_WEBHOOKS_URL                = data.terraform_remote_state.messaging.outputs.colas["payments-webhooks"].url
     COGNITO_ISSUER                    = data.terraform_remote_state.cognito.outputs.issuer

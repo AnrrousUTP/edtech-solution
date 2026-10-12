@@ -6,7 +6,7 @@ import { PagoReembolsadoEvent } from '../events/pago-reembolsado.event'
 import { VentaReferidaConfirmadaEvent } from '../events/venta-referida-confirmada.event'
 import type { AtribucionReferida } from '../ports-out/atribucion.port'
 import { OrdenExpiradaError, OrdenNoCapturableError, type PaymentsError } from '../module.errors'
-import type { Dinero } from '../value-objects/dinero.vo'
+import { Dinero } from '../value-objects/dinero.vo'
 
 export type EstadoOrden =
   'PENDIENTE' | 'APROBADA' | 'CAPTURADA' | 'FALLIDA' | 'EXPIRADA' | 'REEMBOLSADA'
@@ -138,6 +138,16 @@ export class Orden extends AggregateRoot {
       )
     }
     return Ok({ nueva: true })
+  }
+
+  /** Compra autorizada directamente por la plataforma (flujo de demostración sin pasarela). */
+  confirmarCompraDirecta(ahora: Date): Result<{ nueva: boolean }, PaymentsError> {
+    return this.confirmarCaptura({
+      capturaId: `DIRECT-${this.props.id.valor}`,
+      comision: Dinero.desdeCentavos(0, this.props.monto.moneda),
+      neto: this.props.monto,
+      ahora,
+    })
   }
 
   marcarFallida(motivo: string): void {

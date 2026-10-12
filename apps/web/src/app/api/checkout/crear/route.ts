@@ -15,16 +15,11 @@ export const POST = async (peticion: Request): Promise<Response> => {
     return NextResponse.json({ error: 'Faltan cursoId y cursoSlug' }, { status: 400 })
 
   try {
-    const checkout = `/checkout/${encodeURIComponent(cursoSlug)}`
     const referencia = config.affiliatesEnabled
       ? await afiliadosApi.prueba((await cookies()).get(COOKIE_REFERIDO)?.value)
       : null
-    const orden = await paymentsApi.crearOrden(cursoId, {
-      urlRetorno: new URL(checkout, config.appUrl).toString(),
-      urlCancelacion: new URL(checkout, config.appUrl).toString(),
-      ...(referencia?.prueba ? { pruebaAtribucion: referencia.prueba } : {}),
-    })
-    return NextResponse.json(orden)
+    const compra = await paymentsApi.comprarDirecto(cursoId, referencia?.prueba)
+    return NextResponse.json(compra)
   } catch (err) {
     if (err instanceof ErrorApi) {
       return NextResponse.json({ error: err.message }, { status: err.status })

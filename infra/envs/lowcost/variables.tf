@@ -77,12 +77,6 @@ variable "referral_verification_parameter_name" {
   default     = "/edtech/lowcost/referral-verification-public-key"
 }
 
-variable "paypal_parameter_name" {
-  description = "Nombre SecureString de Parameter Store con las credenciales sandbox y el webhookId de PayPal."
-  type        = string
-  default     = "/edtech/lowcost/paypal"
-}
-
 variable "allowed_origins" {
   description = "Orígenes web HTTPS permitidos por API Gateway."
   type        = list(string)

@@ -96,10 +96,7 @@ const order = await request('/api/checkout/crear', buyerCookie, 'POST', {
   cursoSlug: 'python-aplicado-demo',
 })
 if (order.status === 200) {
-  const capture = await request('/api/checkout/capturar', buyerCookie, 'POST', {
-    ordenId: order.data.ordenId,
-  })
-  if (capture.status !== 200) throw new Error('No se pudo confirmar la compra simulada')
+  if (order.data.estado !== 'CAPTURADA') throw new Error('La compra directa no se confirmó')
   await waitFor('ingreso por compra desde la web', async () => {
     const r = await request('/api/afiliados/ingresos', anaCookie)
     return r.data.data?.totalCentavos >= 200

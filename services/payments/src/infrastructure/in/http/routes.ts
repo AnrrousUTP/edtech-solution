@@ -51,30 +51,17 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
 
-  router.post('/ordenes', auth, async (req, res) => {
+  router.post('/ordenes/compra-directa', auth, async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,
       await bus.dispatch({
-        _tag: 'CrearOrden',
+        _tag: 'CrearCompraDirecta',
         usuarioId: req.auth?.usuarioId ?? '',
         cursoId: String(b.cursoId ?? ''),
-        urlRetorno: String(b.urlRetorno ?? `${cfg.urlBase}/pago/retorno`),
-        urlCancelacion: String(b.urlCancelacion ?? `${cfg.urlBase}/pago/cancelado`),
         ...(typeof b.pruebaAtribucion === 'string' ? { pruebaAtribucion: b.pruebaAtribucion } : {}),
       }),
       201,
-    )
-  })
-
-  router.post('/ordenes/:id/capturar', auth, async (req, res) => {
-    responder(
-      res,
-      await bus.dispatch({
-        _tag: 'CapturarPago',
-        ordenId: req.params.id ?? '',
-        usuarioId: req.auth?.usuarioId ?? '',
-      }),
     )
   })
 

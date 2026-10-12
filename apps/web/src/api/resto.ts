@@ -169,20 +169,20 @@ export const ordenEstado = z.object({
 export type OrdenEstado = z.infer<typeof ordenEstado>
 
 export const paymentsApi = {
-  crearOrden: (
-    cursoId: string,
-    urls?: { urlRetorno: string; urlCancelacion: string; pruebaAtribucion?: string },
-  ) =>
+  comprarDirecto: (cursoId: string, pruebaAtribucion?: string) =>
     llamar(
-      '/api/payments/ordenes',
+      '/api/payments/ordenes/compra-directa',
       z.object({
         ordenId: z.string(),
-        urlAprobacion: z.string(),
+        cursoId: z.string(),
+        estado: z.literal('CAPTURADA'),
         monto: z.number(),
         moneda: z.string(),
-        reutilizada: z.boolean(),
       }),
-      { metodo: 'POST', cuerpo: { cursoId, ...urls } },
+      {
+        metodo: 'POST',
+        cuerpo: { cursoId, ...(pruebaAtribucion ? { pruebaAtribucion } : {}) },
+      },
     ),
   misOrdenes: () => llamar('/api/payments/mis-ordenes', z.array(ordenEstado)),
   ordenesAdmin: () => llamar('/api/payments/admin/ordenes', z.array(ordenEstado)),

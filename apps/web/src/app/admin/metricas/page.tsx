@@ -4,8 +4,7 @@ import { paymentsApi } from '@/api/resto'
 import { ErrorConAccion, Vacio, precioTexto } from '@/componentes/base'
 import { esAdmin, mfaPendiente } from '@/lib/sesion'
 
-// Pantalla 14: métricas. Muestra bruto, comisión y neto SEPARADOS: mostrar solo
-// el bruto es engañarse (doc 09 §7).
+// Pantalla 14: métricas de compras confirmadas.
 const Metricas = async (): Promise<JSX.Element> => {
   if (!(await esAdmin())) {
     return (
@@ -67,7 +66,7 @@ const Metricas = async (): Promise<JSX.Element> => {
           { etiqueta: 'Ventas', valor: String(capturadas.length), tono: 'text-slate-900' },
           { etiqueta: 'Bruto', valor: precioTexto(bruto, moneda), tono: 'text-slate-900' },
           {
-            etiqueta: 'Comisión PayPal',
+            etiqueta: 'Costos de cobro',
             valor: precioTexto(comision, moneda),
             tono: 'text-alerta-700',
           },
@@ -81,8 +80,8 @@ const Metricas = async (): Promise<JSX.Element> => {
       </div>
 
       <p className="mt-3 text-xs text-slate-500">
-        La comisión y el neto son los que devuelve PayPal al capturar, no una fórmula propia que
-        envejece.
+        Las compras se confirman directamente en la plataforma, sin descontar tarifas de una
+        pasarela externa.
       </p>
 
       <h2 className="mt-10 text-xl font-extrabold text-slate-900">Cursos más vendidos</h2>

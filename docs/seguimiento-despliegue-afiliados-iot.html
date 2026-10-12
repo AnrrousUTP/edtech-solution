@@ -1,110 +1,1016 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>EdTech · Entrega afiliados + IoT</title>
-  <style>
-    :root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#122b37;background:#f3f7f8;font-synthesis:none;text-rendering:optimizeLegibility;--ink:#122b37;--muted:#526773;--line:#cfdbdf;--teal:#087e78;--teal-soft:#e2f4f1;--orange:#a4470c;--orange-soft:#fff0e4;--blue:#245899;--blue-soft:#eaf1fb;--red:#a33434;--red-soft:#faeaea;--white:#fff}
-    *{box-sizing:border-box}body{margin:0}button,select{font:inherit}button{cursor:pointer}.wrap{max-width:1600px;margin:0 auto;padding:26px clamp(16px,3vw,44px) 56px}.eyebrow{font-size:12px;letter-spacing:.12em;font-weight:800;color:var(--teal);text-transform:uppercase}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.title h1{font-size:clamp(26px,3vw,40px);line-height:1.12;letter-spacing:-.035em;margin:8px 0 10px}.title p{color:var(--muted);max-width:780px;line-height:1.55;margin:0}.updated{font-size:13px;color:var(--muted);white-space:nowrap;border:1px solid var(--line);background:var(--white);padding:9px 12px;border-radius:8px}.scope{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px;margin:22px 0}.scope article{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:15px 16px;min-height:98px}.scope b{display:block;font-size:13px;margin-bottom:7px}.scope p{font-size:13px;line-height:1.45;color:var(--muted);margin:0}.scope .alert{border-color:#edc9a8;background:#fff9f2}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:19px}.metric{background:#fff;border:1px solid var(--line);border-radius:9px;padding:13px 15px}.metric strong{display:block;font-size:24px;letter-spacing:-.04em}.metric span{font-size:12px;color:var(--muted)}.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px}.controls p{font-size:13px;color:var(--muted);margin:0}.filters{display:flex;gap:8px;align-items:center}.filters input,.filters select,.reset{height:40px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:0 11px;color:var(--ink)}.filters input{width:min(260px,42vw)}.reset{font-weight:700}.board{display:grid;grid-template-columns:repeat(4,minmax(235px,1fr));gap:12px;align-items:start}.column{border:1px solid var(--line);border-radius:10px;background:#eaf0f2;min-height:280px;overflow:hidden}.col-head{padding:13px 14px;background:#f8fbfc;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1}.col-title{display:flex;align-items:center;gap:9px;font-weight:800;font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:#71858f}.column[data-status="done"] .dot{background:var(--teal)}.column[data-status="doing"] .dot{background:var(--orange)}.column[data-status="blocked"] .dot{background:var(--red)}.column[data-status="user"] .dot{background:var(--blue)}.count{font-size:12px;font-weight:800;color:var(--muted);background:#e7edef;border-radius:999px;padding:3px 8px}.cards{padding:9px;display:grid;gap:8px;min-height:210px}.card{background:#fff;border:1px solid #d8e1e4;border-radius:8px;padding:12px;box-shadow:0 1px 1px #122b3708}.card h3{font-size:13px;line-height:1.35;margin:0 0 6px}.card p{font-size:12px;line-height:1.45;color:var(--muted);margin:0 0 9px}.meta{display:flex;justify-content:space-between;align-items:center;gap:6px}.tag{font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;color:#385360;background:#eef3f4;border-radius:4px;padding:4px 6px}.owner{font-size:10px;color:var(--muted)}.move{width:100%;height:34px;margin-top:10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#344e59;font-size:11px;font-weight:700}.move:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #087e7866;outline-offset:2px}.footer{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.note{border:1px solid var(--line);border-radius:9px;background:#fff;padding:15px 17px}.note h2{font-size:14px;margin:0 0 8px}.note p,.note li{font-size:12px;line-height:1.5;color:var(--muted)}.note p{margin:0}.note ul{margin:0;padding-left:18px}.note .caveat{color:var(--red);font-weight:700}.empty{color:#657b85;font-size:12px;text-align:center;padding:24px 10px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    @media(max-width:1250px){.board{grid-template-columns:repeat(3,minmax(220px,1fr))}.scope{grid-template-columns:1fr 1fr}.scope article:first-child{grid-column:span 2}}
-    @media(max-width:900px){.board{grid-template-columns:repeat(2,minmax(240px,1fr))}}
-    @media(max-width:650px){.wrap{padding:18px 12px 36px}.top{display:block}.updated{display:inline-block;margin-top:14px}.scope{grid-template-columns:1fr}.scope article:first-child{grid-column:auto}.metrics{grid-template-columns:repeat(2,1fr)}.controls{align-items:flex-start;flex-direction:column}.filters{width:100%}.filters input{flex:1;width:40%}.board{grid-template-columns:1fr}.column{min-height:unset}.col-head{position:static}.footer{grid-template-columns:1fr}}
-    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
-  </style>
-</head>
-<body>
-<main class="wrap">
-  <header class="top">
-    <div class="title"><div class="eyebrow">EdTech · salida a AWS</div><h1>Afiliados, QR y terminal IoT</h1><p>Tablero de ejecución del flujo acordado: afiliado entra, obtiene su QR; comprador llega y compra; el sistema atribuye la venta, muestra la comisión y el terminal virtual recibe el aviso.</p></div>
-    <div class="updated" id="updated">Estado de referencia: 11 oct 2026</div>
-  </header>
-  <section class="scope" aria-label="Alcance y expectativas">
-    <article><b>Incluye esta entrega</b><p>Autenticación, afiliación, QR permanente, compra de demostración, comisión del 5%, panel de ingresos/notificación e integración del terminal virtual mediante AWS IoT.</p></article>
-    <article><b>Fuera de esta entrega</b><p>Gamificación, insignias, transferencias/retiros, Bedrock, transcripción y migración completa de los demás dominios.</p></article>
-    <article class="alert"><b>Ventana solicitada: 2 horas</b><p>La usaré para avanzar y cerrar la base desplegable. La revisión inicial estima 10–16 horas efectivas más autorizaciones externas; publicar y validar AWS en 2 horas no es una promesa realista.</p></article>
-  </section>
-  <section class="metrics" aria-label="Resumen de tareas">
-    <div class="metric"><strong id="total">—</strong><span>Tareas concretas en alcance</span></div>
-    <div class="metric"><strong id="done">—</strong><span>Verificadas, con evidencia</span></div>
-    <div class="metric"><strong id="blocked">—</strong><span>Con dependencia externa/ambiente</span></div>
-    <div class="metric"><strong id="userCount">—</strong><span>Pruebas que te pediré ejecutar</span></div>
-  </section>
-  <div class="controls"><p>El tablero guarda cambios en este navegador; recarga el archivo para ver las últimas actualizaciones de implementación.</p><div class="filters"><label class="sr" for="search">Buscar tareas</label><input id="search" type="search" placeholder="Buscar tarea…"><label class="sr" for="filter">Filtrar por área</label><select id="filter"><option value="all">Todas las áreas</option></select><button class="reset" id="reset" type="button">Restablecer estados</button></div></div>
-  <section class="board" id="board" aria-label="Tablero Kanban">
-    <section class="column" data-status="done"><div class="col-head"><div class="col-title"><span class="dot"></span>Verificado</div><span class="count">0</span></div><div class="cards"></div></section>
-    <section class="column" data-status="doing"><div class="col-head"><div class="col-title"><span class="dot"></span>En curso</div><span class="count">0</span></div><div class="cards"></div></section>
-    <section class="column" data-status="blocked"><div class="col-head"><div class="col-title"><span class="dot"></span>Bloqueado / requiere tercero</div><span class="count">0</span></div><div class="cards"></div></section>
-    <section class="column" data-status="user"><div class="col-head"><div class="col-title"><span class="dot"></span>Prueba contigo</div><span class="count">0</span></div><div class="cards"></div></section>
-    <section class="column" data-status="todo"><div class="col-head"><div class="col-title"><span class="dot"></span>Por hacer</div><span class="count">0</span></div><div class="cards"></div></section>
-  </section>
-  <section class="footer">
-    <article class="note"><h2>Lectura honesta del estado</h2><p>La web SSR ya está publicada en <b>https://main.ddgj3exz5re93.amplifyapp.com</b>; la ejecución 12 completó Build, Deploy y Verify, y portada/login respondieron HTTP 200. La cuenta es <b>047600599757</b>. La base pausada conserva las tablas DynamoDB, el bucket, las colas, Cognito y el terminal IoT; el producto demo de USD 40 está sembrado. <b>El recorrido de compra aún no está conectado:</b> la API Gateway low-cost sigue sin rutas y falta publicar las Lambdas, configurar Cognito para la URL nueva y enlazar el aviso IoT. El perfil correcto de AWS es <b>edtech</b>; el perfil predeterminado apunta a otra cuenta. Las reglas EventBridge e IoT siguen deshabilitadas.</p></article>
-    <article class="note"><h2>Validación manual que te pasaré al final</h2><ul><li>Ingresar como afiliado, activar cuenta y copiar/descargar el QR.</li><li>Abrirlo desde una sesión de comprador, comprar el producto de demostración y comprobar comisión esperada (USD 40 → USD 2).</li><li>Confirmar ingresos/notificación en cuenta afiliada y aviso en terminal IoT.</li><li>Probar terminal sin conexión y reconexión; verificar que no duplique la comisión.</li></ul><p class="caveat">No harás QA de infraestructura a ciegas: primero te entregaré URL de prueba, usuarios/instrucciones seguras y resultado automatizado.</p></article>
-  </section>
-</main>
-<script>
-const tasks=[
- {id:'aws-account',area:'AWS',status:'done',title:'Confirmar la cuenta AWS destino',detail:'Identidad AWS verificada como cuenta 047600599757 con perfil edtech; no usar el perfil default (cuenta distinta).'},
- {id:'affiliate-tests',area:'Pruebas',status:'done',title:'Ejecutar pruebas focalizadas de pagos y afiliados',detail:'25 pruebas locales pasaron para checkout, atribución, idempotencia y verificación de webhooks.'},
- {id:'local-flow',area:'Flujo',status:'done',title:'Confirmar la base local del QR y comisión',detail:'El recorrido de QR permanente, visita referida, comisión del 5% e ingresos está implementado en el checkout local.'},
- {id:'scope',area:'Alcance',status:'done',title:'Congelar alcance de la entrega',detail:'Solo afiliado → QR → compra → comisión/notificación → aviso en terminal virtual. Sin retiros ni gamificación.'},
- {id:'inventory',area:'AWS',status:'done',title:'Inspeccionar inventario publicado de la cuenta destino',detail:'Existen las cinco tablas low-cost y la aplicación Amplify edtech-solution, rama main. Cognito, Thing terminal-demo-01 y endpoint IoT se conservan; la API low-cost sigue sin rutas.'},
- {id:'catalog-adapter',area:'Backend',status:'done',title:'Completar handler Lambda del catálogo público',detail:'Handler DynamoDB de lectura para catálogo/curso/carrera tipado y empaquetado; limita la superficie a las rutas públicas del QR y checkout.'},
- {id:'catalog-seed',area:'Datos',status:'done',title:'Preparar seed idempotente del producto demo',detail:'Script de plan/aplicación preparado: curso público de USD 40, lookup de slug y precio de pagos en una transacción; no crea ventas ni comisiones falsas.'},
- {id:'lambda-build',area:'Backend',status:'done',title:'Empaquetar handlers Linux requeridos por el flujo',detail:'Builds limpios en contenedor Linux pasaron para catálogo, afiliados, pagos, terminales y publicador outbox; ZIP versionados por hash quedan en .local/lambda/.'},
- {id:'terraform-review',area:'Terraform',status:'done',title:'Limitar Terraform a los dominios del flujo QR',detail:'Variable enabled_domains por defecto incluye catálogo, pagos, afiliados y terminales IoT; control conserva cuotas/estado. Otros dominios quedan fuera.'},
- {id:'profile-terraform',area:'Terraform',status:'done',title:'Preparar entorno Linux para Terraform y build',detail:'Terraform instalado en WSL, Docker disponible; configuración y empaquetado se ejecutan sin instalar dependencias Windows dentro de Lambda.'},
- {id:'github-amplify',area:'Acceso externo',status:'done',title:'Autorizar conexión GitHub en Amplify',detail:'Conexión autorizada al repositorio AnrrousUTP/edtech-solution y rama main en la aplicación ddgj3exz5re93.'},
- {id:'paypal',area:'Acceso externo',status:'done',title:'Trasladar credenciales PayPal Sandbox al entorno low-cost',detail:'Las credenciales y el webhook se copiaron desde el secreto usado por ECS a Parameter Store SecureString. Falta verificar el checkout desde la Lambda nueva.'},
- {id:'secrets',area:'Seguridad',status:'done',title:'Guardar PayPal en Parameter Store seguro',detail:'Verificada la lectura de /edtech/lowcost/paypal como SecureString; secreto original de Secrets Manager conservado para rollback.'},
- {id:'routes-contract',area:'Backend',status:'todo',title:'Fijar contrato público de afiliados y pagos',detail:'Comprobar rutas, payloads, status codes, cookies, pruebas firmadas y compatibilidad con Next.js.'},
- {id:'auth-cognito',area:'Identidad',status:'todo',title:'Ajustar Cognito a la URL publicada',detail:'Callbacks, logout, dominios, cookies y flujo de login/MFA para Amplify/API Gateway.'},
- {id:'lambda-affiliates',area:'Backend',status:'todo',title:'Cerrar Lambda de afiliados',detail:'Panel, alta, activación, atribución, ingresos, historial y notificaciones sobre persistencia DynamoDB.'},
- {id:'lambda-payments',area:'Backend',status:'todo',title:'Cerrar Lambda de pagos de demostración',detail:'Crear orden, autorizar/capturar sandbox, verificar webhook y emitir evento de venta referida.'},
- {id:'lambda-iot',area:'Backend',status:'todo',title:'Cerrar Lambda de terminales IoT',detail:'Permisos por propietario, sesión WebSocket firmada, configuración y avisos sin claves permanentes en el browser.'},
- {id:'lambda-web',area:'Web',status:'todo',title:'Conectar páginas afiliado y comprador con la API serverless',detail:'Base URL API, SSR, cookies seguras y manejo visible de errores/loading en las páginas del flujo.'},
- {id:'qr-route',area:'Web',status:'todo',title:'Verificar ruta QR pública y continuidad de atribución',detail:'/r/{refId}, cookie de 30 días, redirect permitido y atribución conservada tras registro/login.'},
- {id:'commission',area:'Reglas de negocio',status:'todo',title:'Verificar comisión 5% en centavos e idempotencia',detail:'Una orden confirmada genera exactamente una comisión; USD 40 genera USD 2; autorreferido se rechaza.'},
- {id:'refund',area:'Reglas de negocio',status:'todo',title:'Mantener ajuste por reembolso si forma parte del camino de pago',detail:'El reembolso registrado ajusta el ingreso sin borrar el historial. No se añade UI de liquidación.'},
- {id:'events',area:'Eventos',status:'todo',title:'Cerrar publicación de eventos de venta',detail:'Outbox durable → EventBridge/SQS; mensajes duplicados y reintentos no repiten efectos financieros.'},
- {id:'sqs',area:'Eventos',status:'todo',title:'Configurar cola, DLQ y reintentos del trabajador IoT',detail:'Procesamiento parcial por lote, deduplicación persistente y recuperación de mensajes fallidos.'},
- {id:'iot-rule',area:'IoT',status:'todo',title:'Conectar evento de comisión con AWS IoT Core',detail:'Regla/worker actualiza Shadow y almacena aviso recuperable para terminal asignado.'},
- {id:'iot-websocket',area:'IoT',status:'todo',title:'Completar terminal virtual MQTT sobre WebSocket seguro',detail:'Conectar, suscribir solo topics del dispositivo, heartbeat, confirmar versión y cerrar al salir.'},
- {id:'iot-shadow',area:'IoT',status:'todo',title:'Probar recuperación de configuración mediante Device Shadow',detail:'Al reconectar, reconciliar configuración/aviso pendiente sin repetir confirmación.'},
- {id:'dynamodb',area:'Datos',status:'done',title:'Crear tablas DynamoDB mínimas y bajo demanda',detail:'Aplicadas cinco tablas: afiliados, pagos, catálogo, terminales y control; claves/índices y cifrado administrado por AWS.'},
- {id:'bootstrap',area:'Datos',status:'doing',title:'Sembrar producto de prueba para QR y checkout',detail:'Curso demo de USD 40 y precio de 4.000 centavos cargados idempotentemente. Aún faltan configuración de afiliado/terminal y validación desde la Lambda nueva.'},
- {id:'s3',area:'Archivos',status:'done',title:'Configurar bucket privado del flujo',detail:'Bucket S3 aplicado con acceso público bloqueado, cifrado SSE-S3 y reglas de ciclo de vida.'},
- {id:'amplify',area:'Hosting',status:'done',title:'Publicar aplicación Next.js en Amplify',detail:'Despliegue a36168d exitoso: Build, Deploy y Verify. Portada y /login responden HTTP 200 en https://main.ddgj3exz5re93.amplifyapp.com. Limpieza de node_modules y linker hoisted eliminan los fallos reproducidos.'},
- {id:'api-gateway',area:'Hosting',status:'done',title:'Crear API Gateway HTTP pausado',detail:'API creada con throttling bajo; no tiene rutas ni integración Lambda, por lo que todavía no sirve la aplicación.'},
- {id:'cost-cap',area:'Costos',status:'done',title:'Configurar pausa y alerta mensual de gasto',detail:'Servicios públicos, trabajadores y reglas permanecen pausados. AWS Budget avisa a USD 4; es una alerta, no un corte automático.'},
- {id:'no-vpc',area:'Costos',status:'done',title:'Mantener la arquitectura sin NAT ni ALB',detail:'El plan aplicado no creó VPC, NAT, ALB ni tareas Fargate.'},
- {id:'terraform-plan',area:'Terraform',status:'done',title:'Validar plan remoto en la cuenta correcta',detail:'Plan real con perfil edtech: 46 recursos, 0 cambios, 0 destrucciones; solo cuatro dominios + control. Los servicios públicos, reglas de negocio y workers quedan pausados. Archivo de plan temporal descartado.'},
- {id:'terraform-apply',area:'Terraform',status:'done',title:'Aplicar infraestructura nueva en modo pausado',detail:'Apply real completado en la cuenta 047600599757: 46 recursos creados, 0 modificados y 0 eliminados.'},
- {id:'terraform-second',area:'Terraform',status:'done',title:'Comprobar segundo plan sin cambios inesperados',detail:'Segundo plan de Terraform encontró cero diferencias; infraestructura coincide con el código.'},
- {id:'seed-aws',area:'Datos',status:'done',title:'Cargar producto y precio demo en AWS',detail:'Curso curso-demo-afiliados publicado a USD 40 y precio de checkout sembrado; comisión esperada al 5%: USD 2.'},
- {id:'deploy-web',area:'Hosting',status:'todo',title:'Desplegar web y verificar healthchecks',detail:'Comprobar TLS, login, API, logs sin secretos y ausencia de recursos legacy activos.'},
- {id:'affiliate-smoke',area:'Pruebas',status:'todo',title:'Ejecutar smoke test automatizado afiliado → comisión',detail:'API y reglas de negocio: atribución, pago sandbox simulado/integrado, idempotencia y lectura de ingresos.'},
- {id:'security',area:'Seguridad',status:'todo',title:'Probar autorización y aislamiento entre usuarios',detail:'Tokens vencidos/incorrectos, recursos ajenos, autorreferidos, topics IoT ajenos y cuerpo crudo webhook.'},
- {id:'cost-inventory',area:'Costos',status:'todo',title:'Revisar inventario y costo estimado para cinco días',detail:'Confirmar recursos realmente activos, borrar/retirar solo lo sustituido tras validar respaldo y mantener pausa.'},
- {id:'affiliate-login-user',area:'Prueba manual',status:'user',title:'Ingresar como afiliado y obtener el QR',detail:'Te entregaré URL pública y usuario de prueba; valida login, activación, QR visible, copiar y descargar.'},
- {id:'buyer-qr-user',area:'Prueba manual',status:'user',title:'Escanear QR como comprador y completar compra',detail:'Usa otro navegador/perfil sin sesión de afiliado; completa el checkout sandbox e indica cualquier fricción.'},
- {id:'commission-ui-user',area:'Prueba manual',status:'user',title:'Confirmar comisión en ingresos y notificación',detail:'Verifica monto, moneda, curso, fecha y que el afiliado vea el aviso tras compra confirmada.'},
- {id:'terminal-user',area:'Prueba manual',status:'user',title:'Validar aviso IoT en pantalla del terminal',detail:'Comprueba que la venta aparece una sola vez y que reconexión recupera el estado pendiente.'},
- {id:'retest-user',area:'Prueba manual',status:'user',title:'Reportar errores visuales/funcionales y repetir aceptación',detail:'Me das pasos, navegador y mensaje observado; corrijo y te pido repetir solo el caso afectado.'},
- {id:'public-url',area:'Entrega',status:'todo',title:'Entregarte URLs y guía breve de demostración',detail:'URL de afiliado, URL de QR/curso, URL de terminal, cuentas sandbox y secuencia para mostrar en clase.'},
- {id:'docs',area:'Entrega',status:'todo',title:'Actualizar arquitectura y runbook del flujo publicado',detail:'Diagrama final, operación pausada/activa, recuperación, costos observados y retiro al acabar la demo.'}
-];
-const labels={done:'Verificado',doing:'En curso',blocked:'Bloqueado / requiere tercero',user:'Prueba contigo',todo:'Por hacer'};
-const savedKey='edtech-affiliate-iot-board-v2';let overrides={};try{overrides=JSON.parse(localStorage.getItem(savedKey)||'{}')}catch{}
-const board=document.getElementById('board');const filter=document.getElementById('filter');const search=document.getElementById('search');
-const areas=[...new Set(tasks.map(t=>t.area))].sort((a,b)=>a.localeCompare(b,'es'));areas.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;filter.append(o)});
-function statusOf(t){return overrides[t.id]||t.status}
-function render(){document.querySelectorAll('.cards').forEach(c=>c.replaceChildren());const query=search.value.trim().toLocaleLowerCase('es'),area=filter.value;let visible=0;const counts={done:0,doing:0,blocked:0,user:0,todo:0};for(const t of tasks){const status=statusOf(t);counts[status]++;if(area!=='all'&&t.area!==area)continue;if(query&&!`${t.title} ${t.detail} ${t.area}`.toLocaleLowerCase('es').includes(query))continue;visible++;const col=board.querySelector(`[data-status="${status}"]`);const card=document.createElement('article');card.className='card';card.innerHTML=`<h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.detail)}</p><div class="meta"><span class="tag">${escapeHtml(t.area)}</span><span class="owner">${status==='user'?'Responsable: tú':'Responsable: Codex'}</span></div><label class="sr" for="move-${t.id}">Cambiar estado de ${escapeHtml(t.title)}</label><select class="move" id="move-${t.id}" aria-label="Cambiar estado: ${escapeHtml(t.title)}">${['todo','doing','blocked','done','user'].map(s=>`<option value="${s}" ${s===status?'selected':''}>Mover a: ${labels[s]}</option>`).join('')}</select>`;card.querySelector('select').addEventListener('change',e=>{overrides[t.id]=e.target.value;localStorage.setItem(savedKey,JSON.stringify(overrides));render()});col.querySelector('.cards').append(card)}
-document.querySelectorAll('.column').forEach(c=>{const s=c.dataset.status;c.querySelector('.count').textContent=counts[s];if(!c.querySelector('.card')){const e=document.createElement('div');e.className='empty';e.textContent='Sin tareas visibles';c.querySelector('.cards').append(e)}});document.getElementById('total').textContent=tasks.length;document.getElementById('done').textContent=`${counts.done} / ${tasks.length}`;document.getElementById('blocked').textContent=counts.blocked;document.getElementById('userCount').textContent=counts.user;document.getElementById('updated').textContent=`${visible} tareas visibles · guardado local`}
-function escapeHtml(v){return v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-search.addEventListener('input',render);filter.addEventListener('change',render);document.getElementById('reset').addEventListener('click',()=>{overrides={};localStorage.removeItem(savedKey);render()});render();
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>EdTech · Entrega afiliados + IoT</title>
+    <style>
+      :root {
+        font-family: Inter, 'Segoe UI', Arial, sans-serif;
+        color: #122b37;
+        background: #f3f7f8;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --ink: #122b37;
+        --muted: #526773;
+        --line: #cfdbdf;
+        --teal: #087e78;
+        --teal-soft: #e2f4f1;
+        --orange: #a4470c;
+        --orange-soft: #fff0e4;
+        --blue: #245899;
+        --blue-soft: #eaf1fb;
+        --red: #a33434;
+        --red-soft: #faeaea;
+        --white: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .wrap {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 26px clamp(16px, 3vw, 44px) 56px;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        font-weight: 800;
+        color: var(--teal);
+        text-transform: uppercase;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+      }
+      .title h1 {
+        font-size: clamp(26px, 3vw, 40px);
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        margin: 8px 0 10px;
+      }
+      .title p {
+        color: var(--muted);
+        max-width: 780px;
+        line-height: 1.55;
+        margin: 0;
+      }
+      .updated {
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        border: 1px solid var(--line);
+        background: var(--white);
+        padding: 9px 12px;
+        border-radius: 8px;
+      }
+      .scope {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr 1fr;
+        gap: 12px;
+        margin: 22px 0;
+      }
+      .scope article {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 15px 16px;
+        min-height: 98px;
+      }
+      .scope b {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 7px;
+      }
+      .scope p {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted);
+        margin: 0;
+      }
+      .scope .alert {
+        border-color: #edc9a8;
+        background: #fff9f2;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 19px;
+      }
+      .metric {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 13px 15px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 24px;
+        letter-spacing: -0.04em;
+      }
+      .metric span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 12px;
+      }
+      .controls p {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .filters {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .filters input,
+      .filters select,
+      .reset {
+        height: 40px;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 7px;
+        padding: 0 11px;
+        color: var(--ink);
+      }
+      .filters input {
+        width: min(260px, 42vw);
+      }
+      .reset {
+        font-weight: 700;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(235px, 1fr));
+        gap: 12px;
+        align-items: start;
+      }
+      .column {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #eaf0f2;
+        min-height: 280px;
+        overflow: hidden;
+      }
+      .col-head {
+        padding: 13px 14px;
+        background: #f8fbfc;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .col-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #71858f;
+      }
+      .column[data-status='done'] .dot {
+        background: var(--teal);
+      }
+      .column[data-status='doing'] .dot {
+        background: var(--orange);
+      }
+      .column[data-status='blocked'] .dot {
+        background: var(--red);
+      }
+      .column[data-status='user'] .dot {
+        background: var(--blue);
+      }
+      .count {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--muted);
+        background: #e7edef;
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+      .cards {
+        padding: 9px;
+        display: grid;
+        gap: 8px;
+        min-height: 210px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d8e1e4;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 1px 1px #122b3708;
+      }
+      .card h3 {
+        font-size: 13px;
+        line-height: 1.35;
+        margin: 0 0 6px;
+      }
+      .card p {
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--muted);
+        margin: 0 0 9px;
+      }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+      }
+      .tag {
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #385360;
+        background: #eef3f4;
+        border-radius: 4px;
+        padding: 4px 6px;
+      }
+      .owner {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .move {
+        width: 100%;
+        height: 34px;
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: #344e59;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .move:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 3px solid #087e7866;
+        outline-offset: 2px;
+      }
+      .footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 17px;
+      }
+      .note {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #fff;
+        padding: 15px 17px;
+      }
+      .note h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      .note p,
+      .note li {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .note p {
+        margin: 0;
+      }
+      .note ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .note .caveat {
+        color: var(--red);
+        font-weight: 700;
+      }
+      .empty {
+        color: #657b85;
+        font-size: 12px;
+        text-align: center;
+        padding: 24px 10px;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 1250px) {
+        .board {
+          grid-template-columns: repeat(3, minmax(220px, 1fr));
+        }
+        .scope {
+          grid-template-columns: 1fr 1fr;
+        }
+        .scope article:first-child {
+          grid-column: span 2;
+        }
+      }
+      @media (max-width: 900px) {
+        .board {
+          grid-template-columns: repeat(2, minmax(240px, 1fr));
+        }
+      }
+      @media (max-width: 650px) {
+        .wrap {
+          padding: 18px 12px 36px;
+        }
+        .top {
+          display: block;
+        }
+        .updated {
+          display: inline-block;
+          margin-top: 14px;
+        }
+        .scope {
+          grid-template-columns: 1fr;
+        }
+        .scope article:first-child {
+          grid-column: auto;
+        }
+        .metrics {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .controls {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .filters {
+          width: 100%;
+        }
+        .filters input {
+          flex: 1;
+          width: 40%;
+        }
+        .board {
+          grid-template-columns: 1fr;
+        }
+        .column {
+          min-height: unset;
+        }
+        .col-head {
+          position: static;
+        }
+        .footer {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="top">
+        <div class="title">
+          <div class="eyebrow">EdTech · salida a AWS</div>
+          <h1>Afiliados, QR y terminal IoT</h1>
+          <p>
+            Tablero de ejecución del flujo acordado: afiliado entra, obtiene su QR; comprador llega
+            y compra; el sistema atribuye la venta, muestra la comisión y el terminal virtual recibe
+            el aviso.
+          </p>
+        </div>
+        <div class="updated" id="updated">Estado de referencia: 11 oct 2026</div>
+      </header>
+      <section class="scope" aria-label="Alcance y expectativas">
+        <article>
+          <b>Incluye esta entrega</b>
+          <p>
+            Autenticación, afiliación, QR permanente, compra directa de demostración (sin pasarela
+            ni cobro externo), comisión del 5%, panel de ingresos/notificación e integración del
+            terminal virtual mediante AWS IoT.
+          </p>
+        </article>
+        <article>
+          <b>Fuera de esta entrega</b>
+          <p>
+            Gamificación, insignias, transferencias/retiros, Bedrock, transcripción y migración
+            completa de los demás dominios.
+          </p>
+        </article>
+        <article class="alert">
+          <b>Ventana solicitada: 2 horas</b>
+          <p>
+            La usaré para avanzar y cerrar la base desplegable. La revisión inicial estima 10–16
+            horas efectivas más autorizaciones externas; publicar y validar AWS en 2 horas no es una
+            promesa realista.
+          </p>
+        </article>
+      </section>
+      <section class="metrics" aria-label="Resumen de tareas">
+        <div class="metric">
+          <strong id="total">—</strong><span>Tareas concretas en alcance</span>
+        </div>
+        <div class="metric">
+          <strong id="done">—</strong><span>Verificadas, con evidencia</span>
+        </div>
+        <div class="metric">
+          <strong id="blocked">—</strong><span>Con dependencia externa/ambiente</span>
+        </div>
+        <div class="metric">
+          <strong id="userCount">—</strong><span>Pruebas que te pediré ejecutar</span>
+        </div>
+      </section>
+      <div class="controls">
+        <p>
+          El tablero guarda cambios en este navegador; recarga el archivo para ver las últimas
+          actualizaciones de implementación.
+        </p>
+        <div class="filters">
+          <label class="sr" for="search">Buscar tareas</label
+          ><input id="search" type="search" placeholder="Buscar tarea…" /><label
+            class="sr"
+            for="filter"
+            >Filtrar por área</label
+          ><select id="filter">
+            <option value="all">Todas las áreas</option></select
+          ><button class="reset" id="reset" type="button">Restablecer estados</button>
+        </div>
+      </div>
+      <section class="board" id="board" aria-label="Tablero Kanban">
+        <section class="column" data-status="done">
+          <div class="col-head">
+            <div class="col-title"><span class="dot"></span>Verificado</div>
+            <span class="count">0</span>
+          </div>
+          <div class="cards"></div>
+        </section>
+        <section class="column" data-status="doing">
+          <div class="col-head">
+            <div class="col-title"><span class="dot"></span>En curso</div>
+            <span class="count">0</span>
+          </div>
+          <div class="cards"></div>
+        </section>
+        <section class="column" data-status="blocked">
+          <div class="col-head">
+            <div class="col-title"><span class="dot"></span>Bloqueado / requiere tercero</div>
+            <span class="count">0</span>
+          </div>
+          <div class="cards"></div>
+        </section>
+        <section class="column" data-status="user">
+          <div class="col-head">
+            <div class="col-title"><span class="dot"></span>Prueba contigo</div>
+            <span class="count">0</span>
+          </div>
+          <div class="cards"></div>
+        </section>
+        <section class="column" data-status="todo">
+          <div class="col-head">
+            <div class="col-title"><span class="dot"></span>Por hacer</div>
+            <span class="count">0</span>
+          </div>
+          <div class="cards"></div>
+        </section>
+      </section>
+      <section class="footer">
+        <article class="note">
+          <h2>Lectura honesta del estado</h2>
+          <p>
+            La web SSR ya está publicada en <b>https://main.ddgj3exz5re93.amplifyapp.com</b>; la
+            ejecución 12 completó Build, Deploy y Verify, y portada/login respondieron HTTP 200. La
+            cuenta es <b>047600599757</b>. La base pausada conserva las tablas DynamoDB, el bucket,
+            las colas, Cognito y el terminal IoT; el producto demo de USD 40 está sembrado.
+            <b>El recorrido de compra aún no está conectado:</b> la API Gateway low-cost sigue sin
+            rutas y falta publicar las Lambdas, configurar Cognito para la URL nueva y enlazar el
+            aviso IoT. El perfil correcto de AWS es <b>edtech</b>; el perfil predeterminado apunta a
+            otra cuenta. Las reglas EventBridge e IoT siguen deshabilitadas.
+          </p>
+        </article>
+        <article class="note">
+          <h2>Validación manual que te pasaré al final</h2>
+          <ul>
+            <li>Ingresar como afiliado, activar cuenta y copiar/descargar el QR.</li>
+            <li>
+              Abrirlo desde una sesión de comprador, comprar el producto de demostración y comprobar
+              comisión esperada (USD 40 → USD 2).
+            </li>
+            <li>Confirmar ingresos/notificación en cuenta afiliada y aviso en terminal IoT.</li>
+            <li>
+              Probar terminal sin conexión y reconexión; verificar que no duplique la comisión.
+            </li>
+          </ul>
+          <p class="caveat">
+            No harás QA de infraestructura a ciegas: primero te entregaré URL de prueba,
+            usuarios/instrucciones seguras y resultado automatizado.
+          </p>
+        </article>
+      </section>
+    </main>
+    <script>
+      const tasks = [
+        {
+          id: 'aws-account',
+          area: 'AWS',
+          status: 'done',
+          title: 'Confirmar la cuenta AWS destino',
+          detail:
+            'Identidad AWS verificada como cuenta 047600599757 con perfil edtech; no usar el perfil default (cuenta distinta).',
+        },
+        {
+          id: 'affiliate-tests',
+          area: 'Pruebas',
+          status: 'done',
+          title: 'Ejecutar pruebas de compra directa y afiliados',
+          detail:
+            '195 pruebas del harness pasaron; incluye pruebas de compra directa, atribución referida e idempotencia.',
+        },
+        {
+          id: 'local-flow',
+          area: 'Flujo',
+          status: 'done',
+          title: 'Confirmar la base local del QR y comisión',
+          detail:
+            'El recorrido de QR permanente, visita referida, comisión del 5% e ingresos está implementado en el checkout local.',
+        },
+        {
+          id: 'scope',
+          area: 'Alcance',
+          status: 'done',
+          title: 'Congelar alcance de la entrega',
+          detail:
+            'Solo afiliado → QR → compra → comisión/notificación → aviso en terminal virtual. Sin retiros ni gamificación.',
+        },
+        {
+          id: 'inventory',
+          area: 'AWS',
+          status: 'done',
+          title: 'Inspeccionar inventario publicado de la cuenta destino',
+          detail:
+            'Existen las cinco tablas low-cost y la aplicación Amplify edtech-solution, rama main. Cognito, Thing terminal-demo-01 y endpoint IoT se conservan; la API low-cost sigue sin rutas.',
+        },
+        {
+          id: 'catalog-adapter',
+          area: 'Backend',
+          status: 'done',
+          title: 'Completar handler Lambda del catálogo público',
+          detail:
+            'Handler DynamoDB de lectura para catálogo/curso/carrera tipado y empaquetado; limita la superficie a las rutas públicas del QR y checkout.',
+        },
+        {
+          id: 'catalog-seed',
+          area: 'Datos',
+          status: 'done',
+          title: 'Preparar seed idempotente del producto demo',
+          detail:
+            'Script de plan/aplicación preparado: curso público de USD 40, lookup de slug y precio de pagos en una transacción; no crea ventas ni comisiones falsas.',
+        },
+        {
+          id: 'lambda-build',
+          area: 'Backend',
+          status: 'done',
+          title: 'Empaquetar handlers Linux requeridos por el flujo',
+          detail:
+            'Builds limpios en contenedor Linux pasaron para catálogo, afiliados, pagos, terminales y publicador outbox; ZIP versionados por hash quedan en .local/lambda/.',
+        },
+        {
+          id: 'terraform-review',
+          area: 'Terraform',
+          status: 'done',
+          title: 'Limitar Terraform a los dominios del flujo QR',
+          detail:
+            'Variable enabled_domains por defecto incluye catálogo, pagos, afiliados y terminales IoT; control conserva cuotas/estado. Otros dominios quedan fuera.',
+        },
+        {
+          id: 'profile-terraform',
+          area: 'Terraform',
+          status: 'done',
+          title: 'Preparar entorno Linux para Terraform y build',
+          detail:
+            'Terraform instalado en WSL, Docker disponible; configuración y empaquetado se ejecutan sin instalar dependencias Windows dentro de Lambda.',
+        },
+        {
+          id: 'github-amplify',
+          area: 'Acceso externo',
+          status: 'done',
+          title: 'Autorizar conexión GitHub en Amplify',
+          detail:
+            'Conexión autorizada al repositorio AnrrousUTP/edtech-solution y rama main en la aplicación ddgj3exz5re93.',
+        },
+        {
+          id: 'paypal',
+          area: 'Checkout',
+          status: 'done',
+          title: 'Retirar PayPal del checkout de demostración',
+          detail:
+            'El checkout público ya no crea órdenes PayPal, redirige a su sitio, lee sus credenciales ni recibe webhooks. El parámetro anterior queda fuera del runtime.',
+        },
+        {
+          id: 'secrets',
+          area: 'Seguridad',
+          status: 'done',
+          title: 'Retirar permisos y colas de webhooks PayPal',
+          detail:
+            'Terraform deja de asignar permiso SSM para PayPal y retira las colas y el trigger de webhooks.',
+        },
+        {
+          id: 'routes-contract',
+          area: 'Backend',
+          status: 'todo',
+          title: 'Fijar contrato público de afiliados y pagos',
+          detail:
+            'Comprobar rutas, payloads, status codes, cookies, pruebas firmadas y compatibilidad con Next.js.',
+        },
+        {
+          id: 'auth-cognito',
+          area: 'Identidad',
+          status: 'todo',
+          title: 'Ajustar Cognito a la URL publicada',
+          detail:
+            'Callbacks, logout, dominios, cookies y flujo de login/MFA para Amplify/API Gateway.',
+        },
+        {
+          id: 'lambda-affiliates',
+          area: 'Backend',
+          status: 'todo',
+          title: 'Cerrar Lambda de afiliados',
+          detail:
+            'Panel, alta, activación, atribución, ingresos, historial y notificaciones sobre persistencia DynamoDB.',
+        },
+        {
+          id: 'lambda-payments',
+          area: 'Backend',
+          status: 'done',
+          title: 'Confirmar compra directa en Lambda Payments',
+          detail:
+            'El endpoint autenticado confirma orden y eventos en una transacción DynamoDB, sin proveedor externo.',
+        },
+        {
+          id: 'lambda-iot',
+          area: 'Backend',
+          status: 'todo',
+          title: 'Cerrar Lambda de terminales IoT',
+          detail:
+            'Permisos por propietario, sesión WebSocket firmada, configuración y avisos sin claves permanentes en el browser.',
+        },
+        {
+          id: 'lambda-web',
+          area: 'Web',
+          status: 'todo',
+          title: 'Conectar páginas afiliado y comprador con la API serverless',
+          detail:
+            'Base URL API, SSR, cookies seguras y manejo visible de errores/loading en las páginas del flujo.',
+        },
+        {
+          id: 'qr-route',
+          area: 'Web',
+          status: 'todo',
+          title: 'Verificar ruta QR pública y continuidad de atribución',
+          detail:
+            '/r/{refId}, cookie de 30 días, redirect permitido y atribución conservada tras registro/login.',
+        },
+        {
+          id: 'commission',
+          area: 'Reglas de negocio',
+          status: 'done',
+          title: 'Verificar comisión 5% en compra directa',
+          detail:
+            'La compra confirmada emite la venta atribuida; el consumidor Affiliates calcula USD 2 por una venta de USD 40 y deduplica la orden.',
+        },
+        {
+          id: 'refund',
+          area: 'Reglas de negocio',
+          status: 'todo',
+          title: 'Mantener ajuste por reembolso si forma parte del camino de pago',
+          detail:
+            'El reembolso registrado ajusta el ingreso sin borrar el historial. No se añade UI de liquidación.',
+        },
+        {
+          id: 'events',
+          area: 'Eventos',
+          status: 'todo',
+          title: 'Cerrar publicación de eventos de venta',
+          detail:
+            'Outbox durable → EventBridge/SQS; mensajes duplicados y reintentos no repiten efectos financieros.',
+        },
+        {
+          id: 'sqs',
+          area: 'Eventos',
+          status: 'todo',
+          title: 'Configurar cola, DLQ y reintentos del trabajador IoT',
+          detail:
+            'Procesamiento parcial por lote, deduplicación persistente y recuperación de mensajes fallidos.',
+        },
+        {
+          id: 'iot-rule',
+          area: 'IoT',
+          status: 'todo',
+          title: 'Conectar evento de comisión con AWS IoT Core',
+          detail:
+            'Regla/worker actualiza Shadow y almacena aviso recuperable para terminal asignado.',
+        },
+        {
+          id: 'iot-websocket',
+          area: 'IoT',
+          status: 'todo',
+          title: 'Completar terminal virtual MQTT sobre WebSocket seguro',
+          detail:
+            'Conectar, suscribir solo topics del dispositivo, heartbeat, confirmar versión y cerrar al salir.',
+        },
+        {
+          id: 'iot-shadow',
+          area: 'IoT',
+          status: 'todo',
+          title: 'Probar recuperación de configuración mediante Device Shadow',
+          detail:
+            'Al reconectar, reconciliar configuración/aviso pendiente sin repetir confirmación.',
+        },
+        {
+          id: 'dynamodb',
+          area: 'Datos',
+          status: 'done',
+          title: 'Crear tablas DynamoDB mínimas y bajo demanda',
+          detail:
+            'Aplicadas cinco tablas: afiliados, pagos, catálogo, terminales y control; claves/índices y cifrado administrado por AWS.',
+        },
+        {
+          id: 'bootstrap',
+          area: 'Datos',
+          status: 'done',
+          title: 'Sembrar producto de prueba para QR y compra directa',
+          detail: 'Curso demo de USD 40 y precio de 4.000 centavos cargados idempotentemente.',
+        },
+        {
+          id: 's3',
+          area: 'Archivos',
+          status: 'done',
+          title: 'Configurar bucket privado del flujo',
+          detail:
+            'Bucket S3 aplicado con acceso público bloqueado, cifrado SSE-S3 y reglas de ciclo de vida.',
+        },
+        {
+          id: 'amplify',
+          area: 'Hosting',
+          status: 'done',
+          title: 'Publicar aplicación Next.js en Amplify',
+          detail:
+            'Despliegue a36168d exitoso: Build, Deploy y Verify. Portada y /login responden HTTP 200 en https://main.ddgj3exz5re93.amplifyapp.com. Limpieza de node_modules y linker hoisted eliminan los fallos reproducidos.',
+        },
+        {
+          id: 'api-gateway',
+          area: 'Hosting',
+          status: 'done',
+          title: 'Crear API Gateway HTTP pausado',
+          detail:
+            'API creada con throttling bajo; no tiene rutas ni integración Lambda, por lo que todavía no sirve la aplicación.',
+        },
+        {
+          id: 'cost-cap',
+          area: 'Costos',
+          status: 'done',
+          title: 'Configurar pausa y alerta mensual de gasto',
+          detail:
+            'Servicios públicos, trabajadores y reglas permanecen pausados. AWS Budget avisa a USD 4; es una alerta, no un corte automático.',
+        },
+        {
+          id: 'no-vpc',
+          area: 'Costos',
+          status: 'done',
+          title: 'Mantener la arquitectura sin NAT ni ALB',
+          detail: 'El plan aplicado no creó VPC, NAT, ALB ni tareas Fargate.',
+        },
+        {
+          id: 'terraform-plan',
+          area: 'Terraform',
+          status: 'done',
+          title: 'Validar plan remoto en la cuenta correcta',
+          detail:
+            'Plan real con perfil edtech: 46 recursos, 0 cambios, 0 destrucciones; solo cuatro dominios + control. Los servicios públicos, reglas de negocio y workers quedan pausados. Archivo de plan temporal descartado.',
+        },
+        {
+          id: 'terraform-apply',
+          area: 'Terraform',
+          status: 'done',
+          title: 'Aplicar infraestructura nueva en modo pausado',
+          detail:
+            'Apply real completado en la cuenta 047600599757: 46 recursos creados, 0 modificados y 0 eliminados.',
+        },
+        {
+          id: 'terraform-second',
+          area: 'Terraform',
+          status: 'done',
+          title: 'Comprobar segundo plan sin cambios inesperados',
+          detail:
+            'Segundo plan de Terraform encontró cero diferencias; infraestructura coincide con el código.',
+        },
+        {
+          id: 'seed-aws',
+          area: 'Datos',
+          status: 'done',
+          title: 'Cargar producto y precio demo en AWS',
+          detail:
+            'Curso curso-demo-afiliados publicado a USD 40 y precio de checkout sembrado; comisión esperada al 5%: USD 2.',
+        },
+        {
+          id: 'deploy-web',
+          area: 'Hosting',
+          status: 'todo',
+          title: 'Desplegar web y verificar healthchecks',
+          detail:
+            'Comprobar TLS, login, API, logs sin secretos y ausencia de recursos legacy activos.',
+        },
+        {
+          id: 'affiliate-smoke',
+          area: 'Pruebas',
+          status: 'todo',
+          title: 'Ejecutar smoke test AWS afiliado → comisión',
+          detail:
+            'Validar con sesiones reales que API, QR, compra directa, matrícula, comisión e ingresos funcionan tras el despliegue.',
+        },
+        {
+          id: 'security',
+          area: 'Seguridad',
+          status: 'todo',
+          title: 'Probar autorización y aislamiento entre usuarios',
+          detail:
+            'Tokens vencidos/incorrectos, recursos ajenos, autorreferidos, topics IoT ajenos y cuerpo crudo webhook.',
+        },
+        {
+          id: 'cost-inventory',
+          area: 'Costos',
+          status: 'todo',
+          title: 'Revisar inventario y costo estimado para cinco días',
+          detail:
+            'Confirmar recursos realmente activos, borrar/retirar solo lo sustituido tras validar respaldo y mantener pausa.',
+        },
+        {
+          id: 'affiliate-login-user',
+          area: 'Prueba manual',
+          status: 'user',
+          title: 'Ingresar como afiliado y obtener el QR',
+          detail:
+            'Te entregaré URL pública y usuario de prueba; valida login, activación, QR visible, copiar y descargar.',
+        },
+        {
+          id: 'buyer-qr-user',
+          area: 'Prueba manual',
+          status: 'user',
+          title: 'Escanear QR como comprador y completar compra directa',
+          detail:
+            'Usa otra sesión sin el afiliado; confirma la compra de demostración y revisa que el curso quede habilitado.',
+        },
+        {
+          id: 'commission-ui-user',
+          area: 'Prueba manual',
+          status: 'user',
+          title: 'Confirmar comisión en ingresos y notificación',
+          detail:
+            'Verifica monto, moneda, curso, fecha y que el afiliado vea el aviso tras compra confirmada.',
+        },
+        {
+          id: 'terminal-user',
+          area: 'Prueba manual',
+          status: 'user',
+          title: 'Validar aviso IoT en pantalla del terminal',
+          detail:
+            'Comprueba que la venta aparece una sola vez y que reconexión recupera el estado pendiente.',
+        },
+        {
+          id: 'retest-user',
+          area: 'Prueba manual',
+          status: 'user',
+          title: 'Reportar errores visuales/funcionales y repetir aceptación',
+          detail:
+            'Me das pasos, navegador y mensaje observado; corrijo y te pido repetir solo el caso afectado.',
+        },
+        {
+          id: 'public-url',
+          area: 'Entrega',
+          status: 'todo',
+          title: 'Entregarte URLs y guía breve de demostración',
+          detail:
+            'URL de afiliado, URL de QR/curso, URL de terminal, cuentas sandbox y secuencia para mostrar en clase.',
+        },
+        {
+          id: 'docs',
+          area: 'Entrega',
+          status: 'todo',
+          title: 'Actualizar arquitectura y runbook del flujo publicado',
+          detail:
+            'Diagrama final, operación pausada/activa, recuperación, costos observados y retiro al acabar la demo.',
+        },
+      ]
+      const labels = {
+        done: 'Verificado',
+        doing: 'En curso',
+        blocked: 'Bloqueado / requiere tercero',
+        user: 'Prueba contigo',
+        todo: 'Por hacer',
+      }
+      const savedKey = 'edtech-affiliate-iot-board-v2'
+      let overrides = {}
+      try {
+        overrides = JSON.parse(localStorage.getItem(savedKey) || '{}')
+      } catch {}
+      const board = document.getElementById('board')
+      const filter = document.getElementById('filter')
+      const search = document.getElementById('search')
+      const areas = [...new Set(tasks.map(t => t.area))].sort((a, b) => a.localeCompare(b, 'es'))
+      areas.forEach(a => {
+        const o = document.createElement('option')
+        o.value = a
+        o.textContent = a
+        filter.append(o)
+      })
+      function statusOf(t) {
+        return overrides[t.id] || t.status
+      }
+      function render() {
+        document.querySelectorAll('.cards').forEach(c => c.replaceChildren())
+        const query = search.value.trim().toLocaleLowerCase('es'),
+          area = filter.value
+        let visible = 0
+        const counts = { done: 0, doing: 0, blocked: 0, user: 0, todo: 0 }
+        for (const t of tasks) {
+          const status = statusOf(t)
+          counts[status]++
+          if (area !== 'all' && t.area !== area) continue
+          if (query && !`${t.title} ${t.detail} ${t.area}`.toLocaleLowerCase('es').includes(query))
+            continue
+          visible++
+          const col = board.querySelector(`[data-status="${status}"]`)
+          const card = document.createElement('article')
+          card.className = 'card'
+          card.innerHTML = `<h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.detail)}</p><div class="meta"><span class="tag">${escapeHtml(t.area)}</span><span class="owner">${status === 'user' ? 'Responsable: tú' : 'Responsable: Codex'}</span></div><label class="sr" for="move-${t.id}">Cambiar estado de ${escapeHtml(t.title)}</label><select class="move" id="move-${t.id}" aria-label="Cambiar estado: ${escapeHtml(t.title)}">${['todo', 'doing', 'blocked', 'done', 'user'].map(s => `<option value="${s}" ${s === status ? 'selected' : ''}>Mover a: ${labels[s]}</option>`).join('')}</select>`
+          card.querySelector('select').addEventListener('change', e => {
+            overrides[t.id] = e.target.value
+            localStorage.setItem(savedKey, JSON.stringify(overrides))
+            render()
+          })
+          col.querySelector('.cards').append(card)
+        }
+        document.querySelectorAll('.column').forEach(c => {
+          const s = c.dataset.status
+          c.querySelector('.count').textContent = counts[s]
+          if (!c.querySelector('.card')) {
+            const e = document.createElement('div')
+            e.className = 'empty'
+            e.textContent = 'Sin tareas visibles'
+            c.querySelector('.cards').append(e)
+          }
+        })
+        document.getElementById('total').textContent = tasks.length
+        document.getElementById('done').textContent = `${counts.done} / ${tasks.length}`
+        document.getElementById('blocked').textContent = counts.blocked
+        document.getElementById('userCount').textContent = counts.user
+        document.getElementById('updated').textContent =
+          `${visible} tareas visibles · guardado local`
+      }
+      function escapeHtml(v) {
+        return v.replace(
+          /[&<>"']/g,
+          c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+        )
+      }
+      search.addEventListener('input', render)
+      filter.addEventListener('change', render)
+      document.getElementById('reset').addEventListener('click', () => {
+        overrides = {}
+        localStorage.removeItem(savedKey)
+        render()
+      })
+      render()
+    </script>
+  </body>
 </html>

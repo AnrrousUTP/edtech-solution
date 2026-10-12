@@ -1,8 +1,4 @@
-// Dos entradas de mensajería (doc 09 §4, doc 05 §6):
-//   - cola del bus (edtech-dev-payments): eventos de catalog → proyección de precios
-//   - cola interna (edtech-dev-payments-webhooks): webhooks de PayPal → worker
-// Los webhooks se deduplican por paypal_event_id y sus efectos por estado de
-// orden; las proyecciones catalogadas guardan evento y precio en una transacción.
+// Consume cambios del catálogo y actualiza la proyección local de precios.
 import {
   log,
   type Command,
@@ -10,12 +6,10 @@ import {
   type ResultadoMensaje,
   type SobreEvento,
 } from '@edtech/shared-kernel'
-import type { WebhookRepository } from '../../../domain/ports-out/orden.repository'
 import type {
   DespublicarPrecioCommand,
   ProyectarPrecioCommand,
 } from '../../../application/consultar-ordenes/consultar-ordenes.handler'
-import type { ProcesarWebhookCommand } from '../../../application/procesar-webhook/procesar-webhook.handler'
 
 export const onCursoPublicado = (sobre: SobreEvento): Command => {
   const p = sobre.payload
@@ -66,42 +60,8 @@ const HANDLERS: Record<string, (sobre: SobreEvento) => Command | null> = {
 }
 
 export const crearProcesador =
-  (bus: CommandBus, webhooks: WebhookRepository) =>
+  (bus: CommandBus) =>
   async (sobre: SobreEvento): Promise<ResultadoMensaje> => {
-    // Cola interna de webhooks: el mensaje solo trae el id; el crudo está en la
-    // bitácora, que se escribió antes de encolar y sobrevive a cualquier fallo.
-    if (sobre.eventType === 'payments.webhook-recibido.interno') {
-      const paypalEventId = String(sobre.payload.paypalEventId)
-      const webhook = await webhooks.porEventId(paypalEventId)
-      if (!webhook) {
-        log.error('webhook encolado sin fila en la bitácora', { paypalEventId })
-        return 'ACK'
-      }
-      if (!webhook.firmaValida) {
-        log.error('webhook con firma inválida llegó al worker: no se procesa', { paypalEventId })
-        return 'ACK'
-      }
-      const payload = webhook.payload as { resource?: Record<string, unknown> }
-      const cmd: ProcesarWebhookCommand = {
-        _tag: 'ProcesarWebhook',
-        paypalEventId,
-        eventType: webhook.eventType,
-        recurso: payload.resource ?? {},
-      }
-      try {
-        const r = await bus.dispatch(cmd)
-        if (r.ok) return 'ACK'
-        log.error('webhook inaplicable (error de negocio)', { paypalEventId, error: r.error })
-        return 'ACK'
-      } catch (err) {
-        log.error('fallo de infraestructura procesando webhook', {
-          paypalEventId,
-          error: err instanceof Error ? err.message : String(err),
-        })
-        return 'NACK' // reintento de SQS → DLQ a la quinta
-      }
-    }
-
     const traducir = HANDLERS[sobre.eventType]
     if (!traducir) {
       log.warn('evento sin handler', { eventType: sobre.eventType })

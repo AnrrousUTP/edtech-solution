@@ -1,15 +1,10 @@
 // Único lugar del servicio donde se lee process.env (doc 12 §3).
-// Las credenciales de PayPal NO están acá: se leen de Secrets Manager (D17).
 export type Config = {
   puerto: number
-  paypalMode: 'real' | 'fake'
   region: string
   awsEndpoint: string | undefined
   busName: string
   colaUrl: string | undefined
-  colaWebhooksUrl: string | undefined
-  paypalSecretName: string
-  paypalParameterName: string
   referralVerificationSecretName?: string
   referralVerificationParameterName?: string
   dynamoTable: string | undefined
@@ -22,14 +17,10 @@ export const cargarConfig = (): Config => {
   const env = process.env
   return {
     puerto: Number(env.PORT ?? 3000),
-    paypalMode: env.PAYPAL_MODE === 'fake' ? 'fake' : 'real',
     region: env.AWS_REGION ?? 'us-east-1',
     awsEndpoint: env.AWS_ENDPOINT_URL,
     busName: env.EVENT_BUS_NAME ?? 'edtech-domain-events',
     colaUrl: env.QUEUE_URL,
-    colaWebhooksUrl: env.QUEUE_WEBHOOKS_URL,
-    paypalSecretName: env.PAYPAL_SECRET_NAME ?? 'edtech/dev/paypal',
-    paypalParameterName: env.PAYPAL_PARAMETER_NAME ?? '/edtech/lowcost/paypal',
     referralVerificationSecretName: env.REFERRAL_VERIFICATION_SECRET_NAME,
     referralVerificationParameterName: env.REFERRAL_VERIFICATION_PARAMETER_NAME,
     dynamoTable: env.DYNAMODB_TABLE,
