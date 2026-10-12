@@ -22,8 +22,6 @@ export const intentarCascadaCurso = async (
   const completado = matricula.intentarCompletarCurso(curso, deps.reloj.ahora())
   if (!completado) return { cursoCompletado: false }
 
-  await deps.matriculas.marcarCursoCompletado(matricula.id, curso.cursoId)
-
   // ¿Alguna carrera quedó completa? (lectura degradable, A-24)
   const completados = new Set(await deps.matriculas.cursosCompletadosDe(matricula.usuarioId))
   completados.add(curso.cursoId)

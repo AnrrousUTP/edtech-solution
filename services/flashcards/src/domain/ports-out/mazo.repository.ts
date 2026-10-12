@@ -1,4 +1,5 @@
 import type { UniqueId } from '@edtech/shared-kernel'
+import type { DomainEvent } from '@edtech/shared-kernel'
 import type { MazoFlashcards, Tarjeta } from '../entities/mazo-flashcards.entity'
 
 export interface MazoRepository {
@@ -11,5 +12,5 @@ export interface MazoRepository {
   /** I-8: el filtro estado='PUBLICADA' vive ACÁ, no en el controlador. Un
    *  endpoint nuevo no tiene forma de pedir tarjetas sin revisar. */
   porTomoParaEstudiante(tomoId: string): Promise<Tarjeta[]>
-  guardar(mazo: MazoFlashcards): Promise<void>
+  guardar(mazo: MazoFlashcards, eventos?: DomainEvent[]): Promise<void>
 }

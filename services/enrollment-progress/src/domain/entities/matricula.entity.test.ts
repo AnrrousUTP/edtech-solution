@@ -97,6 +97,8 @@ describe('Matricula', () => {
 
     const curso = new CursoProyectado(cursoId.valor, 'CSS desde Cero', 'css', true, 19.9, 'E', [t])
     expect(m.intentarCompletarCurso(curso, AHORA)).toBe(true)
+    expect(m.cursoCompletado).toBe(true)
+    expect(m.intentarCompletarCurso(curso, AHORA)).toBe(false)
 
     const evento = m.pullEvents()[0]
     expect(evento?.eventType).toBe('enrollment.curso-completado.v1')

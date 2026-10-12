@@ -1,7 +1,4 @@
-import {
-  InvokeAgentCommand,
-  BedrockAgentRuntimeClient,
-} from '@aws-sdk/client-bedrock-agent-runtime'
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
 import { Err, Ok, type Result } from '@edtech/shared-kernel'
 import type {
   GeneradorFlashcardsPort,
@@ -11,35 +8,37 @@ import type {
 import { GeneracionError } from '../../domain/module.errors'
 import { extraerTarjetas, validarTarjetas } from '../../domain/value-objects/salida-modelo.vo'
 
-export const crearBedrockClient = (cfg: { region: string }): BedrockAgentRuntimeClient =>
-  new BedrockAgentRuntimeClient({ region: cfg.region })
+export const crearBedrockClient = (cfg: { region: string }): BedrockRuntimeClient =>
+  new BedrockRuntimeClient({ region: cfg.region })
 export class BedrockGeneradorFlashcards implements GeneradorFlashcardsPort {
   constructor(
-    private readonly client: BedrockAgentRuntimeClient,
-    private readonly agentId: string,
-    private readonly aliasId: string,
+    private readonly client: BedrockRuntimeClient,
     private readonly modelo: string,
   ) {}
   async generar(input: EntradaGeneracion): Promise<Result<SalidaGeneracion, GeneracionError>> {
-    if (!this.agentId) return Err(new GeneracionError('BEDROCK_AGENT_ID no configurado'))
+    if (!this.modelo) return Err(new GeneracionError('BEDROCK_MODEL_ID no configurado'))
     try {
       const r = await this.client.send(
-        new InvokeAgentCommand({
-          agentId: this.agentId,
-          agentAliasId: this.aliasId,
-          sessionId: crypto.randomUUID(),
-          inputText: JSON.stringify({
-            instruccion: 'Devuelve solo JSON con clave tarjetas',
-            cantidad: input.cantidadDeseada,
-            ...input,
-          }),
+        new ConverseCommand({
+          modelId: this.modelo,
+          system: [
+            {
+              text: 'Genera flashcards educativas en español. Responde únicamente JSON válido con la forma {"tarjetas":[{"anverso":"...","reverso":"..."}]}. No agregues markdown.',
+            },
+          ],
+          messages: [
+            {
+              role: 'user',
+              content: [{ text: JSON.stringify({ cantidad: input.cantidadDeseada, ...input }) }],
+            },
+          ],
+          inferenceConfig: { maxTokens: 3000, temperature: 0.2 },
         }),
       )
-      let texto = ''
-      for await (const parte of r.completion ?? []) {
-        if ('chunk' in parte && parte.chunk?.bytes)
-          texto += new TextDecoder().decode(parte.chunk.bytes)
-      }
+      const texto =
+        r.output?.message?.content
+          ?.flatMap(part => ('text' in part && part.text ? [part.text] : []))
+          .join('') ?? ''
       const salida = extraerTarjetas(texto)
       if (!salida.ok) return Err(new GeneracionError(salida.error.message))
       const tarjetas = validarTarjetas(salida.value)

@@ -49,7 +49,7 @@ export const crearRutaWebhook = (
 
       // Se registra ANTES de procesar y sobrevive a cualquier fallo posterior.
       // El UNIQUE de paypal_event_id descarta el reintento de PayPal (doc 09 §4).
-      const esNuevo = await webhooks.registrarSiEsNuevo({
+      const debeEncolar = await webhooks.registrarSiEsNuevo({
         paypalEventId,
         eventType,
         firmaValida,
@@ -67,8 +67,20 @@ export const crearRutaWebhook = (
         return
       }
 
-      if (esNuevo) await cola.encolar(paypalEventId)
-      else log.info('webhook repetido de PayPal: ya estaba registrado', { paypalEventId })
+      if (debeEncolar) {
+        try {
+          await cola.encolar(paypalEventId)
+          await webhooks.marcarEncolado(paypalEventId)
+        } catch (error) {
+          log.error('no se pudo encolar el webhook de PayPal; se solicitará reintento', {
+            paypalEventId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+          res.status(503).json({ recibido: false })
+          return
+        }
+      } else
+        log.info('webhook repetido de PayPal: ya estaba registrado y encolado', { paypalEventId })
 
       // Responder en < 200 ms: el trabajo lo hace el worker (doc 09 §4)
       res.status(200).json({ recibido: true })

@@ -60,9 +60,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
     cfg.generador === 'bedrock'
       ? new BedrockGeneradorFlashcards(
           crearBedrockClient({ region: cfg.region }),
-          cfg.bedrock.agentId,
-          cfg.bedrock.agentAliasId,
-          cfg.bedrock.modeloDeclarado,
+          cfg.bedrock.modelId,
         )
       : new FakeGeneradorFlashcards()
 

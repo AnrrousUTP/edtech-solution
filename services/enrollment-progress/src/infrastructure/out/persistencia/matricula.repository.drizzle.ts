@@ -22,6 +22,7 @@ const cargar = async (db: Db, fila: Record<string, any>): Promise<Matricula> => 
     origen: String(fila.origen),
     ordenId: fila.orden_id ? UniqueId.desde(String(fila.orden_id)) : null,
     accesoHasta: fila.acceso_hasta ? new Date(fila.acceso_hasta) : null,
+    cursoCompletado: fila.curso_completado_at != null,
     leccionesCompletadas: new Map(
       lecciones.rows.map(l => [String(l.leccion_id), String(l.tomo_id)]),
     ),
@@ -51,8 +52,12 @@ export class DrizzleMatriculaRepository implements MatriculaRepository {
   }
   async guardar(matricula: Matricula): Promise<void> {
     await this.db.query(
-      `INSERT INTO enrollment.matriculas (id, usuario_id, curso_id, estado, origen, orden_id)
-      VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO UPDATE SET estado = EXCLUDED.estado, updated_at = now()`,
+      `INSERT INTO enrollment.matriculas (id, usuario_id, curso_id, estado, origen, orden_id, curso_completado_at)
+      VALUES ($1,$2,$3,$4,$5,$6,CASE WHEN $7 THEN now() ELSE NULL END)
+      ON CONFLICT (id) DO UPDATE SET estado = EXCLUDED.estado,
+      curso_completado_at = CASE WHEN EXCLUDED.curso_completado_at IS NOT NULL
+        THEN COALESCE(enrollment.matriculas.curso_completado_at, now())
+        ELSE enrollment.matriculas.curso_completado_at END, updated_at = now()`,
       [
         matricula.id.valor,
         matricula.usuarioId.valor,
@@ -60,6 +65,7 @@ export class DrizzleMatriculaRepository implements MatriculaRepository {
         matricula.estado,
         matricula.origen,
         matricula.ordenId?.valor ?? null,
+        matricula.cursoCompletado,
       ],
     )
     for (const [leccionId, tomoId] of matricula.leccionesCompletadas)
@@ -89,12 +95,6 @@ export class DrizzleMatriculaRepository implements MatriculaRepository {
       [usuarioId.valor],
     )
     return r.rows.map(x => String(x.curso_id))
-  }
-  async marcarCursoCompletado(matriculaId: UniqueId, cursoId: string): Promise<void> {
-    await this.db.query(
-      'UPDATE enrollment.matriculas SET curso_completado_at = COALESCE(curso_completado_at, now()), updated_at = now() WHERE id = $1 AND curso_id = $2',
-      [matriculaId.valor, cursoId],
-    )
   }
   async cursoYaCompletado(matriculaId: UniqueId): Promise<boolean> {
     const r = await this.db.query(

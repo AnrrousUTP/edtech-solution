@@ -1,6 +1,9 @@
 // Único lugar del servicio donde se lee process.env (doc 12 §3).
 export type Config = {
   puerto: number
+  persistence: 'drizzle' | 'dynamodb'
+  dynamoTable: string
+  catalogFunctionName: string
   region: string
   awsEndpoint: string | undefined
   busName: string
@@ -16,6 +19,9 @@ export const cargarConfig = (): Config => {
   const env = process.env
   return {
     puerto: Number(env.PORT ?? 3000),
+    persistence: env.PERSISTENCE === 'dynamodb' ? 'dynamodb' : 'drizzle',
+    dynamoTable: env.DYNAMODB_TABLE ?? '',
+    catalogFunctionName: env.CATALOG_FUNCTION_NAME ?? '',
     region: env.AWS_REGION ?? 'us-east-1',
     awsEndpoint: env.AWS_ENDPOINT_URL,
     busName: env.EVENT_BUS_NAME ?? 'edtech-domain-events',

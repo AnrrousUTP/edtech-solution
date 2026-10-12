@@ -3,6 +3,7 @@ import { FakeClock, UniqueId, validarContra } from '@edtech/shared-kernel'
 import { InMemoryEventPublisher } from '@edtech/shared-kernel/testing'
 import { EntregarIntentoHandler, IniciarIntentoHandler } from './gestionar-intento.handler'
 import { Matricula } from '../../domain/entities/matricula.entity'
+import type { BancoConRespuestas } from '../../domain/ports-out/banco-respuestas.port'
 import {
   CursoProyectado,
   type TomoProyectado,
@@ -52,7 +53,7 @@ const montar = async () => {
     publisher,
     reloj,
     iniciar: new IniciarIntentoHandler(intentos, matriculas, proyeccion, reloj),
-    entregar: (banco = bancoTomo) =>
+    entregar: (banco: BancoConRespuestas = bancoTomo) =>
       new EntregarIntentoHandler(
         intentos,
         matriculas,
@@ -205,7 +206,7 @@ describe('EntregarIntentoHandler', () => {
 
   test('el test de nivelación emite test-nivelacion-completado con el nivel del algoritmo', async () => {
     const { iniciar, entregar, publisher } = await montar()
-    const bancoNivelacion = {
+    const bancoNivelacion: BancoConRespuestas = {
       bancoId: BANCO,
       umbral: null,
       preguntas: [

@@ -13,6 +13,5 @@ export interface MatriculaRepository {
   ): Promise<{ aprobada: boolean; puntaje: number }>
   /** cursoIds con curso completado por el usuario (para carrera-completada, A-24). */
   cursosCompletadosDe(usuarioId: UniqueId): Promise<string[]>
-  marcarCursoCompletado(matriculaId: UniqueId, cursoId: string): Promise<void>
   cursoYaCompletado(matriculaId: UniqueId): Promise<boolean>
 }

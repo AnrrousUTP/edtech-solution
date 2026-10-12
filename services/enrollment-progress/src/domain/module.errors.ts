@@ -9,6 +9,13 @@ export class SinMatriculaError extends EnrollmentError {
   }
 }
 
+export class MatriculaNoEncontradaError extends EnrollmentError {
+  readonly code = 'MATRICULA_NO_ENCONTRADA'
+  constructor(id: string) {
+    super(`La matrícula ${id} ya no existe`)
+  }
+}
+
 export class MatriculaNoActivaError extends EnrollmentError {
   readonly code = 'MATRICULA_NO_ACTIVA'
   constructor(id: string) {

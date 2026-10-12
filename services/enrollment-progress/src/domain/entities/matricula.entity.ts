@@ -22,6 +22,7 @@ type Props = {
   origen: OrigenMatricula
   ordenId: UniqueId | null
   accesoHasta: Date | null
+  cursoCompletado: boolean
   /** leccionId → tomoId */
   leccionesCompletadas: Map<string, string>
   tomosCompletados: Set<string>
@@ -61,6 +62,7 @@ export class Matricula extends AggregateRoot {
       origen,
       ordenId,
       accesoHasta: null,
+      cursoCompletado: false,
       leccionesCompletadas: new Map(),
       tomosCompletados: new Set(),
     })
@@ -130,9 +132,11 @@ export class Matricula extends AggregateRoot {
 
   /** El curso se completa cuando todos sus tomos están completados (doc 02 §1). */
   intentarCompletarCurso(curso: CursoProyectado, ahora: Date): boolean {
+    if (this.props.cursoCompletado) return false
     if (curso.tomos.length === 0) return false
     if (!curso.tomos.every(t => this.props.tomosCompletados.has(t.id))) return false
 
+    this.props.cursoCompletado = true
     this.record(
       new CursoCompletadoEvent(
         this.props.id.valor,
@@ -175,6 +179,9 @@ export class Matricula extends AggregateRoot {
   }
   get accesoHasta(): Date | null {
     return this.props.accesoHasta
+  }
+  get cursoCompletado(): boolean {
+    return this.props.cursoCompletado
   }
   get leccionesCompletadas(): ReadonlyMap<string, string> {
     return this.props.leccionesCompletadas

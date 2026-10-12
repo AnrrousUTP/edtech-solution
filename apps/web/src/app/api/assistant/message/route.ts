@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { MAX_ASSISTANT_HISTORY, MAX_ASSISTANT_MESSAGE_LENGTH } from '@/lib/assistant/config'
-import { AssistantProviderError, generateAssistantReply } from '@/lib/assistant/openai'
+import { AssistantProviderError, generateAssistantReply } from '@/lib/assistant/bedrock'
+import { config } from '@/lib/config'
+import { accessToken } from '@/lib/sesion'
+import { reserveAssistantChatQuota } from '@/lib/assistant/quota'
 
 export const runtime = 'nodejs'
 
@@ -28,6 +31,19 @@ const errorResponse = (message: string, status: number): NextResponse =>
   NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store' } })
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const token = await accessToken()
+  if (!token) return errorResponse('Inicia sesión para utilizar el asistente.', 401)
+
+  try {
+    const auth = await fetch(`${config.apiBase}/api/identity/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!auth.ok) return errorResponse('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
+  } catch {
+    return errorResponse('No pude validar tu sesión ahora.', 503)
+  }
+
   let body: unknown
   try {
     body = await request.json()
@@ -48,12 +64,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     return errorResponse('La conversación es demasiado larga. Inicia una nueva consulta.', 400)
   }
 
+  if (!config.assistant.enabled) {
+    return errorResponse('El asistente todavía no está configurado.', 503)
+  }
+
   try {
+    await reserveAssistantChatQuota()
     const text = await generateAssistantReply(parsed.data.messages, parsed.data.context)
     return NextResponse.json({ text }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     if (error instanceof AssistantProviderError && error.code === 'not-configured') {
       return errorResponse('El asistente todavía no está configurado.', 503)
+    }
+    if (error instanceof AssistantProviderError && error.code === 'quota-exceeded') {
+      return errorResponse(
+        'Se alcanzó el límite mensual del asistente. Inténtalo el próximo mes.',
+        429,
+      )
     }
 
     return errorResponse('No pude responder ahora. Inténtalo nuevamente en unos segundos.', 502)

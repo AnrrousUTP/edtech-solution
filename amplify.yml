@@ -1,0 +1,24 @@
+version: 1
+applications:
+  - appRoot: apps/web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - nvm use 22
+            - npm install --global bun@1.3.14
+            - cd ../.. && bun install --frozen-lockfile
+        build:
+          commands:
+            - env | grep -E '^(API_BASE|EDTECH_SERVICES_API_BASE|APP_URL|COGNITO_REGION|COGNITO_DOMINIO|COGNITO_CLIENT_ID|EDTECH_AFFILIATES_ENABLED|EDTECH_AI_ENABLED|EDTECH_CONTROL_TABLE|EDTECH_AUDIO_BUCKET|EDTECH_IOT_ENABLED|EDTECH_IOT_DATA_ENDPOINT|EDTECH_IOT_SESSION_ROLE_ARN|EDTECH_IOT_THING_NAME|BEDROCK_MODEL_ID)=' > .env.production || true
+            - cd ../.. && bun run --cwd apps/web build
+      artifacts:
+        baseDirectory: apps/web/.next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - apps/web/node_modules/**/*
+          - apps/web/.next/cache/**/*
+

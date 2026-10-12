@@ -1,8 +1,8 @@
 // Dos entradas de mensajería (doc 09 §4, doc 05 §6):
 //   - cola del bus (edtech-dev-payments): eventos de catalog → proyección de precios
 //   - cola interna (edtech-dev-payments-webhooks): webhooks de PayPal → worker
-// Idempotencia en dos capas: paypal_event_id (contra PayPal) y
-// processed_events.event_id (contra las reentregas de SQS).
+// Los webhooks se deduplican por paypal_event_id y sus efectos por estado de
+// orden; las proyecciones catalogadas guardan evento y precio en una transacción.
 import {
   log,
   type Command,
@@ -16,7 +16,6 @@ import type {
   ProyectarPrecioCommand,
 } from '../../../application/consultar-ordenes/consultar-ordenes.handler'
 import type { ProcesarWebhookCommand } from '../../../application/procesar-webhook/procesar-webhook.handler'
-import type { Db } from '../../out/persistencia/db'
 
 export const onCursoPublicado = (sobre: SobreEvento): Command => {
   const p = sobre.payload
@@ -28,6 +27,8 @@ export const onCursoPublicado = (sobre: SobreEvento): Command => {
     moneda: String(p.moneda),
     versionPrecio: Number(p.versionPrecio),
     publicado: true,
+    eventId: sobre.eventId,
+    eventType: sobre.eventType,
   }
   return cmd
 }
@@ -42,6 +43,8 @@ export const onPrecioActualizado = (sobre: SobreEvento): Command => {
     moneda: String(p.moneda),
     versionPrecio: Number(p.versionPrecio),
     publicado: true,
+    eventId: sobre.eventId,
+    eventType: sobre.eventType,
   }
   return cmd
 }
@@ -50,6 +53,8 @@ export const onCursoDespublicado = (sobre: SobreEvento): Command => {
   const cmd: DespublicarPrecioCommand = {
     _tag: 'DespublicarPrecio',
     cursoId: String(sobre.payload.cursoId),
+    eventId: sobre.eventId,
+    eventType: sobre.eventType,
   }
   return cmd
 }
@@ -61,14 +66,8 @@ const HANDLERS: Record<string, (sobre: SobreEvento) => Command | null> = {
 }
 
 export const crearProcesador =
-  (db: Db, bus: CommandBus, webhooks: WebhookRepository) =>
+  (bus: CommandBus, webhooks: WebhookRepository) =>
   async (sobre: SobreEvento): Promise<ResultadoMensaje> => {
-    const insertado = await db.claimEvent(sobre.eventId, sobre.eventType)
-    if (!insertado) {
-      log.info('evento ya procesado', { eventId: sobre.eventId })
-      return 'ACK'
-    }
-
     // Cola interna de webhooks: el mensaje solo trae el id; el crudo está en la
     // bitácora, que se escribió antes de encolar y sobrevive a cualquier fallo.
     if (sobre.eventType === 'payments.webhook-recibido.interno') {
@@ -99,7 +98,6 @@ export const crearProcesador =
           paypalEventId,
           error: err instanceof Error ? err.message : String(err),
         })
-        await db.releaseEvent(sobre.eventId)
         return 'NACK' // reintento de SQS → DLQ a la quinta
       }
     }
@@ -129,7 +127,6 @@ export const crearProcesador =
         eventId: sobre.eventId,
         error: err instanceof Error ? err.message : String(err),
       })
-      await db.releaseEvent(sobre.eventId)
       return 'NACK'
     }
   }

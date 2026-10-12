@@ -8,8 +8,11 @@
   },
   "dependencies": {
     "@edtech/shared-kernel": "workspace:*",
+    "@aws-sdk/client-dynamodb": "^3.658.0",
     "@aws-sdk/client-sqs": "^3.658.0",
     "@aws-sdk/client-iot-data-plane": "^3.658.0",
+    "@aws-sdk/lib-dynamodb": "^3.658.0",
+    "@codegenie/serverless-express": "^4.16.0",
     "@aws-sdk/rds-signer": "^3.658.0",
     "drizzle-orm": "^0.36.0",
     "express": "^4.21.0",

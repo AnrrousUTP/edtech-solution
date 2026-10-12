@@ -40,8 +40,9 @@ export class FijarNivelPorTestHandler implements CommandHandler<
     if (isErr(nivel)) return Err(nivel.error)
 
     usuario.fijarNivelPorTest(nivel.value)
-    await this.usuarios.guardar(usuario)
-    await this.publisher.publish(usuario.pullEvents())
+    const eventos = usuario.pullEvents()
+    await this.usuarios.guardar(usuario, eventos)
+    await this.publisher.publish(eventos)
     return Ok({ nivel: usuario.nivel.valor })
   }
 }

@@ -36,6 +36,12 @@ export class InMemoryMatriculaRepository implements MatriculaRepository {
   }
   async guardar(m: Matricula): Promise<void> {
     this.guardadas.set(m.id.valor, m)
+    if (m.cursoCompletado) {
+      this.completadasPorMatricula.add(m.id.valor)
+      const set = this.cursosCompletados.get(m.usuarioId.valor) ?? new Set()
+      set.add(m.cursoId.valor)
+      this.cursosCompletados.set(m.usuarioId.valor, set)
+    }
   }
   async evaluacionAprobada(
     _u: UniqueId,
@@ -46,15 +52,6 @@ export class InMemoryMatriculaRepository implements MatriculaRepository {
   }
   async cursosCompletadosDe(usuarioId: UniqueId): Promise<string[]> {
     return [...(this.cursosCompletados.get(usuarioId.valor) ?? [])]
-  }
-  async marcarCursoCompletado(matriculaId: UniqueId, cursoId: string): Promise<void> {
-    this.completadasPorMatricula.add(matriculaId.valor)
-    const m = this.guardadas.get(matriculaId.valor)
-    if (m) {
-      const set = this.cursosCompletados.get(m.usuarioId.valor) ?? new Set()
-      set.add(cursoId)
-      this.cursosCompletados.set(m.usuarioId.valor, set)
-    }
   }
   async cursoYaCompletado(matriculaId: UniqueId): Promise<boolean> {
     return this.completadasPorMatricula.has(matriculaId.valor)

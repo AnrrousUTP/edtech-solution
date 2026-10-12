@@ -5,6 +5,7 @@ export type Config = {
   awsEndpoint: string | undefined
   busName: string
   bucketMedia: string
+  dynamoTable: string | undefined
   cognito: { issuer: string; clientId: string | undefined; jwksUri: string | undefined }
   db: { url: string | undefined; secretName: string | undefined }
   /** Token de la API interna de corrección (A-19). En AWS viene de Secrets Manager. */
@@ -20,6 +21,7 @@ export const cargarConfig = (): Config => {
     awsEndpoint: env.AWS_ENDPOINT_URL,
     busName: env.EVENT_BUS_NAME ?? 'edtech-domain-events',
     bucketMedia: env.BUCKET_MEDIA ?? 'edtech-dev-media',
+    dynamoTable: env.DYNAMODB_TABLE,
     cognito: {
       issuer: env.COGNITO_ISSUER ?? 'http://jwt-local:4599',
       clientId: env.COGNITO_CLIENT_ID,

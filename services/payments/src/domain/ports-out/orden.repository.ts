@@ -26,8 +26,12 @@ export interface OrdenRepository {
 
 export interface PrecioProyeccionRepository {
   porCursoId(cursoId: string): Promise<PrecioProyectado | null>
-  guardar(precio: PrecioProyectado): Promise<void>
-  marcarPublicado(cursoId: string, publicado: boolean): Promise<void>
+  guardar(precio: PrecioProyectado, evento?: { eventId: string; eventType: string }): Promise<void>
+  marcarPublicado(
+    cursoId: string,
+    publicado: boolean,
+    evento?: { eventId: string; eventType: string },
+  ): Promise<void>
 }
 
 export type WebhookCrudo = {
@@ -39,8 +43,9 @@ export type WebhookCrudo = {
 
 export interface WebhookRepository {
   /** Idempotencia frente a los reintentos de PayPal (doc 09 §4). Devuelve
-   *  false si el paypal_event_id ya estaba registrado. */
+   *  true cuando hace falta encolar: evento nuevo o válido sin encolado confirmado. */
   registrarSiEsNuevo(webhook: WebhookCrudo): Promise<boolean>
+  marcarEncolado(paypalEventId: string): Promise<void>
   /** El worker lee de la bitácora: el mensaje de la cola solo lleva el id. */
   porEventId(paypalEventId: string): Promise<WebhookCrudo | null>
   marcarProcesado(paypalEventId: string, error?: string): Promise<void>

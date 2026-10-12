@@ -1,8 +1,17 @@
 # EdTech Solution
 
 Plataforma de cursos de programación con progresión por niveles, gamificación y
-aprendizaje asistido por IA. Seis servicios con arquitectura hexagonal sobre un
-monorepo Bun, comunicados por eventos, desplegados en ECS Fargate.
+aprendizaje asistido por IA. El monorepo Bun conserva ocho dominios con
+arquitectura hexagonal y despliegue local basado en contenedores. La carpeta
+`infra/envs/lowcost` desarrolla una ruta serverless aislada en AWS.
+
+### Migración AWS serverless low-cost
+
+El entorno Terraform low-cost está separado del estado anterior y arranca en
+modo `pausado`; no publica rutas ni activa workers por defecto. La arquitectura,
+el estado verificado, los dominios preparados y los pasos que faltan están en
+[`docs/arquitectura-aws-edtech.html`](docs/arquitectura-aws-edtech.html). La
+migración de datos y las verificaciones en una cuenta AWS siguen pendientes.
 
 El plan completo —del que sale cada decisión de este repositorio— está en
 [`plataforma_edtech/`](plataforma_edtech/). Los supuestos que hubo que tomar más

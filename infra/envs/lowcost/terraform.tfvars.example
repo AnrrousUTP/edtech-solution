@@ -1,0 +1,25 @@
+content_bucket_name       = "edtech-lowcost-<account-id>-<region>"
+enabled_domains           = ["catalog", "payments", "affiliates", "iot-terminals"]
+lambda_artifact_prefix    = "lowcost/releases/<immutable-build-id>"
+allowed_origins           = ["https://<amplify-domain>"]
+budget_notification_emails = ["correo-autorizado@example.com"]
+ready_api_domains         = []
+cognito_issuer            = ""
+cognito_client_id         = ""
+cognito_jwks_uri          = ""
+referral_signing_parameter_name = "/edtech/lowcost/affiliate-signing-key"
+
+# Aplicación gradual: los valores iniciales dejan el servicio sin rutas públicas.
+pause_public_services = true
+enable_workers        = false
+worker_release_ready  = false
+enable_affiliate_events = false
+enable_iot            = false
+enable_ai             = false
+operation_mode        = "pausado"
+amplify_execution_role_name = ""
+amplify_app_id              = ""
+amplify_branch_name         = "main"
+amplify_default_domain      = ""
+cognito_domain              = ""
+

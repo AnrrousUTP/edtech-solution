@@ -178,7 +178,18 @@ export class DrizzleWebhookRepository implements WebhookRepository {
       `INSERT INTO payments.webhooks_paypal (paypal_event_id,event_type,firma_valida,payload) VALUES ($1,$2,$3,$4) ON CONFLICT (paypal_event_id) DO NOTHING RETURNING id`,
       [w.paypalEventId, w.eventType, w.firmaValida, JSON.stringify(w.payload)],
     )
-    return r.rows.length > 0
+    if (r.rows.length > 0) return true
+    const existing = await this.db.query(
+      'SELECT firma_valida,encolado_at FROM payments.webhooks_paypal WHERE paypal_event_id=$1',
+      [w.paypalEventId],
+    )
+    return Boolean(existing.rows[0]?.firma_valida && !existing.rows[0]?.encolado_at)
+  }
+  async marcarEncolado(id: string): Promise<void> {
+    await this.db.query(
+      'UPDATE payments.webhooks_paypal SET encolado_at=now() WHERE paypal_event_id=$1 AND encolado_at IS NULL',
+      [id],
+    )
   }
   async porEventId(id: string): Promise<WebhookCrudo | null> {
     const r = await this.db.query(

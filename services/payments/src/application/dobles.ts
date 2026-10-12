@@ -79,12 +79,20 @@ export class InMemoryPrecioRepository implements PrecioProyeccionRepository {
 }
 
 export class InMemoryWebhookRepository implements WebhookRepository {
-  readonly webhooks = new Map<string, WebhookCrudo & { procesado: boolean; error?: string }>()
+  readonly webhooks = new Map<
+    string,
+    WebhookCrudo & { procesado: boolean; encolado: boolean; error?: string }
+  >()
 
   async registrarSiEsNuevo(webhook: WebhookCrudo): Promise<boolean> {
-    if (this.webhooks.has(webhook.paypalEventId)) return false
-    this.webhooks.set(webhook.paypalEventId, { ...webhook, procesado: false })
+    const previous = this.webhooks.get(webhook.paypalEventId)
+    if (previous) return previous.firmaValida && !previous.encolado
+    this.webhooks.set(webhook.paypalEventId, { ...webhook, procesado: false, encolado: false })
     return true
+  }
+  async marcarEncolado(paypalEventId: string): Promise<void> {
+    const webhook = this.webhooks.get(paypalEventId)
+    if (webhook) this.webhooks.set(paypalEventId, { ...webhook, encolado: true })
   }
   async porEventId(paypalEventId: string): Promise<WebhookCrudo | null> {
     return this.webhooks.get(paypalEventId) ?? null
@@ -97,7 +105,9 @@ export class InMemoryWebhookRepository implements WebhookRepository {
 
 export class FakeColaWebhooks implements ColaWebhooks {
   readonly encolados: string[] = []
+  fallar = false
   async encolar(paypalEventId: string): Promise<void> {
+    if (this.fallar) throw new Error('cola no disponible')
     this.encolados.push(paypalEventId)
   }
 }

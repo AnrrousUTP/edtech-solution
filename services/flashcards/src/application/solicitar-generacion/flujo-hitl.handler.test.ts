@@ -15,13 +15,16 @@ import {
   GeneradorQueFalla,
   InMemoryMazoRepository,
 } from '../dobles'
+import type { GeneradorFlashcardsPort } from '../../domain/ports-out/generador-flashcards.port'
 
 const CURSO = crypto.randomUUID()
 const TOMO = crypto.randomUUID()
 const HASH = 'hash-contenido-original'
 const ADMIN = crypto.randomUUID()
 
-const montar = (generador = new GeneradorDePrueba()) => {
+const montar = (
+  generador: GeneradorFlashcardsPort & { llamadas: number } = new GeneradorDePrueba(),
+) => {
   const mazos = new InMemoryMazoRepository()
   const cola = new FakeColaGeneracion()
   const publisher = new InMemoryEventPublisher()

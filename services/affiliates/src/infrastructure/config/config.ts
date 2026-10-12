@@ -9,6 +9,8 @@ export const cargarConfig = () => {
     awsEndpoint: env.AWS_ENDPOINT_URL,
     bus: env.EVENT_BUS_NAME ?? 'edtech-domain-events',
     cola: env.QUEUE_URL,
+    dynamoTable: env.DYNAMODB_TABLE,
+    referralSigningParameter: env.REFERRAL_SIGNING_PARAMETER_NAME,
     secretoFirma: env.REFERRAL_SIGNING_SECRET_NAME ?? 'edtech/dev/referral-signing',
     issuer: env.COGNITO_ISSUER ?? 'http://jwt-local:4599',
     clientId: env.COGNITO_CLIENT_ID,

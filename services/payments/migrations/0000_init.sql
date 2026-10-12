@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS "payments"."webhooks_paypal" (
 	"procesado_at" timestamp with time zone,
 	"error" text
 );
+ALTER TABLE "payments"."webhooks_paypal" ADD COLUMN IF NOT EXISTS "encolado_at" timestamp with time zone;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "payments"."reembolsos" ADD CONSTRAINT "reembolsos_orden_id_ordenes_id_fk" FOREIGN KEY ("orden_id") REFERENCES "payments"."ordenes"("id") ON DELETE no action ON UPDATE no action;

@@ -3,7 +3,11 @@ import { Router, json, type Request, type Response, type NextFunction } from 'ex
 import type { TerminalHandler } from '../../../application/terminal/terminal.handler'
 import { TerminalError } from '../../../domain/module.errors'
 import type { Config } from '../../config/config'
-export const crearRouter = (handler: TerminalHandler, cfg: Config): Router => {
+export const crearRouter = (
+  handler: TerminalHandler,
+  cfg: Config,
+  onAsignacionCambiada: () => Promise<void> = async () => undefined,
+): Router => {
   const r = Router()
   r.use(json({ limit: '8kb' }))
   const auth = requiereAuth({ issuer: cfg.issuer, clientId: cfg.clientId, jwksUri: cfg.jwksUri })
@@ -61,6 +65,7 @@ export const crearRouter = (handler: TerminalHandler, cfg: Config): Router => {
       if (user !== null && (typeof user !== 'string' || !/^[0-9a-f-]{36}$/i.test(user)))
         throw new TerminalError('DATOS_INVALIDOS', 'Selecciona un afiliado')
       await repo.asignar(user)
+      await onAsignacionCambiada()
       return { asignado: true }
     }),
   )

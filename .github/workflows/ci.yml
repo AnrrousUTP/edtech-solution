@@ -1,5 +1,5 @@
 # Detecta qué cambió y despacha service.yml solo por lo afectado (doc 12 §8).
-# Un monorepo sin path filters vuelve a compilar los seis servicios porque
+# Un monorepo sin path filters vuelve a compilar los ocho dominios porque
 # alguien tocó un README: el pipeline se vuelve lento y la gente lo ignora.
 name: CI
 
@@ -22,6 +22,8 @@ jobs:
       gamification: ${{ steps.filtro.outputs.gamification }}
       flashcards: ${{ steps.filtro.outputs.flashcards }}
       payments: ${{ steps.filtro.outputs.payments }}
+      affiliates: ${{ steps.filtro.outputs.affiliates }}
+      iot-terminals: ${{ steps.filtro.outputs.iot-terminals }}
       web: ${{ steps.filtro.outputs.web }}
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +56,12 @@ jobs:
             payments:
               - 'services/payments/**'
               - *comun
+            affiliates:
+              - 'services/affiliates/**'
+              - *comun
+            iot-terminals:
+              - 'services/iot-terminals/**'
+              - *comun
             web:
               - 'apps/web/**'
               - '.github/workflows/**'
@@ -85,6 +93,8 @@ jobs:
           - gamification
           - flashcards
           - payments
+          - affiliates
+          - iot-terminals
           - web
     uses: ./.github/workflows/service.yml
     with:

@@ -50,8 +50,9 @@ export class CrearUsuarioHandler implements CommandHandler<
     const nombre = cmd.nombreVisible.trim() || email.value.valor.split('@')[0] || 'Estudiante'
     const usuario = Usuario.crearDesdeCognito(id, email.value, nombre)
 
-    await this.usuarios.guardar(usuario)
-    await this.publisher.publish(usuario.pullEvents())
+    const eventos = usuario.pullEvents()
+    await this.usuarios.guardar(usuario, eventos)
+    await this.publisher.publish(eventos)
     return Ok({ creado: true })
   }
 }

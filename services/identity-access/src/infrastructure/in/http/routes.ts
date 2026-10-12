@@ -10,6 +10,7 @@ import { Router, json, type Response } from 'express'
 import type { Config } from '../../config/config'
 import type { CambiosPerfil } from '../../../domain/entities/usuario.entity'
 import type { PerfilResponse } from '../../../application/obtener-perfil/obtener-perfil.handler'
+import type { UsuarioListado } from '../../../application/listar-usuarios/listar-usuarios.handler'
 
 // Mapa explícito código de dominio → HTTP (doc 04 §8). Sin instanceof.
 const MAPA: Record<string, number> = {
@@ -41,6 +42,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
   const auth = requiereAuth({
     issuer: cfg.cognito.issuer,
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
+    ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
 
   router.get('/me', auth, async (req, res) => {
@@ -84,7 +86,9 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
   })
 
   router.get('/usuarios', auth, requiereRol('admin'), async (_req, res) => {
-    const r = await queries.dispatch({ _tag: 'ListarUsuarios' })
+    const r = await queries.dispatch<UsuarioListado[], { code: string; message: string }>({
+      _tag: 'ListarUsuarios',
+    })
     responder(res, r)
   })
 

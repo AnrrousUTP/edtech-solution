@@ -84,8 +84,9 @@ export class GenerarMazoHandler implements CommandHandler<
     }
 
     mazo.recibirTarjetas(validas.value, salida.value.modeloUsado, this.reloj.ahora(), this.nuevoId)
-    await this.mazos.guardar(mazo)
-    await this.publisher.publish(mazo.pullEvents())
+    const eventos = mazo.pullEvents()
+    await this.mazos.guardar(mazo, eventos)
+    await this.publisher.publish(eventos)
     return Ok({ estado: mazo.estado, tarjetas: mazo.tarjetas.length })
   }
 
@@ -95,8 +96,9 @@ export class GenerarMazoHandler implements CommandHandler<
   ): Promise<void> {
     if (mazo.agotoIntentos) {
       mazo.marcarFallido(motivo)
-      await this.mazos.guardar(mazo)
-      await this.publisher.publish(mazo.pullEvents())
+      const eventos = mazo.pullEvents()
+      await this.mazos.guardar(mazo, eventos)
+      await this.publisher.publish(eventos)
     } else {
       // Sigue en GENERANDO: el reintento de SQS vuelve a intentarlo
       await this.mazos.guardar(mazo)

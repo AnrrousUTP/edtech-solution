@@ -21,10 +21,17 @@ export const config = {
     localAuthEnabled: process.env.EDTECH_LOCAL_AUTH === 'true',
   },
   assistant: {
-    openAiApiKey: process.env.OPENAI_API_KEY ?? '',
-    openAiModel: process.env.OPENAI_MODEL ?? 'gpt-5-mini',
-    elevenLabsApiKey: process.env.ELEVENLABS_API_KEY ?? '',
-    elevenLabsSttModel: process.env.ELEVENLABS_STT_MODEL ?? 'scribe_v2',
+    bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'amazon.nova-micro-v1:0',
+    enabled: process.env.EDTECH_AI_ENABLED === 'true',
+    controlTable: process.env.EDTECH_CONTROL_TABLE ?? '',
+    audioBucket: process.env.EDTECH_AUDIO_BUCKET ?? '',
+    production: process.env.NODE_ENV === 'production',
+  },
+  iot: {
+    enabled: process.env.EDTECH_IOT_ENABLED === 'true',
+    endpoint: process.env.EDTECH_IOT_DATA_ENDPOINT ?? '',
+    sessionRoleArn: process.env.EDTECH_IOT_SESSION_ROLE_ARN ?? '',
+    thingName: process.env.EDTECH_IOT_THING_NAME ?? 'terminal-demo-01',
   },
 }
 

@@ -1,24 +1,28 @@
 import Ajv from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
-import { Glob } from 'bun'
-import { join } from 'node:path'
+import { readFileSync, readdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Valida payloads contra los schemas congelados del doc 05 §2. Los schemas son el
 // contrato público entre servicios (doc 06 §3.2): se comparte el JSON, no el tipo.
 const ajv = new Ajv({ allErrors: true, strict: false })
 addFormats(ajv)
 
-const dirSchemas = join(import.meta.dir, 'schemas')
+const dirSchemas = join(dirname(fileURLToPath(import.meta.url)), 'schemas')
 let cargados = false
+let nombresEventos: string[] = []
 
 const cargarSchemas = (): void => {
   if (cargados) return
   cargados = true
-  const glob = new Glob('*.json')
-  for (const archivo of glob.scanSync(dirSchemas)) {
+  nombresEventos = readdirSync(dirSchemas)
+    .filter(archivo => archivo.endsWith('.json'))
+    .sort()
+  for (const archivo of nombresEventos) {
     const clave = archivo.replace(/\.json$/, '')
     if (ajv.getSchema(clave)) continue
-    const schema = require(join(dirSchemas, archivo))
+    const schema = JSON.parse(readFileSync(join(dirSchemas, archivo), 'utf8'))
     ajv.addSchema(schema, clave)
   }
 }
@@ -41,6 +45,5 @@ export const validarContra = (
 
 export const tiposDeEventoConocidos = (): string[] => {
   cargarSchemas()
-  const glob = new Glob('*.json')
-  return [...glob.scanSync(dirSchemas)].map(a => a.replace(/\.json$/, '')).sort()
+  return nombresEventos.map(archivo => archivo.replace(/\.json$/, ''))
 }

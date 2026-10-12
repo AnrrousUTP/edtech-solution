@@ -17,6 +17,7 @@ import {
   CursoNoProyectadoError,
   IntentoAjenoError,
   IntentoNoEncontradoError,
+  MatriculaNoEncontradaError,
   SinMatriculaError,
   TomoNoEncontradoError,
   type EnrollmentError,
@@ -139,30 +140,38 @@ export class EntregarIntentoHandler implements CommandHandler<
     const r = intento.entregar(cmd.respuestas, banco.value.preguntas, umbral, this.reloj.ahora())
     if (isErr(r)) return Err(r.error)
 
-    await this.intentos.guardar(intento)
-    await this.publisher.publish(intento.pullEvents())
-
-    // Avance del tomo en la misma operación de negocio
+    // Preparar el avance antes de persistir la entrega para que el adaptador
+    // DynamoDB pueda guardar ambos agregados y sus outbox en una transacción.
     let tomoCompletado = false
     let cursoCompletado = false
+    let matriculaActualizada: Awaited<ReturnType<MatriculaRepository['porId']>> = null
     if (intento.tipo === 'TOMO' && r.value.aprobado && intento.matriculaId && intento.tomoId) {
       const matricula = await this.matriculas.porId(intento.matriculaId)
-      const curso = matricula ? await this.cursos.porId(matricula.cursoId.valor) : null
-      const tomo = curso?.tomoPorId(intento.tomoId) ?? null
-      if (matricula && curso && tomo) {
-        tomoCompletado = matricula.intentarCompletarTomo(tomo, true, r.value.porcentaje)
-        if (tomoCompletado) {
-          const cascada = await intentarCascadaCurso(matricula, curso, {
-            matriculas: this.matriculas,
-            carreras: this.carreras,
-            reloj: this.reloj,
-          })
-          cursoCompletado = cascada.cursoCompletado
-        }
-        await this.matriculas.guardar(matricula)
-        await this.publisher.publish(matricula.pullEvents())
+      if (!matricula) return Err(new MatriculaNoEncontradaError(intento.matriculaId.valor))
+      const curso = await this.cursos.porId(matricula.cursoId.valor)
+      if (!curso) return Err(new CursoNoProyectadoError(matricula.cursoId.valor))
+      const tomo = curso.tomoPorId(intento.tomoId)
+      if (!tomo) return Err(new TomoNoEncontradoError(intento.tomoId))
+      tomoCompletado = matricula.intentarCompletarTomo(tomo, true, r.value.porcentaje)
+      if (tomoCompletado) {
+        const cascada = await intentarCascadaCurso(matricula, curso, {
+          matriculas: this.matriculas,
+          carreras: this.carreras,
+          reloj: this.reloj,
+        })
+        cursoCompletado = cascada.cursoCompletado
       }
+      matriculaActualizada = matricula
     }
+
+    if (matriculaActualizada && this.intentos.guardarEntregaConProgreso) {
+      await this.intentos.guardarEntregaConProgreso(intento, matriculaActualizada)
+    } else {
+      await this.intentos.guardar(intento)
+      if (matriculaActualizada) await this.matriculas.guardar(matriculaActualizada)
+    }
+    await this.publisher.publish(intento.pullEvents())
+    if (matriculaActualizada) await this.publisher.publish(matriculaActualizada.pullEvents())
 
     return Ok({
       puntaje: r.value.porcentaje,

@@ -155,7 +155,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   http.use(noEncontradoMiddleware)
   http.use(errorMiddleware)
 
-  const procesar = crearProcesador(db, bus, webhooks)
+  const procesar = crearProcesador(bus, webhooks)
   const poller = cfg.colaUrl ? new SqsPoller(sqs, { queueUrl: cfg.colaUrl, procesar }) : null
   const workerWebhooks = cfg.colaWebhooksUrl
     ? new SqsPoller(sqs, { queueUrl: cfg.colaWebhooksUrl, procesar })

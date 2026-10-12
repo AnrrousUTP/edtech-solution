@@ -24,7 +24,7 @@ export class AwsIoTGateway {
     this.client = new IoTDataPlaneClient({ region: cfg.region, endpoint: cfg.iotEndpoint })
   }
 
-  async flush(): Promise<void> {
+  async flush(throwOnError = false): Promise<void> {
     if (this.ocupado) return
     this.ocupado = true
     try {
@@ -49,7 +49,7 @@ export class AwsIoTGateway {
         if (this.publicados.has(alert.id)) continue
         await this.client.send(
           new PublishCommand({
-            topic: `edtech/dev/terminals/${this.cfg.deviceId}/alerts`,
+            topic: `${this.cfg.iotTopicPrefix}/terminals/${this.cfg.deviceId}/alerts`,
             qos: 1,
             payload: Buffer.from(JSON.stringify(alert)),
           }),
@@ -58,6 +58,7 @@ export class AwsIoTGateway {
       }
     } catch (error) {
       log.error('IoT Core pendiente de reintento', { error: String(error) })
+      if (throwOnError) throw error
     } finally {
       this.ocupado = false
     }

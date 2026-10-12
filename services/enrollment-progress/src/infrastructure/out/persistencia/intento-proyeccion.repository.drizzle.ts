@@ -27,8 +27,8 @@ const intento = async (db: Db, fila: Record<string, unknown>): Promise<IntentoEv
     puntaje: fila.puntaje === null ? null : Number(fila.puntaje),
     aprobado: fila.aprobado === null ? null : Boolean(fila.aprobado),
     nivelResultante: fila.nivel_resultante ?? null,
-    iniciadoAt: new Date(fila.iniciado_at),
-    entregadoAt: fila.entregado_at ? new Date(fila.entregado_at) : null,
+    iniciadoAt: new Date(String(fila.iniciado_at)),
+    entregadoAt: fila.entregado_at ? new Date(String(fila.entregado_at)) : null,
     respuestas: rs.rows.map(r => ({
       preguntaId: String(r.pregunta_id),
       respuesta: r.respuesta,

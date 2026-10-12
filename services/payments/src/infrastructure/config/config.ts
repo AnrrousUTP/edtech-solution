@@ -9,7 +9,10 @@ export type Config = {
   colaUrl: string | undefined
   colaWebhooksUrl: string | undefined
   paypalSecretName: string
+  paypalParameterName: string
   referralVerificationSecretName?: string
+  referralVerificationParameterName?: string
+  dynamoTable: string | undefined
   urlBase: string
   cognito: { issuer: string; clientId: string | undefined; jwksUri: string | undefined }
   db: { url: string | undefined; secretName: string | undefined }
@@ -26,7 +29,10 @@ export const cargarConfig = (): Config => {
     colaUrl: env.QUEUE_URL,
     colaWebhooksUrl: env.QUEUE_WEBHOOKS_URL,
     paypalSecretName: env.PAYPAL_SECRET_NAME ?? 'edtech/dev/paypal',
+    paypalParameterName: env.PAYPAL_PARAMETER_NAME ?? '/edtech/lowcost/paypal',
     referralVerificationSecretName: env.REFERRAL_VERIFICATION_SECRET_NAME,
+    referralVerificationParameterName: env.REFERRAL_VERIFICATION_PARAMETER_NAME,
+    dynamoTable: env.DYNAMODB_TABLE,
     urlBase: env.URL_BASE ?? 'http://localhost:3000',
     cognito: {
       issuer: env.COGNITO_ISSUER ?? 'http://jwt-local:4599',

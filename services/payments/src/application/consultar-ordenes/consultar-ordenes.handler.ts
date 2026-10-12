@@ -124,6 +124,8 @@ export type ProyectarPrecioCommand = Command & {
   readonly moneda: string
   readonly versionPrecio: number
   readonly publicado: boolean
+  readonly eventId?: string
+  readonly eventType?: string
 }
 
 /** Proyección de precios (D14): evita llamar a catalog en el checkout. */
@@ -137,14 +139,17 @@ export class ProyectarPrecioHandler implements CommandHandler<
   constructor(private readonly precios: PrecioProyeccionRepository) {}
 
   async execute(cmd: ProyectarPrecioCommand): Promise<Result<{ ok: true }, PaymentsError>> {
-    await this.precios.guardar({
-      cursoId: cmd.cursoId,
-      titulo: cmd.titulo,
-      monto: cmd.monto,
-      moneda: cmd.moneda,
-      versionPrecio: cmd.versionPrecio,
-      publicado: cmd.publicado,
-    })
+    await this.precios.guardar(
+      {
+        cursoId: cmd.cursoId,
+        titulo: cmd.titulo,
+        monto: cmd.monto,
+        moneda: cmd.moneda,
+        versionPrecio: cmd.versionPrecio,
+        publicado: cmd.publicado,
+      },
+      cmd.eventId && cmd.eventType ? { eventId: cmd.eventId, eventType: cmd.eventType } : undefined,
+    )
     return Ok({ ok: true })
   }
 }
@@ -152,6 +157,8 @@ export class ProyectarPrecioHandler implements CommandHandler<
 export type DespublicarPrecioCommand = Command & {
   readonly _tag: 'DespublicarPrecio'
   readonly cursoId: string
+  readonly eventId?: string
+  readonly eventType?: string
 }
 
 export class DespublicarPrecioHandler implements CommandHandler<
@@ -164,7 +171,11 @@ export class DespublicarPrecioHandler implements CommandHandler<
   constructor(private readonly precios: PrecioProyeccionRepository) {}
 
   async execute(cmd: DespublicarPrecioCommand): Promise<Result<{ ok: true }, PaymentsError>> {
-    await this.precios.marcarPublicado(cmd.cursoId, false)
+    await this.precios.marcarPublicado(
+      cmd.cursoId,
+      false,
+      cmd.eventId && cmd.eventType ? { eventId: cmd.eventId, eventType: cmd.eventType } : undefined,
+    )
     return Ok({ ok: true })
   }
 }

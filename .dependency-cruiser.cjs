@@ -23,7 +23,9 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^services/',
-        pathNot: 'services/[^/]+/src/infrastructure',
+        // Las Lambdas independientes (p. ej. Cognito triggers) son entrypoints
+        // de infraestructura y pueden usar el SDK AWS directamente.
+        pathNot: 'services/[^/]+/(src/(infrastructure|lambda)|lambdas)',
       },
       to: { path: 'node_modules/(drizzle-orm|@aws-sdk|pg)' },
     },

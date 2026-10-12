@@ -17,6 +17,8 @@
     "design:audit": "node tools/design-auditor.mjs",
     "db:migrate": "bun run tools/db-migrate.ts",
     "db:seed": "bun run tools/seed/index.ts",
+    "db:migrate:aurora-dynamodb": "bun run tools/migration/aurora-dynamodb.ts",
+    "lambda:build": "bun run tools/lambda/build.ts",
     "gen:localstack": "bun run tools/gen-localstack-init.ts",
     "credenciales:local": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/aws/sincronizar-paypal-local.ps1",
     "prepare": "husky"
@@ -29,16 +31,24 @@
       "bunx prettier --write"
     ]
   },
+  "overrides": {
+    "@aws-sdk/client-s3": "3.1149.0",
+    "@smithy/types": "4.19.0"
+  },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "3.1149.0",
     "@aws-sdk/client-eventbridge": "^3.658.0",
     "@aws-sdk/client-iot-data-plane": "^3.658.0",
+    "@aws-sdk/client-s3": "3.1149.0",
     "@aws-sdk/client-secrets-manager": "^3.1121.0",
+    "@aws-sdk/lib-dynamodb": "3.1149.0",
     "@aws-sdk/rds-signer": "^3.1121.0",
     "@aws-sdk/s3-request-presigner": "^3.1121.0",
     "@types/bun": "^1.1.0",
     "@types/pg": "^8.23.1",
     "dependency-cruiser": "^16.6.0",
     "eslint": "^9.12.0",
+    "fflate": "0.8.3",
     "husky": "^9.1.0",
     "jsqr": "^1.4.0",
     "lint-staged": "^15.2.0",

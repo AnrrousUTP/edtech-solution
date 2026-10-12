@@ -1,6 +1,9 @@
 import { Ok, type Command, type CommandHandler, type Result } from '@edtech/shared-kernel'
 import type { EnrollmentError } from '../../domain/module.errors'
-import type { CursoProyeccionRepository } from '../../domain/ports-out/curso-proyeccion.repository'
+import type {
+  CursoProyeccionRepository,
+  FuenteEventoProyeccion,
+} from '../../domain/ports-out/curso-proyeccion.repository'
 
 export type ProyectarCursoCommand = Command & {
   readonly _tag: 'ProyectarCurso'
@@ -10,6 +13,7 @@ export type ProyectarCursoCommand = Command & {
   readonly precio: number
   readonly nivelMax: string | null
   readonly estructura: unknown
+  readonly fuente?: FuenteEventoProyeccion
 }
 
 /** Mantiene la proyección local del catálogo (D14): es un read model, se
@@ -24,15 +28,18 @@ export class ProyectarCursoHandler implements CommandHandler<
   constructor(private readonly proyeccion: CursoProyeccionRepository) {}
 
   async execute(cmd: ProyectarCursoCommand): Promise<Result<{ ok: true }, EnrollmentError>> {
-    await this.proyeccion.guardar({
-      cursoId: cmd.cursoId,
-      titulo: cmd.titulo,
-      slug: cmd.slug,
-      publicado: true,
-      precio: cmd.precio,
-      nivelMax: cmd.nivelMax,
-      estructura: cmd.estructura,
-    })
+    await this.proyeccion.guardar(
+      {
+        cursoId: cmd.cursoId,
+        titulo: cmd.titulo,
+        slug: cmd.slug,
+        publicado: true,
+        precio: cmd.precio,
+        nivelMax: cmd.nivelMax,
+        estructura: cmd.estructura,
+      },
+      cmd.fuente,
+    )
     return Ok({ ok: true })
   }
 }
@@ -40,6 +47,7 @@ export class ProyectarCursoHandler implements CommandHandler<
 export type DespublicarProyeccionCommand = Command & {
   readonly _tag: 'DespublicarProyeccion'
   readonly cursoId: string
+  readonly fuente?: FuenteEventoProyeccion
 }
 
 /** Despublicar NO revoca acceso ya comprado: solo impide matrículas nuevas
@@ -54,7 +62,7 @@ export class DespublicarProyeccionHandler implements CommandHandler<
   constructor(private readonly proyeccion: CursoProyeccionRepository) {}
 
   async execute(cmd: DespublicarProyeccionCommand): Promise<Result<{ ok: true }, EnrollmentError>> {
-    await this.proyeccion.marcarPublicado(cmd.cursoId, false)
+    await this.proyeccion.marcarPublicado(cmd.cursoId, false, cmd.fuente)
     return Ok({ ok: true })
   }
 }
@@ -64,6 +72,7 @@ export type ActualizarTomoProyeccionCommand = Command & {
   readonly cursoId: string
   readonly tomoId: string
   readonly lecciones: { id: string; titulo: string }[]
+  readonly fuente?: FuenteEventoProyeccion
 }
 
 export class ActualizarTomoProyeccionHandler implements CommandHandler<
@@ -78,7 +87,7 @@ export class ActualizarTomoProyeccionHandler implements CommandHandler<
   async execute(
     cmd: ActualizarTomoProyeccionCommand,
   ): Promise<Result<{ ok: true }, EnrollmentError>> {
-    await this.proyeccion.actualizarTomo(cmd.cursoId, cmd.tomoId, cmd.lecciones)
+    await this.proyeccion.actualizarTomo(cmd.cursoId, cmd.tomoId, cmd.lecciones, cmd.fuente)
     return Ok({ ok: true })
   }
 }

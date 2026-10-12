@@ -57,8 +57,9 @@ export class ObtenerPerfilHandler implements QueryHandler<
           email.value,
           query.altaPerezosa.nombreVisible ?? email.value.valor.split('@')[0] ?? 'Estudiante',
         )
-        await this.usuarios.guardar(usuario)
-        await this.publisher.publish(usuario.pullEvents())
+        const eventos = usuario.pullEvents()
+        await this.usuarios.guardar(usuario, eventos)
+        await this.publisher.publish(eventos)
       }
     }
 

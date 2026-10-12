@@ -126,20 +126,56 @@ const AssistantWidget = (): JSX.Element => {
     setError(null)
 
     try {
+      const uploadResponse = await fetch('/api/assistant/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: blob.type || 'audio/webm' }),
+      })
+      if (!uploadResponse.ok) {
+        throw new Error(await getErrorMessage(uploadResponse, 'No pude preparar el audio.'))
+      }
+      const upload = (await uploadResponse.json()) as {
+        jobId: string
+        url: string
+        fields: Record<string, string>
+      }
       const form = new FormData()
-      const extension = blob.type.includes('mp4') ? 'm4a' : 'webm'
-      form.append('audio', blob, `edtech-message.${extension}`)
-      const response = await fetch('/api/assistant/transcribe', { method: 'POST', body: form })
-      if (!response.ok) {
-        throw new Error(await getErrorMessage(response, 'No pude transcribir el audio.'))
+      Object.entries(upload.fields).forEach(([name, value]) => form.append(name, value))
+      const extension = blob.type.includes('mp4') ? 'mp4' : 'webm'
+      form.append('file', blob, `edtech-message.${extension}`)
+      const putResponse = await fetch(upload.url, { method: 'POST', body: form })
+      if (!putResponse.ok) throw new Error('No pude subir el audio a almacenamiento seguro.')
+
+      const startResponse = await fetch('/api/assistant/transcribe/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: upload.jobId }),
+      })
+      if (!startResponse.ok) {
+        throw new Error(await getErrorMessage(startResponse, 'No pude iniciar la transcripción.'))
       }
 
-      const body = (await response.json()) as { text?: unknown }
-      if (typeof body.text !== 'string' || !body.text.trim()) {
-        throw new Error('No encontré palabras claras en el audio.')
+      let transcribedText = ''
+      for (let attempt = 0; attempt < 45; attempt += 1) {
+        await new Promise(resolve => window.setTimeout(resolve, 2000))
+        const statusResponse = await fetch(
+          `/api/assistant/transcribe/status?jobId=${encodeURIComponent(upload.jobId)}`,
+          { cache: 'no-store' },
+        )
+        if (!statusResponse.ok) {
+          throw new Error(
+            await getErrorMessage(statusResponse, 'No pude consultar la transcripción.'),
+          )
+        }
+        const status = (await statusResponse.json()) as { status?: string; text?: string }
+        if (status.status === 'completed' && status.text?.trim()) {
+          transcribedText = status.text.trim()
+          break
+        }
+        if (status.status === 'failed') throw new Error('AWS no pudo transcribir ese audio.')
       }
-
-      const transcribedText = body.text.trim()
+      if (!transcribedText)
+        throw new Error('La transcripción tardó demasiado. Inténtalo nuevamente.')
       setDraft(current => (current ? `${current} ${transcribedText}` : transcribedText).trim())
     } catch (transcriptionError) {
       setError(
@@ -203,7 +239,7 @@ const AssistantWidget = (): JSX.Element => {
       }
       recorder.start()
       setIsRecording(true)
-      stopTimerRef.current = window.setTimeout(stopRecording, 60_000)
+      stopTimerRef.current = window.setTimeout(stopRecording, 30_000)
     } catch {
       streamRef.current?.getTracks().forEach(track => track.stop())
       streamRef.current = null

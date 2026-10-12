@@ -129,6 +129,26 @@ describe('POST /api/payments/webhook', () => {
     }
   })
 
+  test('si SQS falla, el mismo webhook puede reintentarse sin perderse', async () => {
+    const { cola, webhooks, servidor, base } = montar()
+    cola.fallar = true
+    try {
+      const first = await enviar(base, CUERPO_CRUDO)
+      expect(first.status).toBe(503)
+      expect(webhooks.webhooks.get('WH-TEST-1')?.encolado).toBe(false)
+      cola.fallar = false
+      const retry = await enviar(base, CUERPO_CRUDO)
+      expect(retry.status).toBe(200)
+      expect(cola.encolados).toEqual(['WH-TEST-1'])
+      expect(webhooks.webhooks.get('WH-TEST-1')?.encolado).toBe(true)
+      const duplicate = await enviar(base, CUERPO_CRUDO)
+      expect(duplicate.status).toBe(200)
+      expect(cola.encolados).toEqual(['WH-TEST-1'])
+    } finally {
+      servidor.close()
+    }
+  })
+
   test('un cuerpo que no es JSON no rompe el endpoint', async () => {
     const { cola, servidor, base } = montar()
     try {

@@ -15,6 +15,11 @@ export const onCursoPublicado = (sobre: SobreEvento): Command => {
     precio: Number(p.precio),
     nivelMax: typeof p.nivelMax === 'string' ? p.nivelMax : null,
     estructura: p.estructura ?? [],
+    fuente: {
+      eventId: sobre.eventId,
+      eventType: sobre.eventType,
+      occurredAt: sobre.occurredAt,
+    },
   }
   return cmd
 }
@@ -23,6 +28,11 @@ export const onCursoDespublicado = (sobre: SobreEvento): Command => {
   const cmd: DespublicarProyeccionCommand = {
     _tag: 'DespublicarProyeccion',
     cursoId: String(sobre.payload.cursoId),
+    fuente: {
+      eventId: sobre.eventId,
+      eventType: sobre.eventType,
+      occurredAt: sobre.occurredAt,
+    },
   }
   return cmd
 }
@@ -39,6 +49,11 @@ export const onContenidoActualizado = (sobre: SobreEvento): Command => {
           titulo: String(l.titulo),
         }))
       : [],
+    fuente: {
+      eventId: sobre.eventId,
+      eventType: sobre.eventType,
+      occurredAt: sobre.occurredAt,
+    },
   }
   return cmd
 }

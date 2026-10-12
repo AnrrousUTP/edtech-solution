@@ -44,8 +44,9 @@ export class AprobarTarjetaHandler implements CommandHandler<
     const r = mazo.aprobarTarjeta(cmd.tarjetaId, cmd.revisorId, this.reloj.ahora(), cmd.edicion)
     if (isErr(r)) return Err(r.error)
 
-    await this.mazos.guardar(mazo)
-    await this.publisher.publish(mazo.pullEvents())
+    const eventos = mazo.pullEvents()
+    await this.mazos.guardar(mazo, eventos)
+    await this.publisher.publish(eventos)
     return Ok({
       estadoMazo: mazo.estado,
       publicadas: mazo.tarjetas.filter(t => t.estado === 'PUBLICADA').length,
@@ -81,8 +82,9 @@ export class RechazarTarjetaHandler implements CommandHandler<
     const r = mazo.rechazarTarjeta(cmd.tarjetaId, cmd.revisorId, cmd.motivo, this.reloj.ahora())
     if (isErr(r)) return Err(r.error)
 
-    await this.mazos.guardar(mazo)
-    await this.publisher.publish(mazo.pullEvents())
+    const eventos = mazo.pullEvents()
+    await this.mazos.guardar(mazo, eventos)
+    await this.publisher.publish(eventos)
     return Ok({
       estadoMazo: mazo.estado,
       publicadas: mazo.tarjetas.filter(t => t.estado === 'PUBLICADA').length,
