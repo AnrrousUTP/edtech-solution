@@ -65,7 +65,12 @@ export const GET = async (peticion: Request): Promise<Response> => {
       JSON.stringify({
         usuarioId: String(claimsAcceso.sub ?? ''),
         email: String(claimsId.email ?? ''),
-        nombre: String(claimsId.nombre_visible ?? claimsId.email ?? 'Estudiante'),
+        nombre: String(
+          claimsId['custom:nombre_visible'] ??
+            claimsId.nombre_visible ??
+            claimsId.email ??
+            'Estudiante',
+        ),
         roles: Array.isArray(grupos) ? grupos : [],
         // El claim viaja en el ID token, no en el de acceso: pre_token_generation
         // solo puede tocar el primero (doc 08 §6).

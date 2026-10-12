@@ -215,7 +215,8 @@ resource "aws_cognito_user_pool_domain" "hosted_ui" {
   user_pool_id = aws_cognito_user_pool.principal.id
 }
 
-# App client de la web: público, Authorization Code + PKCE, sin USER_PASSWORD_AUTH
+# App client público de la web. Conserva OAuth/PKCE y permite que el formulario
+# propio de EdTech autentique contra Cognito desde sus Route Handlers.
 resource "aws_cognito_user_pool_client" "web" {
   name         = "edtech-${var.entorno}-web"
   user_pool_id = aws_cognito_user_pool.principal.id
@@ -235,7 +236,9 @@ resource "aws_cognito_user_pool_client" "web" {
   # Con la rotación activada, Cognito PROHIBE ALLOW_REFRESH_TOKEN_AUTH: el
   # refresh pasa por el endpoint de token del Hosted UI, que es justo por donde
   # lo hace el Route Handler del servidor (doc 08 §7).
-  explicit_auth_flows = []
+  explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH"]
+  read_attributes     = ["email", "email_verified", "custom:nombre_visible"]
+  write_attributes    = ["email", "custom:nombre_visible"]
 
   access_token_validity  = 60
   id_token_validity      = 60

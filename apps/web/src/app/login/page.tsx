@@ -16,6 +16,7 @@ const LoginPage = async ({
       eyebrow="01 / LOGIN"
       title="Vuelve a construir."
       detail="Tu workspace conserva el progreso, las rutas y cada evidencia que ya dejaste."
+      destino={destino}
     >
       <AuthForm mode="login" local={local} destino={destino} />
     </AuthShell>

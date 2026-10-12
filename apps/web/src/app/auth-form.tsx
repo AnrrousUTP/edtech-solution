@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 
 type AuthMode = 'login' | 'register' | 'recover'
 
+type AuthPhase = 'formulario' | 'confirmar' | 'reset' | 'mfa' | 'nueva-clave'
+
 export const AuthForm = ({
   mode,
   local,
@@ -15,11 +17,13 @@ export const AuthForm = ({
   local: boolean
   destino: string
 }): JSX.Element => {
-  const [fase, setFase] = useState<'formulario' | 'confirmar' | 'reset'>('formulario')
+  const [fase, setFase] = useState<AuthPhase>('formulario')
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [codigo, setCodigo] = useState('')
+  const [authSession, setAuthSession] = useState('')
+  const [challengeName, setChallengeName] = useState('')
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ocupada, setOcupada] = useState(false)
@@ -37,7 +41,7 @@ export const AuthForm = ({
     setError(null)
     setMensaje(null)
     try {
-      const respuesta = await fetch('/api/auth/local', {
+      const respuesta = await fetch(local ? '/api/auth/local' : '/api/auth/cognito', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accion, destino, ...datos }),
@@ -49,7 +53,7 @@ export const AuthForm = ({
       }
       return cuerpo
     } catch {
-      setError('No se pudo conectar con el proveedor de identidad local')
+      setError('No se pudo conectar con el servicio de acceso. Inténtalo de nuevo.')
       return null
     } finally {
       setOcupada(false)
@@ -58,14 +62,18 @@ export const AuthForm = ({
 
   const enviar = async (evento: FormEvent<HTMLFormElement>): Promise<void> => {
     evento.preventDefault()
-    if (!local) {
-      window.location.href = `/api/auth/login?destino=${encodeURIComponent(destino)}${mode === 'register' ? '&modo=registro' : ''}`
-      return
-    }
 
     if (mode === 'login') {
-      const cuerpo = await api('login', { email, password })
-      if (cuerpo) window.location.href = String(cuerpo.destino ?? destino)
+      const cuerpo =
+        fase === 'mfa' || fase === 'nueva-clave'
+          ? await api('challenge', { email, session: authSession, challengeName, codigo, password })
+          : await api('login', { email, password })
+      if (cuerpo?.destino) window.location.href = String(cuerpo.destino)
+      else if (cuerpo?.reto && cuerpo?.session) {
+        setAuthSession(String(cuerpo.session))
+        setChallengeName(String(cuerpo.reto))
+        setFase(cuerpo.reto === 'SOFTWARE_TOKEN_MFA' ? 'mfa' : 'nueva-clave')
+      }
       return
     }
 
@@ -74,7 +82,9 @@ export const AuthForm = ({
       if (cuerpo) {
         setFase('confirmar')
         setMensaje(
-          `Cuenta creada. En local usa el código ${String(cuerpo.codigoDesarrollo ?? '123456')} para confirmar.`,
+          local
+            ? `Cuenta creada. En local usa el código ${String(cuerpo.codigoDesarrollo ?? '123456')} para confirmar.`
+            : 'Te enviamos un código al correo para confirmar la cuenta.',
         )
       }
       return
@@ -83,8 +93,16 @@ export const AuthForm = ({
     if (mode === 'register' && fase === 'confirmar') {
       const cuerpo = await api('confirm', { email, codigo })
       if (cuerpo) {
-        setMensaje('Cuenta confirmada. Ya puedes iniciar sesión.')
-        setFase('formulario')
+        const sesion = await api('login', { email, password })
+        if (sesion?.destino) window.location.href = String(sesion.destino)
+        else if (sesion?.reto && sesion?.session) {
+          setAuthSession(String(sesion.session))
+          setChallengeName(String(sesion.reto))
+          setFase(sesion.reto === 'SOFTWARE_TOKEN_MFA' ? 'mfa' : 'nueva-clave')
+        } else if (sesion) {
+          setMensaje('Correo confirmado. Ya puedes iniciar sesión.')
+          setFase('formulario')
+        }
       }
       return
     }
@@ -93,7 +111,11 @@ export const AuthForm = ({
       const cuerpo = await api('forgot', { email })
       if (cuerpo) {
         setFase('reset')
-        setMensaje(`Código enviado. En local usa ${String(cuerpo.codigoDesarrollo ?? '654321')}.`)
+        setMensaje(
+          local
+            ? `Código enviado. En local usa ${String(cuerpo.codigoDesarrollo ?? '654321')}.`
+            : 'Te enviamos un código para restablecer la contraseña.',
+        )
       }
       return
     }
@@ -107,30 +129,32 @@ export const AuthForm = ({
 
   const esConfirmacion = mode === 'register' && fase === 'confirmar'
   const esReset = mode === 'recover' && fase === 'reset'
+  const esMfa = mode === 'login' && fase === 'mfa'
+  const esNuevaClave = mode === 'login' && fase === 'nueva-clave'
   const titulo =
     mode === 'login'
       ? 'Entrar al sistema'
       : mode === 'register'
-        ? 'Crear identidad'
+        ? 'Crear cuenta'
         : 'Recuperar acceso'
 
   return (
     <form className="auth-form" onSubmit={enviar}>
-      {!local && (
+      {local && (
         <div className="auth-provider-note">
-          <strong>AWS Cognito activo</strong>
-          <span>Serás dirigido al Hosted UI seguro de la plataforma.</span>
+          <strong>Acceso seguro</strong>
+          <span>Tu cuenta y tu progreso están protegidos.</span>
         </div>
       )}
 
-      {mode === 'register' && !esConfirmacion && (
+      {mode === 'register' && fase === 'formulario' && (
         <label>
           Nombre visible
           <input
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             placeholder="Ada Lovelace"
-            required={local}
+            required
           />
         </label>
       )}
@@ -140,11 +164,12 @@ export const AuthForm = ({
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          placeholder="you@workspace.dev"
-          required={local}
+          placeholder="correo@ejemplo.com"
+          required
         />
       </label>
-      {mode !== 'recover' && !esConfirmacion && (
+      {((mode === 'login' && fase === 'formulario') ||
+        (mode === 'register' && fase === 'formulario')) && (
         <label>
           Contraseña
           <input
@@ -152,33 +177,39 @@ export const AuthForm = ({
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••••"
-            required={local}
-            minLength={10}
+            required
+            minLength={mode === 'register' ? 10 : undefined}
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
           />
         </label>
       )}
-      {(esConfirmacion || esReset) && (
+      {(esConfirmacion || esReset || esMfa) && (
         <label>
-          Código de verificación
+          {esMfa ? 'Código de tu app de autenticación' : 'Código de verificación'}
           <input
             inputMode="numeric"
             value={codigo}
             onChange={e => setCodigo(e.target.value)}
-            placeholder={esConfirmacion ? '123456' : '654321'}
-            required={local}
+            placeholder="000000"
+            autoComplete="one-time-code"
+            required
           />
         </label>
       )}
-      {esReset && (
+      {esMfa && (
+        <p className="auth-legal">Escribe el código de seis dígitos de tu app de autenticación.</p>
+      )}
+      {(esReset || esNuevaClave) && (
         <label>
-          Nueva contraseña
+          {esNuevaClave ? 'Crea una contraseña nueva' : 'Nueva contraseña'}
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••••"
-            required={local}
+            required
             minLength={10}
+            autoComplete="new-password"
           />
         </label>
       )}
@@ -199,13 +230,15 @@ export const AuthForm = ({
           ? 'Preparando…'
           : ocupada
             ? 'Procesando…'
-            : !local
-              ? 'Continuar con Cognito'
-              : esConfirmacion
-                ? 'Confirmar cuenta'
-                : esReset
-                  ? 'Actualizar contraseña'
-                  : titulo}
+            : esConfirmacion
+              ? 'Confirmar cuenta'
+              : esReset
+                ? 'Actualizar contraseña'
+                : esMfa
+                  ? 'Verificar código'
+                  : esNuevaClave
+                    ? 'Guardar contraseña nueva'
+                    : titulo}
         <b aria-hidden="true">
           <svg className="inline-icon inline-arrow" viewBox="0 0 24 24">
             <path d="M5 12h13m-5-5 5 5-5 5" />
@@ -214,7 +247,7 @@ export const AuthForm = ({
       </button>
 
       {mode === 'login' && (
-        <Link className="auth-recovery" href="/recuperar">
+        <Link className="auth-recovery" href={`/recuperar?destino=${encodeURIComponent(destino)}`}>
           ¿Olvidaste tu contraseña?
         </Link>
       )}
@@ -222,7 +255,7 @@ export const AuthForm = ({
         <p className="auth-legal">Al crear tu cuenta aceptas la política de uso de EdTech.</p>
       )}
       {mode === 'recover' && (
-        <Link className="auth-recovery" href="/login">
+        <Link className="auth-recovery" href={`/login?destino=${encodeURIComponent(destino)}`}>
           Volver a iniciar sesión
         </Link>
       )}

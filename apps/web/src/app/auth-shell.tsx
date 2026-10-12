@@ -6,12 +6,14 @@ export const AuthShell = ({
   title,
   detail,
   local = false,
+  destino = '/dashboard',
   children,
 }: {
   eyebrow: string
   title: string
   detail: string
   local?: boolean
+  destino?: string
   children: ReactNode
 }): JSX.Element => (
   <div className="auth-page">
@@ -29,15 +31,15 @@ export const AuthShell = ({
             provider: <strong>{local ? 'JWT LOCAL' : 'AWS COGNITO'}</strong>
           </p>
           <p>
-            session: <em>{local ? 'httpOnly / dev issuer' : 'httpOnly / PKCE'}</em>
+            session: <em>{local ? 'httpOnly / dev issuer' : 'httpOnly / server-side'}</em>
           </p>
           <p>
             status: <i>ready</i>
           </p>
         </div>
         <nav className="auth-links" aria-label="Cuenta">
-          <Link href="/login">Iniciar sesión</Link>
-          <Link href="/register">Crear cuenta</Link>
+          <Link href={`/login?destino=${encodeURIComponent(destino)}`}>Iniciar sesión</Link>
+          <Link href={`/register?destino=${encodeURIComponent(destino)}`}>Crear cuenta</Link>
         </nav>
       </section>
       <section className="auth-card" aria-label={eyebrow}>
