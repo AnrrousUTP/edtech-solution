@@ -12,18 +12,20 @@ La variable `AMPLIFY_MONOREPO_APP_ROOT=apps/web` ya existía a nivel de aplicaci
 
 ## Evidencia de las ejecuciones
 
-| Ejecución | Fallo observado                                                  |
-| --------- | ---------------------------------------------------------------- |
-| 1         | `cd ../..` repetido; no se encuentra `apps/web`.                 |
-| 2         | Se busca `apps/web` desde el directorio del frontend.            |
-| 3         | Compila Next; falla la ubicación de los artefactos.              |
-| 4         | Caché restaurado; no se encuentra `styled-jsx/package.json`.     |
-| 5         | El directorio cambió; la raíz no tiene script `build`.           |
-| 6         | Persiste el fallo de `styled-jsx`.                               |
-| 7         | `cd apps/web` desde otro nivel del árbol falla.                  |
-| 8         | `CODEBUILD_SRC_DIR` no apunta al repositorio en este entorno.    |
-| 9         | Rutas corregidas; persiste el fallo de dependencias restauradas. |
-| 10        | Añadir `styled-jsx` solo desplaza el fallo a `@swc/helpers`.     |
+| Ejecución | Fallo observado                                                                  |
+| --------- | -------------------------------------------------------------------------------- |
+| 1         | `cd ../..` repetido; no se encuentra `apps/web`.                                 |
+| 2         | Se busca `apps/web` desde el directorio del frontend.                            |
+| 3         | Compila Next; falla la ubicación de los artefactos.                              |
+| 4         | Caché restaurado; no se encuentra `styled-jsx/package.json`.                     |
+| 5         | El directorio cambió; la raíz no tiene script `build`.                           |
+| 6         | Persiste el fallo de `styled-jsx`.                                               |
+| 7         | `cd apps/web` desde otro nivel del árbol falla.                                  |
+| 8         | `CODEBUILD_SRC_DIR` no apunta al repositorio en este entorno.                    |
+| 9         | Rutas corregidas; persiste el fallo de dependencias restauradas.                 |
+| 10        | Añadir `styled-jsx` solo desplaza el fallo a `@swc/helpers`.                     |
+| 11        | Compilación completa correcta; el empaquetador SSR no encuentra Next en la raíz. |
+| 12        | Build, Deploy y Verify exitosos con instalación limpia y linker `hoisted`.       |
 
 ## Corrección
 
@@ -43,7 +45,8 @@ La ejecución 11 completó la compilación y falló después, al empaquetar SSR 
 - La reproducción convirtió el enlace de Next en una carpeta normal y repitió `bun install --force --frozen-lockfile`: el enlace no se reparó y apareció exactamente `Cannot find module '@swc/helpers/_/_interop_require_default'`, igual que en AWS.
 - La limpieza propuesta reparó esa misma copia contaminada, sin agregar dependencias directas: instalación congelada, arranque de Next, compilación completa, validación de tipos, generación de 54 páginas y trazas terminaron con código de salida 0.
 - Con `--linker hoisted`, las seis comprobaciones de dependencias desde la raíz pasaron; la compilación completa volvió a terminar con código 0. El servidor resultante respondió HTTP 200 en la portada y el login; se detuvo al terminar la prueba.
+- La ejecución 12 (`a36168d`) completó `BUILD`, `DEPLOY` y `VERIFY`. La portada y `/login` devolvieron HTTP 200 en `https://main.ddgj3exz5re93.amplifyapp.com/` y `/login`. La identidad AWS verificada es `047600599757`.
 
-Publicar la web no verifica todavía el flujo completo de afiliación, compra y aviso IoT: API Gateway low-cost, funciones, variables operativas y callbacks de Cognito requieren su propia validación.
+La publicación confirma el hosting SSR; no confirma todavía el flujo completo de afiliación, compra y aviso IoT. API Gateway low-cost sigue sin rutas y las funciones, variables operativas y callbacks de Cognito requieren su propia integración y validación.
 
 Referencias: [estructura de instalación de Bun](https://bun.com/docs/pm/isolated-installs), [monorepos en Amplify](https://github.com/aws-amplify/amplify-hosting/blob/main/FAQ.md#support-for-monorepo-framework).
