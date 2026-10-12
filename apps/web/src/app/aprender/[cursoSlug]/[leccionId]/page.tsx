@@ -28,8 +28,11 @@ const Reproductor = async ({
     )
   }
 
-  const evaluacionInicial = await enrollmentApi.evaluacionInicial(curso.id)
-  if (!evaluacionInicial.completado) {
+  const [evaluacionInicial, bancoInicial] = await Promise.all([
+    enrollmentApi.evaluacionInicial(curso.id),
+    catalogApi.evaluacionInicial(curso.id),
+  ])
+  if (!evaluacionInicial.completado && bancoInicial !== null) {
     return (
       <ErrorConAccion
         titulo="Completa el test inicial primero"

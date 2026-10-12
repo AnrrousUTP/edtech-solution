@@ -159,9 +159,14 @@ const MapaCurso = async ({
       />
     )
   }
-  const gamificacion = await gamificationApi.miPerfil()
-  const evaluacionInicial = await enrollmentApi.evaluacionInicial(curso.id)
-  const evaluacionInicialCompletada = evaluacionInicial.completado
+  const [gamificacion, evaluacionInicial, bancoInicial] = await Promise.all([
+    gamificationApi.miPerfil(),
+    enrollmentApi.evaluacionInicial(curso.id),
+    catalogApi.evaluacionInicial(curso.id),
+  ])
+  // Los cursos de muestra no incluyen banco de evaluación. Si el docente no
+  // configuró uno, no bloqueamos el acceso a sus lecciones.
+  const evaluacionInicialCompletada = evaluacionInicial.completado || bancoInicial === null
 
   const completadas = new Set(
     progreso.tomos.flatMap(t => t.lecciones.filter(l => l.completada).map(l => l.leccionId)),

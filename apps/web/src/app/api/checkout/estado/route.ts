@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
 import { enrollmentApi } from '@/api/enrollment'
 
-// El polling del checkout pregunta por la MATRÍCULA, no por la orden: lo que
-// el estudiante espera es el acceso al curso (doc 09 §2, paso 12).
+export const dynamic = 'force-dynamic'
+
+// El polling usa la consulta puntual del curso, que lee la matrícula por clave
+// primaria. Evita esperar a que el índice secundario de "mis matrículas"
+// refleje una inscripción recién creada.
 export const GET = async (peticion: Request): Promise<Response> => {
   const cursoId = new URL(peticion.url).searchParams.get('cursoId')
-  if (!cursoId) return NextResponse.json({ activa: false })
+  if (!cursoId)
+    return NextResponse.json({ activa: false }, { headers: { 'Cache-Control': 'no-store' } })
 
-  const matriculas = await enrollmentApi.misMatriculas().catch(() => [])
-  const activa = matriculas.some(m => m.cursoId === cursoId && m.estado === 'ACTIVA')
-  return NextResponse.json({ activa })
+  const progreso = await enrollmentApi.progreso(cursoId).catch(() => null)
+  const activa = progreso?.estado === 'ACTIVA'
+  return NextResponse.json({ activa }, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
 }

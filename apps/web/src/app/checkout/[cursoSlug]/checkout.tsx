@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 type Fase = 'inicial' | 'comprando' | 'esperando' | 'listo' | 'demorado' | 'error'
-const INTENTOS_MAXIMOS = 15
+const INTENTOS_MAXIMOS = 45
 
 export const Checkout = ({
   cursoId,
@@ -18,15 +18,24 @@ export const Checkout = ({
   const [fase, setFase] = useState<Fase>('inicial')
   const [mensajeError, setMensajeError] = useState<string | null>(null)
   const [intentos, setIntentos] = useState(0)
+  const [redirigiendo, setRedirigiendo] = useState(false)
 
   const comprar = async (): Promise<void> => {
     setFase('comprando')
     setMensajeError(null)
-    const respuesta = await fetch('/api/checkout/crear', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cursoId, cursoSlug }),
-    })
+    let respuesta: Response
+    try {
+      respuesta = await fetch('/api/checkout/crear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cursoId, cursoSlug }),
+        cache: 'no-store',
+      })
+    } catch {
+      setMensajeError('No pudimos conectar. Verifica tu conexión e inténtalo de nuevo.')
+      setFase('error')
+      return
+    }
     if (!respuesta.ok) {
       const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: string }
       setMensajeError(cuerpo.error ?? 'No se pudo completar la compra.')
@@ -43,15 +52,25 @@ export const Checkout = ({
       return
     }
     const temporizador = setTimeout(async () => {
-      const respuesta = await fetch(`/api/checkout/estado?cursoId=${cursoId}`)
-      const { activa } = (await respuesta.json()) as { activa: boolean }
-      if (activa) {
-        setFase('listo')
-        router.refresh()
-      } else {
+      try {
+        const respuesta = await fetch(`/api/checkout/estado?cursoId=${cursoId}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        })
+        if (!respuesta.ok) throw new Error('No se pudo consultar la matrícula')
+        const { activa } = (await respuesta.json()) as { activa: boolean }
+        if (activa) {
+          setFase('listo')
+          setRedirigiendo(true)
+          router.refresh()
+          router.replace(`/dashboard?curso=${encodeURIComponent(cursoSlug)}`)
+        } else {
+          setIntentos(n => n + 1)
+        }
+      } catch {
         setIntentos(n => n + 1)
       }
-    }, 700)
+    }, 1000)
     return () => clearTimeout(temporizador)
   }, [fase, intentos, cursoId, router])
 
@@ -64,8 +83,11 @@ export const Checkout = ({
         </svg>
         <h2 className="mt-4 text-xl font-extrabold text-slate-900">¡Compra completada!</h2>
         <p className="mt-2 text-slate-700">El curso ya está habilitado en tu cuenta.</p>
-        <Link href={`/aprender/${cursoSlug}`} className="boton-exito mt-6">
-          Empezar el curso
+        <Link
+          href={`/dashboard?curso=${encodeURIComponent(cursoSlug)}`}
+          className="boton-exito mt-6"
+        >
+          {redirigiendo ? 'Abriendo mi perfil…' : 'Ver mi perfil'}
         </Link>
       </div>
     )

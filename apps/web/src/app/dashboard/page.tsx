@@ -12,6 +12,8 @@ import {
 } from '@/componentes/base'
 import { perfilSesion } from '@/lib/sesion'
 
+export const dynamic = 'force-dynamic'
+
 // Pantalla 10: dashboard con racha, puntos, insignias, certificados y cursos.
 type IconoInsignia = 'inicio' | 'dominio' | 'ruta' | 'precision' | 'racha'
 

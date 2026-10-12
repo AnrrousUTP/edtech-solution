@@ -37,12 +37,23 @@ const linksAdmin = [
 const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): JSX.Element => {
   const pathname = usePathname()
   const [hash, setHash] = useState('')
+  const [menuAbierto, setMenuAbierto] = useState(false)
 
   useEffect(() => {
     const updateHash = (): void => setHash(window.location.hash)
     updateHash()
     window.addEventListener('hashchange', updateHash)
     return () => window.removeEventListener('hashchange', updateHash)
+  }, [])
+
+  useEffect(() => setMenuAbierto(false), [pathname])
+
+  useEffect(() => {
+    const cerrarConEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setMenuAbierto(false)
+    }
+    window.addEventListener('keydown', cerrarConEscape)
+    return () => window.removeEventListener('keydown', cerrarConEscape)
   }, [])
 
   // El encabezado representa el área abierta, no solo el rol guardado en la
@@ -119,7 +130,10 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
           )}
         </Link>
 
-        <div className="header-public-nav">
+        <div
+          id="site-navigation-links"
+          className={`header-public-nav${menuAbierto ? ' is-open' : ''}`}
+        >
           {links.map(link => (
             <Link
               key={link.key}
@@ -133,6 +147,24 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
         </div>
 
         <div className="ml-auto flex items-center gap-2.5">
+          <button
+            type="button"
+            className="header-menu-toggle"
+            aria-label={menuAbierto ? 'Cerrar navegación' : 'Abrir navegación'}
+            aria-expanded={menuAbierto}
+            aria-controls="site-navigation-links"
+            onClick={() => setMenuAbierto(abierto => !abierto)}
+          >
+            {menuAbierto ? (
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path d="m6 6 12 12M18 6 6 18" />
+              </svg>
+            ) : (
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            )}
+          </button>
           <Link href="/cursos" className="header-search-button" aria-label="Buscar cursos">
             <svg aria-hidden="true" className="header-icon" viewBox="0 0 24 24" fill="none">
               <path d="m20 20-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />
