@@ -24,12 +24,14 @@ locals {
   workers_enabled          = local.public_mode && var.enable_workers && var.worker_release_ready
   payments_enabled         = local.public_mode && contains(local.ready_api_domains, "payments")
   payments_workers_enabled = local.payments_enabled && local.workers_enabled
+  outbox_enabled           = local.public_mode && var.enable_outbox_publisher && contains(local.ready_api_domains, "payments") && contains(local.ready_api_domains, "affiliates")
+  outbox_domains           = setintersection(local.lambda_domains, toset(["payments", "affiliates", "iot-terminals"]))
   ai_enabled               = local.public_mode && var.enable_ai
   iot_enabled              = local.public_mode && var.enable_iot && local.workers_enabled && contains(local.ready_api_domains, "iot-terminals")
   affiliate_events_enabled = local.public_mode && var.enable_affiliate_events && contains(local.ready_api_domains, "affiliates")
   # El primer despliegue público solo necesita el recorrido QR → compra → comisión → terminal.
   # Los otros dominios se agregan explícitamente en una fase posterior.
-  domains = setunion(var.enabled_domains, toset(["control"]))
+  domains           = setunion(var.enabled_domains, toset(["control"]))
   lambda_domains    = setsubtract(local.domains, toset(["control"]))
   ready_api_domains = setintersection(local.lambda_domains, var.ready_api_domains)
   artifact_bucket   = var.lambda_artifact_bucket != "" ? var.lambda_artifact_bucket : aws_s3_bucket.content.bucket
@@ -930,7 +932,7 @@ resource "aws_iam_role_policy" "stream_publisher" {
   })
 }
 resource "aws_lambda_function" "stream_publisher" {
-  count                          = local.workers_enabled ? 1 : 0
+  count                          = local.outbox_enabled ? 1 : 0
   function_name                  = "edtech-lowcost-outbox-publisher"
   role                           = aws_iam_role.stream_publisher.arn
   runtime                        = "nodejs22.x"
@@ -940,7 +942,7 @@ resource "aws_lambda_function" "stream_publisher" {
   timeout                        = 30
   s3_bucket                      = local.artifact_bucket
   s3_key                         = "${var.lambda_artifact_prefix}/outbox.zip"
-  reserved_concurrent_executions = local.workers_enabled ? 1 : 0
+  reserved_concurrent_executions = local.outbox_enabled ? -1 : 0
   environment {
     variables = {
       EVENT_BUS_NAME = aws_cloudwatch_event_bus.main.name
@@ -950,7 +952,7 @@ resource "aws_lambda_function" "stream_publisher" {
   depends_on = [aws_iam_role_policy_attachment.stream_logs]
 }
 resource "aws_iam_role_policy" "scheduler_outbox" {
-  count = local.workers_enabled ? 1 : 0
+  count = local.outbox_enabled ? 1 : 0
   name  = "invoke-outbox-reconciler"
   role  = aws_iam_role.scheduler.id
   policy = jsonencode({
@@ -959,11 +961,11 @@ resource "aws_iam_role_policy" "scheduler_outbox" {
   })
 }
 resource "aws_scheduler_schedule" "reconcile_outbox" {
-  count                        = local.workers_enabled ? 1 : 0
+  count                        = local.outbox_enabled ? 1 : 0
   name                         = "edtech-lowcost-reconcile-outbox"
   schedule_expression          = "rate(1 hour)"
   schedule_expression_timezone = "UTC"
-  state                        = local.workers_enabled ? "ENABLED" : "DISABLED"
+  state                        = local.outbox_enabled ? "ENABLED" : "DISABLED"
   flexible_time_window { mode = "OFF" }
   target {
     arn      = aws_lambda_function.stream_publisher[0].arn
@@ -976,7 +978,7 @@ resource "aws_scheduler_schedule" "reconcile_outbox" {
   }
 }
 resource "aws_lambda_event_source_mapping" "outbox" {
-  for_each                       = local.workers_enabled ? local.lambda_domains : toset([])
+  for_each                       = local.outbox_enabled ? local.outbox_domains : toset([])
   event_source_arn               = aws_dynamodb_table.domain[each.key].stream_arn
   function_name                  = aws_lambda_function.stream_publisher[0].arn
   starting_position              = "LATEST"
@@ -1081,21 +1083,33 @@ resource "aws_apigatewayv2_stage" "http" {
 # Terraform. La rama queda controlada aquí y no compila mientras siga pausada.
 resource "aws_amplify_app" "production" {
   count      = var.amplify_app_id != "" ? 1 : 0
-  name       = "edtech-platform"
+  name       = "edtech-solution"
   repository = "https://github.com/AnrrousUTP/edtech-solution"
   platform   = "WEB_COMPUTE"
   build_spec = file("${path.module}/../../../amplify.yml")
+  environment_variables = {
+    AMPLIFY_DIFF_DEPLOY       = "false"
+    AMPLIFY_MONOREPO_APP_ROOT = "apps/web"
+  }
 
   enable_branch_auto_build    = false
   enable_branch_auto_deletion = false
+  enable_auto_branch_creation = false
+  enable_basic_auth           = false
   iam_service_role_arn        = var.amplify_execution_role_name != "" ? data.aws_iam_role.amplify_execution[0].arn : null
+
+  custom_rule {
+    source = "/<*>"
+    target = "/index.html"
+    status = "404-200"
+  }
 }
 
 resource "aws_amplify_branch" "production" {
   count        = var.amplify_app_id != "" && var.amplify_default_domain != "" ? 1 : 0
   app_id       = aws_amplify_app.production[0].id
   branch_name  = var.amplify_branch_name
-  display_name = "production"
+  display_name = "main"
   description  = "EdTech · rama pública"
   framework    = "Next.js - SSR"
   stage        = "PRODUCTION"
@@ -1106,6 +1120,7 @@ resource "aws_amplify_branch" "production" {
   environment_variables = {
     API_BASE                    = aws_apigatewayv2_api.http.api_endpoint
     EDTECH_SERVICES_API_BASE    = aws_apigatewayv2_api.http.api_endpoint
+    NEXT_PUBLIC_API_BASE        = aws_apigatewayv2_api.http.api_endpoint
     APP_URL                     = "https://${var.amplify_branch_name}.${var.amplify_default_domain}"
     COGNITO_REGION              = var.aws_region
     COGNITO_DOMINIO             = var.cognito_domain

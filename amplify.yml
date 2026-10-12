@@ -17,7 +17,7 @@ applications:
             - node -e "for (const id of ['next/package.json', 'styled-jsx/package.json', '@swc/helpers/_/_interop_require_default', '@next/env', 'caniuse-lite', 'postcss']) require.resolve(id); console.log('Next runtime dependencies verified')"
         build:
           commands:
-            - (env | grep -E '^(API_BASE|EDTECH_SERVICES_API_BASE|APP_URL|COGNITO_REGION|COGNITO_DOMINIO|COGNITO_CLIENT_ID|EDTECH_AFFILIATES_ENABLED|EDTECH_AI_ENABLED|EDTECH_CONTROL_TABLE|EDTECH_AUDIO_BUCKET|EDTECH_IOT_ENABLED|EDTECH_IOT_DATA_ENDPOINT|EDTECH_IOT_SESSION_ROLE_ARN|EDTECH_IOT_THING_NAME|BEDROCK_MODEL_ID)=' > apps/web/.env.production || true)
+            - (env | grep -E '^(API_BASE|EDTECH_SERVICES_API_BASE|NEXT_PUBLIC_API_BASE|APP_URL|COGNITO_REGION|COGNITO_DOMINIO|COGNITO_CLIENT_ID|EDTECH_AFFILIATES_ENABLED|EDTECH_AI_ENABLED|EDTECH_CONTROL_TABLE|EDTECH_AUDIO_BUCKET|EDTECH_IOT_ENABLED|EDTECH_IOT_DATA_ENDPOINT|EDTECH_IOT_SESSION_ROLE_ARN|EDTECH_IOT_THING_NAME|BEDROCK_MODEL_ID)=' > apps/web/.env.production || true)
             - bun run --cwd apps/web build
       artifacts:
         baseDirectory: apps/web/.next

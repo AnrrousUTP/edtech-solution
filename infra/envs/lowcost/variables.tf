@@ -113,6 +113,12 @@ variable "enable_workers" {
   default     = false
 }
 
+variable "enable_outbox_publisher" {
+  description = "Activa solo el publicador DynamoDB Streams → EventBridge, sin desplegar el worker genérico de trabajos."
+  type        = bool
+  default     = false
+}
+
 variable "worker_release_ready" {
   description = "Confirma que el ZIP del worker pasó pruebas e incluye los consumidores SQS necesarios."
   type        = bool
