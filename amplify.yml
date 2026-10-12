@@ -8,7 +8,11 @@ applications:
           commands:
             - nvm use 22
             - npm install --global bun@1.3.14
-            - bun install --force --frozen-lockfile
+            - test -f bun.lock && test -f apps/web/package.json
+            # Bun isolated usa enlaces hacia node_modules/.bun. Un cache antiguo
+            # puede restaurar Next como carpeta y --force no repara ese enlace.
+            - rm -rf node_modules apps/web/node_modules
+            - bun install --frozen-lockfile
         build:
           commands:
             - (env | grep -E '^(API_BASE|EDTECH_SERVICES_API_BASE|APP_URL|COGNITO_REGION|COGNITO_DOMINIO|COGNITO_CLIENT_ID|EDTECH_AFFILIATES_ENABLED|EDTECH_AI_ENABLED|EDTECH_CONTROL_TABLE|EDTECH_AUDIO_BUCKET|EDTECH_IOT_ENABLED|EDTECH_IOT_DATA_ENDPOINT|EDTECH_IOT_SESSION_ROLE_ARN|EDTECH_IOT_THING_NAME|BEDROCK_MODEL_ID)=' > apps/web/.env.production || true)
@@ -19,5 +23,4 @@ applications:
           - '**/*'
       cache:
         paths:
-          - node_modules/**/*
           - apps/web/.next/cache/**/*
