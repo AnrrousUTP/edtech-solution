@@ -16,7 +16,7 @@ import {
 } from '../../domain/module.errors'
 import type { Bloque, CursoRepository, Ejercicio } from '../../domain/ports-out/curso.repository'
 import type { ContenidoStore } from '../../domain/ports-out/contenido-store.port'
-import { hashContenido } from '../hash-contenido'
+import { publicarFuentesFlashcards } from '../publicar-fuentes-flashcards'
 
 export type LeccionEntrada = {
   id?: string
@@ -115,17 +115,16 @@ export class ActualizarContenidoHandler implements CommandHandler<
     // Si está publicado, el contenido nuevo dispara los eventos por tomo
     if (curso.estado === 'PUBLICADO') {
       for (const tomo of tomos) {
-        const publicadas = []
-        for (const leccion of tomo.lecciones) {
-          const bloques = bloquesPorLeccion.get(leccion.id) ?? []
-          const key = await this.contenidoStore.publicarContenidoLeccion(
-            leccion.id,
-            JSON.stringify({ leccionId: leccion.id, titulo: leccion.titulo, bloques }),
-          )
-          publicadas.push({ id: leccion.id, titulo: leccion.titulo, bloquesS3Key: key })
-        }
-        const hashTomo = await hashContenido(tomo.lecciones.map(l => l.contenidoHash).join('|'))
-        const rEvento = curso.registrarContenidoActualizado(tomo.id, hashTomo, publicadas)
+        const fuentes = await publicarFuentesFlashcards(
+          tomo,
+          this.contenidoStore,
+          async leccionId => bloquesPorLeccion.get(leccionId) ?? [],
+        )
+        const rEvento = curso.registrarContenidoActualizado(
+          tomo.id,
+          fuentes.contenidoHash,
+          fuentes.lecciones,
+        )
         if (isErr(rEvento)) return Err(rEvento.error)
       }
     }

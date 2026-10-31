@@ -12,7 +12,7 @@ import {
 import { CursoNoEncontradoError, type CatalogError } from '../../domain/module.errors'
 import type { CursoRepository } from '../../domain/ports-out/curso.repository'
 import type { ContenidoStore } from '../../domain/ports-out/contenido-store.port'
-import { hashContenido } from '../hash-contenido'
+import { publicarFuentesFlashcards } from '../publicar-fuentes-flashcards'
 
 export type PublicarCursoCommand = Command & {
   readonly _tag: 'PublicarCurso'
@@ -48,17 +48,14 @@ export class PublicarCursoHandler implements CommandHandler<
 
     if (!yaPublicado) {
       for (const tomo of curso.tomos) {
-        const publicadas = []
-        for (const leccion of tomo.lecciones) {
-          const bloques = await this.cursos.bloquesDe(UniqueId.desde(leccion.id))
-          const key = await this.contenidoStore.publicarContenidoLeccion(
-            leccion.id,
-            JSON.stringify({ leccionId: leccion.id, titulo: leccion.titulo, bloques }),
-          )
-          publicadas.push({ id: leccion.id, titulo: leccion.titulo, bloquesS3Key: key })
-        }
-        const hashTomo = await hashContenido(tomo.lecciones.map(l => l.contenidoHash).join('|'))
-        const rEvento = curso.registrarContenidoActualizado(tomo.id, hashTomo, publicadas)
+        const fuentes = await publicarFuentesFlashcards(tomo, this.contenidoStore, leccionId =>
+          this.cursos.bloquesDe(UniqueId.desde(leccionId)),
+        )
+        const rEvento = curso.registrarContenidoActualizado(
+          tomo.id,
+          fuentes.contenidoHash,
+          fuentes.lecciones,
+        )
         if (isErr(rEvento)) return Err(rEvento.error)
       }
     }
