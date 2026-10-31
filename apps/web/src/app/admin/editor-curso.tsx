@@ -252,7 +252,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
             Imagen URL
             <input value={datos.imagenUrl} onChange={e => setDatos({ ...datos, imagenUrl: e.target.value })} />
           </label>
-          <label>
+          <label className="admin-form-wide">
             Subir imagen
             <input
               type="file"
@@ -294,7 +294,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       </section>
 
       <section className="tech-admin-card admin-week-editor">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="admin-week-editor-heading flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2>Semanas del curso</h2>
             <p className="admin-help">Sube PDF y organiza materiales, lecciones, repaso y evaluaciones por semana.</p>

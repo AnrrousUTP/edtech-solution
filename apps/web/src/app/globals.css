@@ -10831,6 +10831,21 @@
   grid-column: 1 / -1;
 }
 
+.admin-week-editor-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+
+.admin-week-editor-heading > div:first-child {
+  min-width: 0;
+}
+
+.admin-week-editor-heading .admin-help {
+  max-width: 520px;
+}
+
 .admin-course-card-controls .admin-icon-button {
   display: inline-grid;
   min-width: 48px;
@@ -11040,6 +11055,20 @@
   .admin-editor-grid > .admin-form-success {
     grid-column: 1;
     grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-week-editor-heading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-week-editor-heading > button {
+    justify-self: start;
+  }
+
+  .admin-week-editor-heading .admin-help {
+    max-width: none;
   }
 }
 
