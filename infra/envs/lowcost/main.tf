@@ -1561,7 +1561,7 @@ resource "aws_amplify_app" "production" {
 }
 
 resource "aws_amplify_branch" "production" {
-  count        = var.amplify_app_id != "" && var.amplify_default_domain != "" ? 1 : 0
+  count = var.amplify_app_id != "" && var.amplify_default_domain != "" && var.enable_amplify_branch ? 1 : 0
   app_id       = aws_amplify_app.production[0].id
   branch_name  = var.amplify_branch_name
   display_name = "main"

@@ -190,6 +190,12 @@ variable "amplify_branch_name" {
   default     = "main"
 }
 
+variable "enable_amplify_branch" {
+  description = "Permite crear la rama de producción cuando el commit ya está publicado en el repositorio conectado."
+  type        = bool
+  default     = true
+}
+
 variable "amplify_default_domain" {
   description = "Dominio predeterminado de Amplify de la app importada, sin protocolo."
   type        = string
