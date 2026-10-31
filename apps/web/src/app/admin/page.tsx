@@ -152,7 +152,8 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
               <p className="admin-course-description">{curso.descripcion}</p>
               <div className="admin-course-stats">
                 <span>
-                  <strong>{estado.semanas.length}</strong> semanas
+                  <strong>{estado.semanas.length}</strong>{' '}
+                  {estado.semanas.length === 1 ? 'semana' : 'semanas'}
                 </span>
                 <span>{precioTexto(curso.precio, curso.moneda)}</span>
               </div>
