@@ -24,6 +24,7 @@ const DOCENTE = crypto.randomUUID()
 
 const montar = (
   generador: GeneradorFlashcardsPort & { llamadas: number } = new GeneradorDePrueba(),
+  contenido = new FakeContenidoFuente(),
 ) => {
   const mazos = new InMemoryMazoRepository()
   const cola = new FakeColaGeneracion()
@@ -35,7 +36,7 @@ const montar = (
     publisher,
     generador,
     solicitar: new SolicitarGeneracionHandler(mazos, cola),
-    generar: new GenerarMazoHandler(mazos, generador, new FakeContenidoFuente(), publisher, reloj),
+    generar: new GenerarMazoHandler(mazos, generador, contenido, publisher, reloj),
     aprobar: new AprobarTarjetaHandler(mazos, publisher, reloj),
     rechazar: new RechazarTarjetaHandler(mazos, publisher, reloj),
     consultar: new TarjetasDeTomoHandler(mazos),
@@ -51,6 +52,36 @@ const solicitud = (hash = HASH) => ({
 })
 
 describe('Flujo completo: generación → HITL → estudiante (I-8)', () => {
+  test('usa el curso, tema, nivel y texto limpio de cada fuente al pedir flashcards', async () => {
+    const contexto = {
+      cursoTitulo: 'Automatización de tareas',
+      cursoTecnologia: 'RPA y Power Platform',
+      nivelMin: 'B',
+      nivelMax: 'D',
+      tomoTitulo: 'Flujos con Power Automate',
+    }
+    const fuente = JSON.stringify({
+      titulo: 'Disparadores y acciones',
+      contexto,
+      bloques: [{ tipo: 'TEXTO', contenido: { markdown: 'Un flujo inicia con un disparador.' } }],
+    })
+    const generador = new GeneradorDePrueba()
+    const { solicitar, generar, cola } = montar(generador, new FakeContenidoFuente(fuente))
+
+    await solicitar.execute(solicitud())
+    await generar.execute({ _tag: 'GenerarMazo', mazoId: cola.encolados[0]! })
+
+    expect(generador.ultimaEntrada).toMatchObject({
+      cursoTitulo: contexto.cursoTitulo,
+      cursoTecnologia: contexto.cursoTecnologia,
+      tomoTitulo: contexto.tomoTitulo,
+      nivel: 'B-D',
+      lecciones: [
+        { titulo: 'Disparadores y acciones', contenido: 'Un flujo inicia con un disparador.' },
+      ],
+    })
+  })
+
   test('el contenido nuevo crea un mazo EN_REVISION con 10 tarjetas', async () => {
     const { solicitar, generar, mazos, cola, publisher } = montar()
 

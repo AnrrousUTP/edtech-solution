@@ -79,6 +79,8 @@ const Reproductor = async ({
     `Curso: ${curso.titulo}.`,
     tomo ? `Semana: ${tomo.titulo}.` : '',
     `Lección: ${leccion.titulo}.`,
+    `Progreso de la semana: ${hechasEnTomo}/${estadoTomo?.lecciones.length ?? tomo?.lecciones.length ?? 0} lecciones completadas.`,
+    `Esta lección ${yaCompletada ? 'ya está completada' : 'está pendiente'}.`,
     'Contenido de estudio:',
     ...leccion.bloques.map(bloque =>
       Object.values(bloque.contenido)
@@ -86,7 +88,10 @@ const Reproductor = async ({
         .join('\n'),
     ),
     'Ejercicios:',
-    ...leccion.ejercicios.map((ejercicio, indice) => `${indice + 1}. ${ejercicio.enunciado}`),
+    ...leccion.ejercicios.map(
+      (ejercicio, indice) =>
+        `${indice + 1}. ${ejercicio.enunciado}${ejercicio.pistas.length > 0 ? `\nPistas disponibles: ${ejercicio.pistas.map(pista => String(pista)).join(' | ')}` : ''}`,
+    ),
   ]
     .filter(Boolean)
     .join('\n')

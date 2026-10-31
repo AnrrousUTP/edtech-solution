@@ -59,10 +59,12 @@ export class FakeContenidoFuente implements ContenidoFuente {
 /** Generador de test: sin retraso, tarjetas deterministas. */
 export class GeneradorDePrueba implements GeneradorFlashcardsPort {
   llamadas = 0
+  ultimaEntrada: EntradaGeneracion | null = null
   constructor(private readonly cantidad = 10) {}
 
   async generar(input: EntradaGeneracion): Promise<Result<SalidaGeneracion, GeneracionError>> {
     this.llamadas += 1
+    this.ultimaEntrada = input
     return Ok({
       tarjetas: Array.from({ length: this.cantidad }, (_, i) => ({
         anverso: `Pregunta ${i + 1} sobre ${input.tomoTitulo}`,

@@ -122,6 +122,12 @@ export class ActualizarContenidoHandler implements CommandHandler<
           tomo,
           this.contenidoStore,
           async leccionId => bloquesPorLeccion.get(leccionId) ?? [],
+          {
+            cursoTitulo: curso.titulo,
+            cursoTecnologia: curso.tecnologia,
+            nivelMin: curso.nivelMin.valor,
+            nivelMax: curso.nivelMax.valor,
+          },
         )
         const rEvento = curso.registrarContenidoActualizado(
           tomo.id,

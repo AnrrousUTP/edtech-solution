@@ -19,9 +19,10 @@ describe('BedrockGeneradorFlashcards', () => {
     } as unknown as BedrockRuntimeClient
 
     const result = await new BedrockGeneradorFlashcards(client, 'amazon.nova-micro-v1:0').generar({
+      cursoTitulo: 'Fundamentos de automatización',
       tomoTitulo: 'Fundamentos',
-      cursoTecnologia: 'programación',
-      nivel: 'A',
+      cursoTecnologia: 'RPA y no-code',
+      nivel: 'A-C',
       lecciones: [{ titulo: 'Variables', contenido: 'Contenido de la lección' }],
       cantidadDeseada: 8,
     })

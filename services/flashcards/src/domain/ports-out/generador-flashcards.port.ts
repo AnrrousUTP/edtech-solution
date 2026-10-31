@@ -2,6 +2,7 @@ import type { Result } from '@edtech/shared-kernel'
 import type { GeneracionError } from '../module.errors'
 
 export type EntradaGeneracion = {
+  cursoTitulo: string
   tomoTitulo: string
   cursoTecnologia: string
   nivel: string

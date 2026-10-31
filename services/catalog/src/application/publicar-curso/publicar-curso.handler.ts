@@ -48,8 +48,16 @@ export class PublicarCursoHandler implements CommandHandler<
 
     if (!yaPublicado) {
       for (const tomo of curso.tomos) {
-        const fuentes = await publicarFuentesFlashcards(tomo, this.contenidoStore, leccionId =>
-          this.cursos.bloquesDe(UniqueId.desde(leccionId)),
+        const fuentes = await publicarFuentesFlashcards(
+          tomo,
+          this.contenidoStore,
+          leccionId => this.cursos.bloquesDe(UniqueId.desde(leccionId)),
+          {
+            cursoTitulo: curso.titulo,
+            cursoTecnologia: curso.tecnologia,
+            nivelMin: curso.nivelMin.valor,
+            nivelMax: curso.nivelMax.valor,
+          },
         )
         const rEvento = curso.registrarContenidoActualizado(
           tomo.id,

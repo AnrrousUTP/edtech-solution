@@ -14,6 +14,10 @@ import { MazoNoEncontradoError, type FlashcardsError } from '../../domain/module
 import type { ContenidoFuente } from '../../domain/ports-out/contenido-fuente.port'
 import type { GeneradorFlashcardsPort } from '../../domain/ports-out/generador-flashcards.port'
 import type { MazoRepository } from '../../domain/ports-out/mazo.repository'
+import {
+  leerFuenteGeneracion,
+  type ContextoFuente,
+} from '../../domain/value-objects/fuente-generacion.vo'
 import { validarTarjetas } from '../../domain/value-objects/salida-modelo.vo'
 
 export type GenerarMazoCommand = Command & {
@@ -53,21 +57,31 @@ export class GenerarMazoHandler implements CommandHandler<
     mazo.registrarIntento()
 
     const lecciones: { titulo: string; contenido: string }[] = []
+    let contexto: ContextoFuente | undefined
     for (const fuente of mazo.leccionesFuente) {
-      const texto = await this.contenido.leer(fuente.bloquesS3Key).catch(err => {
+      const bruto = await this.contenido.leer(fuente.bloquesS3Key).catch(err => {
         log.warn('no se pudo leer el contenido de la lección', {
           key: fuente.bloquesS3Key,
           error: err instanceof Error ? err.message : String(err),
         })
         return ''
       })
-      lecciones.push({ titulo: fuente.titulo, contenido: texto })
+      const interpretacion = leerFuenteGeneracion(bruto, fuente.titulo)
+      const leida = interpretacion.ok
+        ? interpretacion.value
+        : { titulo: fuente.titulo, contenido: bruto }
+      contexto ??= leida.contexto
+      lecciones.push({ titulo: leida.titulo, contenido: leida.contenido })
     }
 
     const salida = await this.generador.generar({
-      tomoTitulo: `Tomo ${mazo.tomoId}`,
-      cursoTecnologia: 'programación',
-      nivel: 'A',
+      cursoTitulo: contexto?.cursoTitulo ?? 'Curso sin título',
+      tomoTitulo: contexto?.tomoTitulo ?? lecciones[0]?.titulo ?? `Semana ${mazo.tomoId}`,
+      cursoTecnologia: contexto?.cursoTecnologia ?? 'habilidades digitales',
+      nivel:
+        contexto?.nivelMin && contexto.nivelMax
+          ? `${contexto.nivelMin}-${contexto.nivelMax}`
+          : 'A-N',
       lecciones,
       cantidadDeseada: CANTIDAD_DESEADA,
     })

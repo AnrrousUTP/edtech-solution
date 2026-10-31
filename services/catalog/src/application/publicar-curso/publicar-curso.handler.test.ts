@@ -73,6 +73,17 @@ describe('PublicarCursoHandler', () => {
     expect(validarContra('catalog.contenido-actualizado.v1', contenido[0]!.payload())).toEqual({
       valido: true,
     })
+
+    const fuente = JSON.parse([...store.publicados.values()][0] ?? '{}') as {
+      contexto?: Record<string, string>
+    }
+    expect(fuente.contexto).toMatchObject({
+      cursoTitulo: 'HTML Esencial',
+      cursoTecnologia: 'HTML',
+      nivelMin: 'A',
+      nivelMax: 'B',
+      tomoTitulo: 'Fundamentos',
+    })
   })
 
   test('publicar un curso sin contenido devuelve CURSO_NO_PUBLICABLE', async () => {
