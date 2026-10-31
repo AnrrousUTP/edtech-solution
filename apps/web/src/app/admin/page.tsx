@@ -123,7 +123,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
           const listos = checks.filter(([, listo]) => listo).length
           return (
             <article key={curso.id} className="admin-course-card">
-              <div className="admin-course-card-heading">
+              <header className="admin-course-card-heading">
                 <div className="admin-course-card-topline">
                   <span className="admin-course-tech">{curso.tecnologia}</span>
                   <Etiqueta
@@ -147,7 +147,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
                   </Link>
                   <AccionesCurso cursoId={curso.id} estado={curso.estado} />
                 </div>
-              </div>
+              </header>
               <h3>{curso.titulo}</h3>
               <p className="admin-course-description">{curso.descripcion}</p>
               <div className="admin-course-stats">

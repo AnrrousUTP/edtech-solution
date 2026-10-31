@@ -206,7 +206,7 @@ export const catalogApi = {
       cuerpo: datos,
     }),
 
-  actualizarContenido: (cursoId: string, tomos: unknown[]) =>
+  actualizarContenido: (cursoId: string, tomos: unknown[], generarFlashcards = false) =>
     llamar(
       `/api/catalog/admin/cursos/${cursoId}/contenido`,
       z.object({
@@ -215,7 +215,7 @@ export const catalogApi = {
       }),
       {
         metodo: 'PUT',
-        cuerpo: { tomos },
+        cuerpo: { tomos, generarFlashcards },
       },
     ),
 

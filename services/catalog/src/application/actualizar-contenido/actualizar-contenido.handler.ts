@@ -16,6 +16,7 @@ import {
 } from '../../domain/module.errors'
 import type { Bloque, CursoRepository, Ejercicio } from '../../domain/ports-out/curso.repository'
 import type { ContenidoStore } from '../../domain/ports-out/contenido-store.port'
+import { hashContenido } from '../hash-contenido'
 import { publicarFuentesFlashcards } from '../publicar-fuentes-flashcards'
 
 export type LeccionEntrada = {
@@ -41,6 +42,7 @@ export type ActualizarContenidoCommand = Command & {
   readonly _tag: 'ActualizarContenido'
   readonly cursoId: string
   readonly tomos: TomoEntrada[]
+  readonly generarFlashcards?: boolean
 }
 
 export type ActualizarContenidoResponse = {
@@ -49,9 +51,9 @@ export type ActualizarContenidoResponse = {
 }
 
 /** Reemplaza la estructura completa de tomos/lecciones/bloques del curso.
- *  Calcula contenido_hash por lección (caché de flashcards, doc 03 §5) y, si el
- *  curso está publicado, sube el contenido al store y registra
- *  contenido-actualizado por tomo. */
+ *  Calcula contenido_hash por lección (caché de flashcards, doc 03 §5). El curso
+ *  publicado genera al actualizarse; el docente puede solicitarlo para un
+ *  borrador con generarFlashcards. */
 export class ActualizarContenidoHandler implements CommandHandler<
   ActualizarContenidoCommand,
   ActualizarContenidoResponse,
@@ -112,8 +114,9 @@ export class ActualizarContenidoHandler implements CommandHandler<
     const r = curso.reemplazarTomos(tomos)
     if (isErr(r)) return Err(r.error)
 
-    // Si está publicado, el contenido nuevo dispara los eventos por tomo
-    if (curso.estado === 'PUBLICADO') {
+    // Los cursos publicados se regeneran al cambiar; en borradores solo se
+    // ejecuta cuando el docente lo pide expresamente desde el editor.
+    if (curso.estado === 'PUBLICADO' || cmd.generarFlashcards === true) {
       for (const tomo of tomos) {
         const fuentes = await publicarFuentesFlashcards(
           tomo,

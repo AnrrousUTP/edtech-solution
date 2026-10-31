@@ -109,6 +109,14 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   const [ocupado, setOcupado] = useState(false)
   const [subiendo, setSubiendo] = useState<string | null>(null)
   const mazosPorSemana = new Map(mazosPorTomo.map(item => [item.tomoId, item.mazos]))
+  const contextoAsistente = [
+    curso ? `Curso: ${curso.titulo} (${curso.estado}).` : 'Curso nuevo.',
+    ...semanas.map((semana, indice) =>
+      `Semana ${indice + 1}: ${semana.titulo}. Materiales: ${semana.materiales.map(material => material.titulo).filter(Boolean).join(', ') || 'ninguno'}. Lecciones: ${semana.lecciones.map(leccion => leccion.titulo).filter(Boolean).join(', ') || 'ninguna'}.`,
+    ),
+  ]
+    .join('\n')
+    .slice(0, 1100)
 
   const cambiarSemana = (indice: number, cambios: Partial<Semana>): void => {
     setSemanas(actual => actual.map((semana, i) => (i === indice ? { ...semana, ...cambios } : semana)))
@@ -165,6 +173,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
 
   const guardar = async (evento: React.FormEvent): Promise<void> => {
     evento.preventDefault()
+    const submitter = (evento.nativeEvent as SubmitEvent).submitter
+    const generarFlashcards =
+      submitter instanceof HTMLButtonElement && submitter.value === 'guardar-y-generar-flashcards'
     setOcupado(true)
     setError(null)
     setEstado(null)
@@ -199,13 +210,22 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       const guardado = await fetch('/api/admin/catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accion: 'contenido', id: cursoId, datos: { tomos: semanas } }),
+        body: JSON.stringify({
+          accion: 'contenido',
+          id: cursoId,
+          datos: { tomos: semanas, generarFlashcards },
+        }),
       })
       const result = (await guardado.json().catch(() => ({}))) as { error?: string }
       if (!guardado.ok) throw new Error(result.error ?? 'No se pudo guardar el contenido')
-      setEstado('Curso y semanas guardados.')
-      router.push('/admin')
-      router.refresh()
+      if (generarFlashcards) {
+        setEstado('Curso guardado. La IA está preparando las flashcards; podrás revisarlas aquí.')
+        router.refresh()
+      } else {
+        setEstado('Curso y semanas guardados.')
+        router.push('/admin')
+        router.refresh()
+      }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el curso')
     } finally {
@@ -215,6 +235,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
 
   return (
     <form onSubmit={guardar} className="admin-editor-grid">
+      <p className="sr-only" data-assistant-context>{contextoAsistente}</p>
       <section className="tech-admin-card">
         <h1>{curso ? 'Editar curso' : 'Nuevo curso'}</h1>
         <p className="admin-help">Define los datos que verán los estudiantes.</p>
@@ -276,7 +297,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2>Semanas del curso</h2>
-            <p className="admin-help">Materiales, lecciones, repaso y evaluación semanal.</p>
+            <p className="admin-help">Sube PDF y organiza materiales, lecciones, repaso y evaluaciones por semana.</p>
           </div>
           <button type="button" className="boton-secundario" onClick={() => setSemanas(actual => [...actual, semanaVacia(actual.length + 1)])}>
             Agregar semana
@@ -391,9 +412,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                   </section>
 
                   <section className="admin-week-section admin-week-review">
-                    <div><h3>Repaso y flashcards</h3><p className="admin-help">Al publicar, o guardar cambios en un curso publicado, la IA prepara el mazo con las lecciones y los PDF. Revisa el resultado aquí.</p></div>
+                    <div><h3>Repaso y flashcards</h3><p className="admin-help">Genera flashcards con las lecciones y los resúmenes de PDF. Cada mazo queda pendiente de revisión docente.</p></div>
                     {mazos.length > 0 && <div className="admin-route-flashcards-list">{mazos.map(mazo => <details key={mazo.mazoId}><summary>Versión {mazo.version} · {mazo.estado}</summary><RevisionMazo mazo={mazo} /></details>)}</div>}
-                    {mazos.length === 0 && <p className="admin-help">El mazo aparecerá después de publicar o actualizar el curso publicado.</p>}
+                    {mazos.length === 0 && <p className="admin-help">Aún no hay mazos. Usa “Guardar y generar flashcards” o publica el curso.</p>}
                   </section>
 
                   <section className="admin-week-section">
@@ -422,6 +443,14 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
 
       {(error || estado) && <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">{error ?? estado}</p>}
       <div className="admin-editor-actions">
+        {curso && <button
+          disabled={ocupado || subiendo !== null}
+          className="boton-secundario"
+          type="submit"
+          value="guardar-y-generar-flashcards"
+        >
+          {ocupado ? 'Procesando…' : 'Guardar y generar flashcards'}
+        </button>}
         <button disabled={ocupado || subiendo !== null} className="boton-primario" type="submit">{ocupado ? 'Guardando…' : 'Guardar curso'}</button>
       </div>
     </form>

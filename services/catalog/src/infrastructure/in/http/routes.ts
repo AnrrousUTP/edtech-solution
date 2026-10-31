@@ -251,6 +251,7 @@ export const crearRouter = (
         _tag: 'ActualizarContenido',
         cursoId: req.params.id ?? '',
         tomos: Array.isArray(b.tomos) ? b.tomos : [],
+        generarFlashcards: b.generarFlashcards === true,
       }),
     )
   })

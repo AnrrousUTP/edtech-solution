@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { NextResponse } from 'next/server'
-import { extraerResumenPdf } from '@/lib/assistant/bedrock'
+import { AssistantProviderError, extraerResumenPdf } from '@/lib/assistant/bedrock'
+import { reserveAssistantChatQuota } from '@/lib/assistant/quota'
 import { config } from '@/lib/config'
 import { esDocente, mfaPendiente } from '@/lib/sesion'
 
@@ -36,8 +37,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const key = `course-media/${randomUUID()}.${extension}`
   try {
-    const textoExtraido =
-      file.type === 'application/pdf' ? await extraerResumenPdf(bytes, file.name) : undefined
+    let textoExtraido: string | undefined
+    if (file.type === 'application/pdf') {
+      await reserveAssistantChatQuota()
+      textoExtraido = await extraerResumenPdf(bytes, file.name)
+    }
     await s3.send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -54,7 +58,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       tipo: file.type === 'application/pdf' ? 'PDF' : 'IMAGEN',
       ...(textoExtraido ? { textoExtraido } : {}),
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof AssistantProviderError && error.code === 'quota-exceeded') {
+      return NextResponse.json(
+        { error: 'Se alcanzó el límite mensual de procesamiento con IA.' },
+        { status: 429 },
+      )
+    }
+    if (error instanceof AssistantProviderError && error.code === 'not-configured') {
+      return NextResponse.json({ error: 'El procesamiento de PDF no está configurado.' }, { status: 503 })
+    }
     return NextResponse.json(
       { error: 'No se pudo subir el archivo. Revisa el formato e inténtalo de nuevo.' },
       { status: 502 },

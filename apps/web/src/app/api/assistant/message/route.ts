@@ -74,22 +74,22 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     await reserveAssistantChatQuota()
     const pregunta = parsed.data.messages.at(-1)?.content ?? ''
-    const pideCatalogo = /curso|cursos|ruta|rutas/i.test(pregunta)
-    let datosCatalogo = ''
-    if (pideCatalogo) {
+    const pideCursos = /curso|cursos|clase|clases/i.test(pregunta)
+    const pideRutas = /ruta|rutas|secuencia/i.test(pregunta)
+    const rol = perfil?.rol?.toLowerCase()
+    const esDocente = rol === 'docente'
+    const datosCatalogo: string[] = []
+    if (pideCursos) {
       try {
-        const ruta =
-          perfil?.rol?.toLowerCase() === 'docente'
-            ? '/api/catalog/admin/cursos'
-            : '/api/catalog/cursos'
-        const catalogo = await fetch(`${config.catalogApiBase}${ruta}`, {
+        const endpoint = esDocente ? '/api/catalog/admin/cursos' : '/api/catalog/cursos'
+        const catalogo = await fetch(`${config.catalogApiBase}${endpoint}`, {
           ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
           cache: 'no-store',
         })
         if (catalogo.ok) {
           const body = (await catalogo.json()) as { data?: unknown }
           const cursos = Array.isArray(body.data) ? body.data : []
-          datosCatalogo = `Cursos disponibles para este usuario: ${JSON.stringify(
+          datosCatalogo.push(`Cursos disponibles para este usuario: ${JSON.stringify(
             cursos.slice(0, 30).map(valor => {
               const curso = valor as Record<string, unknown>
               return {
@@ -99,17 +99,41 @@ export async function POST(request: Request): Promise<NextResponse> {
                 nivel: String(curso.nivelMin ?? '') + '-' + String(curso.nivelMax ?? ''),
               }
             }),
-          )}`
+          )}`)
         }
       } catch {
-        datosCatalogo = ''
+        // El asistente responderá sin datos de catálogo si el servicio no está disponible.
+      }
+    }
+    if (pideRutas) {
+      try {
+        const endpoint = esDocente ? '/api/catalog/admin/carreras' : '/api/catalog/carreras'
+        const catalogo = await fetch(`${config.catalogApiBase}${endpoint}`, {
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+          cache: 'no-store',
+        })
+        if (catalogo.ok) {
+          const body = (await catalogo.json()) as { data?: unknown }
+          const rutas = Array.isArray(body.data) ? body.data : []
+          datosCatalogo.push(`Rutas disponibles para este usuario: ${JSON.stringify(
+            rutas.slice(0, 30).map(valor => {
+              const ruta = valor as Record<string, unknown>
+              return {
+                nombre: ruta.titulo,
+                estado: ruta.estado,
+                cursos: Array.isArray(ruta.cursos) ? ruta.cursos.length : undefined,
+              }
+            }),
+          )}`)
+        }
+      } catch {
+        // El asistente responderá sin datos de rutas si el servicio no está disponible.
       }
     }
     const contexto = {
       ...parsed.data.context,
-      pageSummary: [parsed.data.context?.pageSummary, datosCatalogo].filter(Boolean).join('\n'),
+      pageSummary: [parsed.data.context?.pageSummary, ...datosCatalogo].filter(Boolean).join('\n'),
     }
-    const rol = perfil?.rol?.toLowerCase()
     const tipoAsistente =
       rol === 'docente' ? 'docente' : rol === 'estudiante' ? 'estudiante' : 'publico'
     const text = await generateAssistantReply(parsed.data.messages, contexto, tipoAsistente)

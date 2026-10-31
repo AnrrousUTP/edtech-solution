@@ -9189,9 +9189,7 @@
 
   .admin-course-card-topline,
   .admin-course-stats,
-  .admin-readiness-heading,
-  .admin-course-actions,
-  .admin-course-footer {
+  .admin-readiness-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -9277,23 +9275,6 @@
 
   .admin-readiness-checks .is-ready {
     color: #137333;
-    font-weight: 700;
-  }
-
-  .admin-course-actions {
-    justify-content: flex-start;
-    margin-top: 22px;
-  }
-
-  .admin-course-footer {
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--gs-border);
-  }
-
-  .admin-course-footer > a {
-    color: var(--gs-primary);
-    font-size: 12px;
     font-weight: 700;
   }
 
@@ -10762,9 +10743,15 @@
 /* Docente: curso cards and editor layout */
 .admin-course-card-heading {
   display: flex;
+  width: 100%;
+  min-height: 44px;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.admin-course-card > .admin-course-card-heading {
+  order: 0;
 }
 
 .admin-course-card-topline {
@@ -10777,11 +10764,17 @@
 }
 
 .admin-course-card-controls {
-  display: flex;
+  display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
+}
+
+.admin-course-card-controls > a,
+.admin-course-publish-action > button {
+  flex: 0 0 auto;
 }
 
 .admin-course-publish-action {
@@ -10793,6 +10786,7 @@
 .admin-course-edit-link {
   display: inline-flex;
   min-height: 44px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
 }
@@ -10803,8 +10797,15 @@
 
 .admin-editor-grid {
   grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   max-width: 1240px;
   margin-inline: auto;
+}
+
+.admin-editor-grid > .tech-admin-card,
+.admin-editor-grid > .admin-ai-generation-panel,
+.admin-editor-grid > .admin-editor-actions {
+  width: 100%;
 }
 
 .admin-week-editor {
@@ -10812,11 +10813,24 @@
 }
 
 .admin-icon-button {
+  display: inline-grid;
+  min-width: 44px;
+  min-height: 44px;
   width: 44px;
   height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 1px solid #c7d2e0;
+  border-radius: 11px;
+  background: #fff;
+  color: #1558d6;
+  line-height: 0;
+  place-items: center;
+  cursor: pointer;
 }
 
 .admin-icon-button svg {
+  display: block;
   width: 20px;
   height: 20px;
   fill: none;
@@ -10824,6 +10838,22 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+
+.admin-icon-button svg path,
+.admin-icon-button svg circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.admin-icon-button:hover:not(:disabled) {
+  border-color: #8ab4f8;
+  background: #f5f8ff;
+}
+
+.admin-course-publish-action > .boton-primario {
+  min-height: 44px;
 }
 
 .admin-ai-generation-panel {
@@ -10959,6 +10989,16 @@
     align-items: flex-start;
     flex-direction: column;
     padding: 18px;
+  }
+
+  .admin-editor-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .admin-editor-actions > button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

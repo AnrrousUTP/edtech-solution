@@ -25,6 +25,7 @@ export const POST = async (peticion: Request): Promise<Response> => {
         await catalogApi.actualizarContenido(
           cuerpo.id,
           Array.isArray(cuerpo.datos?.tomos) ? cuerpo.datos.tomos : [],
+          cuerpo.datos?.generarFlashcards === true,
         ),
       )
     if (cuerpo.accion === 'crear-carrera') {
