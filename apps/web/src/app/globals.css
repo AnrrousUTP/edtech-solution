@@ -10742,12 +10742,12 @@
 
 /* Docente: curso cards and editor layout */
 .admin-course-card-heading {
-  display: grid;
+  display: flex;
   width: 100%;
   min-height: 48px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .admin-course-card > .admin-course-card-heading {
@@ -10756,23 +10756,23 @@
 
 .admin-course-card-topline {
   display: flex;
+  flex: 1 1 0;
   min-width: 0;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  align-content: flex-start;
+  align-content: center;
   gap: 8px;
 }
 
 .admin-course-card-controls {
   display: inline-flex;
   flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-left: auto;
-  grid-column: 2;
-  grid-row: 1;
 }
 
 .admin-course-card-controls > a,
@@ -10788,10 +10788,11 @@
 
 .admin-course-edit-link {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 48px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .admin-course-card h3 {
@@ -10799,8 +10800,8 @@
 }
 
 .admin-editor-grid {
-  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
-  gap: 24px;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.25fr);
+  gap: 20px;
   align-items: start;
   max-width: 1480px;
   margin-inline: auto;
@@ -10892,7 +10893,7 @@
 }
 
 .admin-course-publish-action > .boton-primario {
-  min-height: 44px;
+  min-height: 48px;
 }
 
 .admin-ai-generation-panel {
@@ -11041,7 +11042,7 @@
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 820px) {
   .admin-editor-grid {
     grid-template-columns: minmax(0, 1fr);
     max-width: 900px;
@@ -11073,18 +11074,6 @@
 }
 
 @media (max-width: 420px) {
-  .admin-course-card-heading {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .admin-course-card-controls {
-    grid-column: 1;
-    grid-row: 2;
-    width: 100%;
-    justify-content: flex-start;
-    margin-left: 0;
-  }
-
   .admin-course-card-controls .admin-icon-button {
     width: 48px;
     height: 48px;
