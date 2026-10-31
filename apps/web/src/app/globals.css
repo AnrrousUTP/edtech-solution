@@ -11091,3 +11091,15 @@
     flex-basis: 48px;
   }
 }
+
+.admin-review-sources { display: grid; gap: 12px; }
+.admin-review-upload { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--gs-border); border-radius: 12px; background: var(--gs-surface-alt); color: var(--gs-ink); font-size: 14px; font-weight: 700; }
+.admin-review-upload input { width: 100%; min-width: 0; font-weight: 400; }
+.admin-review-upload small, .admin-review-source-item small { color: var(--gs-muted); font-size: 12px; font-weight: 400; line-height: 1.5; }
+.admin-review-source-list { display: grid; gap: 8px; }
+.admin-review-source-item { display: grid; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--gs-border); border-radius: 12px; background: var(--gs-surface); }
+.admin-review-source-heading { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.admin-review-source-heading strong { overflow-wrap: anywhere; color: var(--gs-ink-strong); font-size: 13px; }
+.admin-review-source-heading a { display: inline-flex; min-height: 44px; align-items: center; color: var(--gs-primary); font-size: 13px; font-weight: 700; }
+.admin-review-source-item details summary { display: flex; min-height: 44px; align-items: center; color: var(--gs-primary); font-size: 13px; font-weight: 700; cursor: pointer; }
+.admin-review-source-item details p { max-height: 220px; overflow: auto; margin: 0; padding: 12px; border-radius: 10px; background: var(--gs-surface-alt); color: var(--gs-body); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }

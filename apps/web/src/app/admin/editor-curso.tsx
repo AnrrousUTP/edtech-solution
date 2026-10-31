@@ -111,17 +111,34 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   const mazosPorSemana = new Map(mazosPorTomo.map(item => [item.tomoId, item.mazos]))
   const contextoAsistente = [
     curso ? `Curso: ${curso.titulo} (${curso.estado}).` : 'Curso nuevo.',
-    ...semanas.map((semana, indice) =>
-      `Semana ${indice + 1}: ${semana.titulo}. Materiales: ${semana.materiales.map(material => material.titulo).filter(Boolean).join(', ') || 'ninguno'}. Lecciones: ${semana.lecciones.map(leccion => leccion.titulo).filter(Boolean).join(', ') || 'ninguna'}.`,
+    ...semanas.map(
+      (semana, indice) =>
+        `Semana ${indice + 1}: ${semana.titulo}. Materiales: ${
+          semana.materiales
+            .map(material => material.titulo)
+            .filter(Boolean)
+            .join(', ') || 'ninguno'
+        }. Lecciones: ${
+          semana.lecciones
+            .map(leccion => leccion.titulo)
+            .filter(Boolean)
+            .join(', ') || 'ninguna'
+        }.`,
     ),
   ]
     .join('\n')
     .slice(0, 1100)
 
   const cambiarSemana = (indice: number, cambios: Partial<Semana>): void => {
-    setSemanas(actual => actual.map((semana, i) => (i === indice ? { ...semana, ...cambios } : semana)))
+    setSemanas(actual =>
+      actual.map((semana, i) => (i === indice ? { ...semana, ...cambios } : semana)),
+    )
   }
-  const cambiarMaterial = (semanaIndex: number, materialIndex: number, cambios: Partial<Material>): void => {
+  const cambiarMaterial = (
+    semanaIndex: number,
+    materialIndex: number,
+    cambios: Partial<Material>,
+  ): void => {
     const semana = semanas[semanaIndex]
     cambiarSemana(semanaIndex, {
       materiales: semana.materiales.map((material, i) =>
@@ -129,7 +146,11 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       ),
     })
   }
-  const cambiarLeccion = (semanaIndex: number, leccionIndex: number, cambios: Partial<Leccion>): void => {
+  const cambiarLeccion = (
+    semanaIndex: number,
+    leccionIndex: number,
+    cambios: Partial<Leccion>,
+  ): void => {
     const semana = semanas[semanaIndex]
     cambiarSemana(semanaIndex, {
       lecciones: semana.lecciones.map((leccion, i) =>
@@ -138,12 +159,16 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
     })
   }
 
-  const subirArchivo = async (archivo: File, onUploaded: (data: {
-    url: string
-    nombre: string
-    tipo: string
-    textoExtraido?: string
-  }) => void, llave: string): Promise<void> => {
+  const subirArchivo = async (
+    archivo: File,
+    onUploaded: (data: {
+      url: string
+      nombre: string
+      tipo: string
+      textoExtraido?: string
+    }) => void,
+    llave: string,
+  ): Promise<void> => {
     setSubiendo(llave)
     setError(null)
     try {
@@ -157,7 +182,8 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         textoExtraido?: string
         error?: string
       }
-      if (!response.ok || !result.url) throw new Error(result.error ?? 'No se pudo subir el archivo')
+      if (!response.ok || !result.url)
+        throw new Error(result.error ?? 'No se pudo subir el archivo')
       onUploaded({
         url: result.url,
         nombre: result.nombre ?? archivo.name,
@@ -235,22 +261,34 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
 
   return (
     <form onSubmit={guardar} className="admin-editor-grid">
-      <p className="sr-only" data-assistant-context>{contextoAsistente}</p>
+      <p className="sr-only" data-assistant-context>
+        {contextoAsistente}
+      </p>
       <section className="tech-admin-card admin-course-details">
         <h1>{curso ? 'Editar curso' : 'Nuevo curso'}</h1>
         <p className="admin-help">Define los datos que verán los estudiantes.</p>
         <div className="admin-form-grid">
           <label className="admin-form-wide">
             Nombre del curso
-            <input required value={datos.titulo} onChange={e => setDatos({ ...datos, titulo: e.target.value })} />
+            <input
+              required
+              value={datos.titulo}
+              onChange={e => setDatos({ ...datos, titulo: e.target.value })}
+            />
           </label>
           <label>
             Área temática
-            <input value={datos.tecnologia} onChange={e => setDatos({ ...datos, tecnologia: e.target.value })} />
+            <input
+              value={datos.tecnologia}
+              onChange={e => setDatos({ ...datos, tecnologia: e.target.value })}
+            />
           </label>
           <label>
             Imagen URL
-            <input value={datos.imagenUrl} onChange={e => setDatos({ ...datos, imagenUrl: e.target.value })} />
+            <input
+              value={datos.imagenUrl}
+              onChange={e => setDatos({ ...datos, imagenUrl: e.target.value })}
+            />
           </label>
           <label className="admin-form-wide">
             Subir imagen
@@ -260,7 +298,12 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
               disabled={subiendo !== null}
               onChange={event => {
                 const file = event.target.files?.[0]
-                if (file) void subirArchivo(file, result => setDatos(actual => ({ ...actual, imagenUrl: result.url })), 'cover')
+                if (file)
+                  void subirArchivo(
+                    file,
+                    result => setDatos(actual => ({ ...actual, imagenUrl: result.url })),
+                    'cover',
+                  )
                 event.currentTarget.value = ''
               }}
             />
@@ -268,26 +311,51 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
           </label>
           <label className="admin-form-wide">
             Descripción
-            <textarea required rows={4} value={datos.descripcion} onChange={e => setDatos({ ...datos, descripcion: e.target.value })} />
+            <textarea
+              required
+              rows={4}
+              value={datos.descripcion}
+              onChange={e => setDatos({ ...datos, descripcion: e.target.value })}
+            />
           </label>
           <label>
             Precio
-            <input type="number" min="0" step="0.01" value={datos.precio} onChange={e => setDatos({ ...datos, precio: e.target.value })} />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={datos.precio}
+              onChange={e => setDatos({ ...datos, precio: e.target.value })}
+            />
           </label>
           <label>
             Moneda
-            <input maxLength={3} value={datos.moneda} onChange={e => setDatos({ ...datos, moneda: e.target.value.toUpperCase() })} />
+            <input
+              maxLength={3}
+              value={datos.moneda}
+              onChange={e => setDatos({ ...datos, moneda: e.target.value.toUpperCase() })}
+            />
           </label>
           <label>
             Nivel inicial
-            <select value={datos.nivelMin} onChange={e => setDatos({ ...datos, nivelMin: e.target.value })}>
-              {['A', 'B', 'C', 'D', 'E', 'F'].map(nivel => <option key={nivel}>{nivel}</option>)}
+            <select
+              value={datos.nivelMin}
+              onChange={e => setDatos({ ...datos, nivelMin: e.target.value })}
+            >
+              {['A', 'B', 'C', 'D', 'E', 'F'].map(nivel => (
+                <option key={nivel}>{nivel}</option>
+              ))}
             </select>
           </label>
           <label>
             Nivel máximo
-            <select value={datos.nivelMax} onChange={e => setDatos({ ...datos, nivelMax: e.target.value })}>
-              {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(nivel => <option key={nivel}>{nivel}</option>)}
+            <select
+              value={datos.nivelMax}
+              onChange={e => setDatos({ ...datos, nivelMax: e.target.value })}
+            >
+              {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(nivel => (
+                <option key={nivel}>{nivel}</option>
+              ))}
             </select>
           </label>
         </div>
@@ -297,9 +365,15 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         <div className="admin-week-editor-heading flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2>Semanas del curso</h2>
-            <p className="admin-help">Sube PDF y organiza materiales, lecciones, repaso y evaluaciones por semana.</p>
+            <p className="admin-help">
+              Sube PDF y organiza materiales, lecciones, repaso y evaluaciones por semana.
+            </p>
           </div>
-          <button type="button" className="boton-secundario" onClick={() => setSemanas(actual => [...actual, semanaVacia(actual.length + 1)])}>
+          <button
+            type="button"
+            className="boton-secundario"
+            onClick={() => setSemanas(actual => [...actual, semanaVacia(actual.length + 1)])}
+          >
             Agregar semana
           </button>
         </div>
@@ -308,31 +382,72 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
           {semanas.map((semana, semanaIndex) => {
             const mazos = semana.id ? (mazosPorSemana.get(semana.id) ?? []) : []
             return (
-              <details key={semana.id ?? semanaIndex} className="admin-week-accordion" open={semanaIndex === 0}>
+              <details
+                key={semana.id ?? semanaIndex}
+                className="admin-week-accordion"
+                open={semanaIndex === 0}
+              >
                 <summary>
-                  <span>Semana {semanaIndex + 1}: {semana.titulo || 'Sin título'}</span>
-                  <small>{semana.materiales.length} materiales · {semana.lecciones.length} lecciones</small>
+                  <span>
+                    Semana {semanaIndex + 1}: {semana.titulo || 'Sin título'}
+                  </span>
+                  <small>
+                    {semana.materiales.length} materiales · {semana.lecciones.length} lecciones
+                  </small>
                 </summary>
                 <div className="admin-week-content">
                   <div className="admin-form-grid">
                     <label>
                       Nombre de la semana
-                      <input value={semana.titulo} onChange={e => cambiarSemana(semanaIndex, { titulo: e.target.value })} required />
+                      <input
+                        value={semana.titulo}
+                        onChange={e => cambiarSemana(semanaIndex, { titulo: e.target.value })}
+                        required
+                      />
                     </label>
                     <label>
                       Puntaje mínimo (%)
-                      <input type="number" min="1" max="100" value={semana.umbral} onChange={e => cambiarSemana(semanaIndex, { umbral: Number(e.target.value) })} />
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={semana.umbral}
+                        onChange={e =>
+                          cambiarSemana(semanaIndex, { umbral: Number(e.target.value) })
+                        }
+                      />
                     </label>
                     <label className="admin-form-wide">
                       Descripción de la semana
-                      <textarea rows={2} value={semana.descripcion} onChange={e => cambiarSemana(semanaIndex, { descripcion: e.target.value })} />
+                      <textarea
+                        rows={2}
+                        value={semana.descripcion}
+                        onChange={e => cambiarSemana(semanaIndex, { descripcion: e.target.value })}
+                      />
                     </label>
                   </div>
 
                   <section className="admin-week-section">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3>Materiales</h3>
-                      <button type="button" className="boton-secundario text-xs" onClick={() => cambiarSemana(semanaIndex, { materiales: [...semana.materiales, { orden: semana.materiales.length + 1, titulo: '', descripcion: null, tipo: 'PDF', url: '' }] })}>
+                      <button
+                        type="button"
+                        className="boton-secundario text-xs"
+                        onClick={() =>
+                          cambiarSemana(semanaIndex, {
+                            materiales: [
+                              ...semana.materiales,
+                              {
+                                orden: semana.materiales.length + 1,
+                                titulo: '',
+                                descripcion: null,
+                                tipo: 'PDF',
+                                url: '',
+                              },
+                            ],
+                          })
+                        }
+                      >
                         Agregar material
                       </button>
                     </div>
@@ -340,17 +455,41 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       <div key={materialIndex} className="admin-material-row">
                         <label>
                           Nombre
-                          <input required value={material.titulo} onChange={e => cambiarMaterial(semanaIndex, materialIndex, { titulo: e.target.value })} />
+                          <input
+                            required
+                            value={material.titulo}
+                            onChange={e =>
+                              cambiarMaterial(semanaIndex, materialIndex, {
+                                titulo: e.target.value,
+                              })
+                            }
+                          />
                         </label>
                         <label>
                           Tipo
-                          <select value={material.tipo} onChange={e => cambiarMaterial(semanaIndex, materialIndex, { tipo: e.target.value })}>
-                            <option>PDF</option><option>DOCUMENTO</option><option>VIDEO</option><option>ENLACE</option>
+                          <select
+                            value={material.tipo}
+                            onChange={e =>
+                              cambiarMaterial(semanaIndex, materialIndex, { tipo: e.target.value })
+                            }
+                          >
+                            <option>PDF</option>
+                            <option>DOCUMENTO</option>
+                            <option>VIDEO</option>
+                            <option>ENLACE</option>
                           </select>
                         </label>
                         <label className="admin-form-wide">
                           URL del material
-                          <input required type="url" value={material.url} onChange={e => cambiarMaterial(semanaIndex, materialIndex, { url: e.target.value })} placeholder="https://…" />
+                          <input
+                            required
+                            type="url"
+                            value={material.url}
+                            onChange={e =>
+                              cambiarMaterial(semanaIndex, materialIndex, { url: e.target.value })
+                            }
+                            placeholder="https://…"
+                          />
                         </label>
                         <label className="admin-form-wide">
                           Subir PDF
@@ -360,51 +499,142 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                             disabled={subiendo !== null}
                             onChange={event => {
                               const file = event.target.files?.[0]
-                              if (file) void subirArchivo(file, result => cambiarMaterial(semanaIndex, materialIndex, { titulo: material.titulo || result.nombre, tipo: 'PDF', url: result.url, textoExtraido: result.textoExtraido }), 'pdf-' + semanaIndex + '-' + materialIndex)
+                              if (file)
+                                void subirArchivo(
+                                  file,
+                                  result =>
+                                    cambiarMaterial(semanaIndex, materialIndex, {
+                                      titulo: material.titulo || result.nombre,
+                                      tipo: 'PDF',
+                                      url: result.url,
+                                      textoExtraido: result.textoExtraido,
+                                    }),
+                                  'pdf-' + semanaIndex + '-' + materialIndex,
+                                )
                               event.currentTarget.value = ''
                             }}
                           />
-                          {subiendo === 'pdf-' + semanaIndex + '-' + materialIndex && <small>Subiendo y extrayendo contenido…</small>}
+                          {subiendo === 'pdf-' + semanaIndex + '-' + materialIndex && (
+                            <small>Subiendo y extrayendo contenido…</small>
+                          )}
                         </label>
-                        {material.textoExtraido && <p className="admin-material-extraction"><strong>Contenido extraído para el repaso</strong><br />{material.textoExtraido}</p>}
-                        <button type="button" className="admin-text-button" onClick={() => cambiarSemana(semanaIndex, { materiales: semana.materiales.filter((_, i) => i !== materialIndex).map((item, i) => ({ ...item, orden: i + 1 })) })}>Quitar material</button>
+                        {material.textoExtraido && (
+                          <p className="admin-material-extraction">
+                            <strong>Contenido extraído para el repaso</strong>
+                            <br />
+                            {material.textoExtraido}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          className="admin-text-button"
+                          onClick={() =>
+                            cambiarSemana(semanaIndex, {
+                              materiales: semana.materiales
+                                .filter((_, i) => i !== materialIndex)
+                                .map((item, i) => ({ ...item, orden: i + 1 })),
+                            })
+                          }
+                        >
+                          Quitar material
+                        </button>
                       </div>
                     ))}
-                    {semana.materiales.length === 0 && <p className="admin-help">Agrega un enlace o sube un PDF.</p>}
+                    {semana.materiales.length === 0 && (
+                      <p className="admin-help">Agrega un enlace o sube un PDF.</p>
+                    )}
                   </section>
 
                   <section className="admin-week-section">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3>Lecciones</h3>
-                      <button type="button" className="boton-secundario text-xs" onClick={() => cambiarSemana(semanaIndex, { lecciones: [...semana.lecciones, nuevaLeccion(semana.lecciones.length + 1)] })}>Agregar lección</button>
+                      <button
+                        type="button"
+                        className="boton-secundario text-xs"
+                        onClick={() =>
+                          cambiarSemana(semanaIndex, {
+                            lecciones: [
+                              ...semana.lecciones,
+                              nuevaLeccion(semana.lecciones.length + 1),
+                            ],
+                          })
+                        }
+                      >
+                        Agregar lección
+                      </button>
                     </div>
                     {semana.lecciones.map((leccion, leccionIndex) => {
                       const texto = leccion.bloques.find(bloque => bloque.tipo === 'TEXTO')
-                      const markdown = typeof texto?.contenido.markdown === 'string' ? texto.contenido.markdown : ''
+                      const markdown =
+                        typeof texto?.contenido.markdown === 'string'
+                          ? texto.contenido.markdown
+                          : ''
                       return (
                         <details key={leccionIndex} className="admin-lesson-accordion">
-                          <summary>Lección {leccionIndex + 1}: {leccion.titulo || 'Sin título'}</summary>
+                          <summary>
+                            Lección {leccionIndex + 1}: {leccion.titulo || 'Sin título'}
+                          </summary>
                           <div className="admin-form-grid">
                             <label>
                               Nombre de la lección
-                              <input value={leccion.titulo} onChange={e => cambiarLeccion(semanaIndex, leccionIndex, { titulo: e.target.value })} required />
+                              <input
+                                value={leccion.titulo}
+                                onChange={e =>
+                                  cambiarLeccion(semanaIndex, leccionIndex, {
+                                    titulo: e.target.value,
+                                  })
+                                }
+                                required
+                              />
                             </label>
                             <label>
                               Duración (minutos)
-                              <input type="number" min="1" value={leccion.duracionMin} onChange={e => cambiarLeccion(semanaIndex, leccionIndex, { duracionMin: Number(e.target.value) })} />
+                              <input
+                                type="number"
+                                min="1"
+                                value={leccion.duracionMin}
+                                onChange={e =>
+                                  cambiarLeccion(semanaIndex, leccionIndex, {
+                                    duracionMin: Number(e.target.value),
+                                  })
+                                }
+                              />
                             </label>
                             <label className="admin-form-wide">
                               Contenido
-                              <textarea rows={5} value={markdown} onChange={e => {
-                                const bloques = [...leccion.bloques]
-                                const indice = bloques.findIndex(bloque => bloque.tipo === 'TEXTO')
-                                const bloque = { orden: indice < 0 ? bloques.length + 1 : bloques[indice]!.orden, tipo: 'TEXTO', contenido: { markdown: e.target.value } }
-                                if (indice < 0) bloques.push(bloque)
-                                else bloques[indice] = bloque
-                                cambiarLeccion(semanaIndex, leccionIndex, { bloques })
-                              }} placeholder="Escribe la explicación de la lección…" />
+                              <textarea
+                                rows={5}
+                                value={markdown}
+                                onChange={e => {
+                                  const bloques = [...leccion.bloques]
+                                  const indice = bloques.findIndex(
+                                    bloque => bloque.tipo === 'TEXTO',
+                                  )
+                                  const bloque = {
+                                    orden: indice < 0 ? bloques.length + 1 : bloques[indice]!.orden,
+                                    tipo: 'TEXTO',
+                                    contenido: { markdown: e.target.value },
+                                  }
+                                  if (indice < 0) bloques.push(bloque)
+                                  else bloques[indice] = bloque
+                                  cambiarLeccion(semanaIndex, leccionIndex, { bloques })
+                                }}
+                                placeholder="Escribe la explicación de la lección…"
+                              />
                             </label>
-                            <button type="button" className="admin-text-button" onClick={() => cambiarSemana(semanaIndex, { lecciones: semana.lecciones.filter((_, i) => i !== leccionIndex).map((item, i) => ({ ...item, orden: i + 1 })) })}>Quitar lección</button>
+                            <button
+                              type="button"
+                              className="admin-text-button"
+                              onClick={() =>
+                                cambiarSemana(semanaIndex, {
+                                  lecciones: semana.lecciones
+                                    .filter((_, i) => i !== leccionIndex)
+                                    .map((item, i) => ({ ...item, orden: i + 1 })),
+                                })
+                              }
+                            >
+                              Quitar lección
+                            </button>
                           </div>
                         </details>
                       )
@@ -412,46 +642,195 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                   </section>
 
                   <section className="admin-week-section admin-week-review">
-                    <div><h3>Repaso y flashcards</h3><p className="admin-help">Genera flashcards con las lecciones y los resúmenes de PDF. Cada mazo queda pendiente de revisión docente.</p></div>
-                    {mazos.length > 0 && <div className="admin-route-flashcards-list">{mazos.map(mazo => <details key={mazo.mazoId}><summary>Versión {mazo.version} · {mazo.estado}</summary><RevisionMazo mazo={mazo} /></details>)}</div>}
-                    {mazos.length === 0 && <p className="admin-help">Aún no hay mazos. Usa “Guardar y generar flashcards” o publica el curso.</p>}
+                    <div>
+                      <h3>Repaso y flashcards</h3>
+                      <p className="admin-help">
+                        Sube un PDF o usa las lecciones de la semana. La IA extrae conceptos y
+                        prepara flashcards para revisión docente.
+                      </p>
+                    </div>
+                    <div className="admin-review-sources">
+                      <label className="admin-review-upload">
+                        <span>Subir PDF para el repaso</span>
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          disabled={subiendo !== null}
+                          onChange={event => {
+                            const file = event.target.files?.[0]
+                            if (file) {
+                              void subirArchivo(
+                                file,
+                                result =>
+                                  cambiarSemana(semanaIndex, {
+                                    materiales: [
+                                      ...semana.materiales,
+                                      {
+                                        orden: semana.materiales.length + 1,
+                                        titulo: result.nombre,
+                                        descripcion: null,
+                                        tipo: 'PDF',
+                                        url: result.url,
+                                        ...(result.textoExtraido
+                                          ? { textoExtraido: result.textoExtraido }
+                                          : {}),
+                                      },
+                                    ],
+                                  }),
+                                'repaso-' + semanaIndex,
+                              )
+                            }
+                            event.currentTarget.value = ''
+                          }}
+                        />
+                        <small>
+                          Se guarda en los materiales de esta semana y alimenta la generación de
+                          flashcards.
+                        </small>
+                        {subiendo === 'repaso-' + semanaIndex && (
+                          <small role="status">Subiendo y analizando PDF…</small>
+                        )}
+                      </label>
+                      {semana.materiales.filter(material => material.tipo === 'PDF').length > 0 ? (
+                        <div className="admin-review-source-list" aria-label="PDFs para el repaso">
+                          {semana.materiales
+                            .filter(material => material.tipo === 'PDF')
+                            .map((material, indice) => (
+                              <article
+                                key={material.url || material.titulo || indice}
+                                className="admin-review-source-item"
+                              >
+                                <div className="admin-review-source-heading">
+                                  <strong>{material.titulo || 'PDF de la semana'}</strong>
+                                  {material.url && (
+                                    <a href={material.url} target="_blank" rel="noreferrer">
+                                      Abrir PDF
+                                    </a>
+                                  )}
+                                </div>
+                                {material.textoExtraido ? (
+                                  <details>
+                                    <summary>Ver extracción para el repaso</summary>
+                                    <p>{material.textoExtraido}</p>
+                                  </details>
+                                ) : (
+                                  <small>
+                                    Sin extracción de IA. Sube el archivo desde esta sección para
+                                    procesarlo.
+                                  </small>
+                                )}
+                              </article>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="admin-help">Todavía no hay PDFs para el repaso.</p>
+                      )}
+                    </div>
+                    {mazos.length > 0 && (
+                      <div className="admin-route-flashcards-list">
+                        {mazos.map(mazo => (
+                          <details key={mazo.mazoId}>
+                            <summary>
+                              Versión {mazo.version} · {mazo.estado}
+                            </summary>
+                            <RevisionMazo mazo={mazo} />
+                          </details>
+                        ))}
+                      </div>
+                    )}
+                    {mazos.length === 0 && (
+                      <p className="admin-help">
+                        Aún no hay mazos. Usa “Guardar y generar flashcards” o publica el curso.
+                      </p>
+                    )}
                   </section>
 
                   <section className="admin-week-section">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div><h3>Evaluación semanal</h3><p className="admin-help">Genera un borrador con los PDF y las lecciones de esta semana. Revisa las respuestas antes de guardarlo.</p></div>
-                      {curso && semana.id && <a className="boton-secundario text-xs" href={'/admin/bancos?curso=' + curso.id + '&tomo=' + semana.id + '&uso=EVALUACION_TOMO'}>Preparar evaluación con IA</a>}
+                      <div>
+                        <h3>Evaluación semanal</h3>
+                        <p className="admin-help">
+                          Genera un borrador con los PDF y las lecciones de esta semana. Revisa las
+                          respuestas antes de guardarlo.
+                        </p>
+                      </div>
+                      {curso && semana.id && (
+                        <a
+                          className="boton-secundario text-xs"
+                          href={
+                            '/admin/bancos?curso=' +
+                            curso.id +
+                            '&tomo=' +
+                            semana.id +
+                            '&uso=EVALUACION_TOMO'
+                          }
+                        >
+                          Preparar evaluación con IA
+                        </a>
+                      )}
                     </div>
                   </section>
 
-                  <button type="button" className="admin-text-button" onClick={() => setSemanas(actual => actual.filter((_, i) => i !== semanaIndex).map((item, i) => ({ ...item, orden: i + 1 })))}>Quitar semana</button>
+                  <button
+                    type="button"
+                    className="admin-text-button"
+                    onClick={() =>
+                      setSemanas(actual =>
+                        actual
+                          .filter((_, i) => i !== semanaIndex)
+                          .map((item, i) => ({ ...item, orden: i + 1 })),
+                      )
+                    }
+                  >
+                    Quitar semana
+                  </button>
                 </div>
               </details>
             )
           })}
-          {semanas.length === 0 && <p className="admin-help">Agrega la primera semana del curso.</p>}
+          {semanas.length === 0 && (
+            <p className="admin-help">Agrega la primera semana del curso.</p>
+          )}
         </div>
       </section>
 
-      {curso && <section className="admin-ai-generation-panel admin-course-initial-assessment">
-        <div>
-          <strong>Test inicial del curso</strong>
-          <p>Prepara cinco preguntas desde los materiales y lecciones del curso. Revisa el borrador antes de guardarlo.</p>
-        </div>
-        <a className="boton-secundario" href={'/admin/bancos?curso=' + curso.id + '&uso=EVALUACION_INICIAL'}>Preparar test inicial</a>
-      </section>}
+      {curso && (
+        <section className="admin-ai-generation-panel admin-course-initial-assessment">
+          <div>
+            <strong>Test inicial del curso</strong>
+            <p>
+              Prepara cinco preguntas desde los materiales y lecciones del curso. Revisa el borrador
+              antes de guardarlo.
+            </p>
+          </div>
+          <a
+            className="boton-secundario"
+            href={'/admin/bancos?curso=' + curso.id + '&uso=EVALUACION_INICIAL'}
+          >
+            Preparar test inicial
+          </a>
+        </section>
+      )}
 
-      {(error || estado) && <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">{error ?? estado}</p>}
+      {(error || estado) && (
+        <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">
+          {error ?? estado}
+        </p>
+      )}
       <div className="admin-editor-actions">
-        {curso && <button
-          disabled={ocupado || subiendo !== null}
-          className="boton-secundario"
-          type="submit"
-          value="guardar-y-generar-flashcards"
-        >
-          {ocupado ? 'Procesando…' : 'Guardar y generar flashcards'}
-        </button>}
-        <button disabled={ocupado || subiendo !== null} className="boton-primario" type="submit">{ocupado ? 'Guardando…' : 'Guardar curso'}</button>
+        {curso && (
+          <button
+            disabled={ocupado || subiendo !== null}
+            className="boton-secundario"
+            type="submit"
+            value="guardar-y-generar-flashcards"
+          >
+            {ocupado ? 'Procesando…' : 'Guardar y generar flashcards'}
+          </button>
+        )}
+        <button disabled={ocupado || subiendo !== null} className="boton-primario" type="submit">
+          {ocupado ? 'Guardando…' : 'Guardar curso'}
+        </button>
       </div>
     </form>
   )
