@@ -24,6 +24,7 @@ export type MaterialResumen = {
   descripcion: string | null
   tipo: string
   url: string
+  textoExtraido?: string
 }
 
 export type TomoDetalle = {

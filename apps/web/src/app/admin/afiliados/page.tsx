@@ -14,7 +14,15 @@ export default async function Page(): Promise<JSX.Element> {
         accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
-  const data = await afiliadosApi.admin()
+  const data = await afiliadosApi.admin().catch(() => null)
+  if (!data)
+    return (
+      <ErrorConAccion
+        titulo="No se pudieron cargar los afiliados"
+        detalle="La API no devolvió los datos esperados. Vuelve a intentarlo más tarde."
+        accion={{ texto: 'Volver al panel docente', href: '/admin' }}
+      />
+    )
   return (
     <div className="affiliate-shell">
       <AutoActualizar />

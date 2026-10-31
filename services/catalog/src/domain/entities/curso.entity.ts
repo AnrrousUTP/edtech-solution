@@ -26,12 +26,23 @@ export type LeccionInfo = {
   contenidoHash: string
 }
 
+export type MaterialInfo = {
+  id: string
+  orden: number
+  titulo: string
+  descripcion: string | null
+  tipo: string
+  url: string
+  textoExtraido?: string
+}
+
 export type TomoInfo = {
   id: string
   orden: number
   titulo: string
   descripcion: string | null
   umbral: number
+  materiales?: MaterialInfo[]
   lecciones: LeccionInfo[]
 }
 

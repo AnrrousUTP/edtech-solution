@@ -511,7 +511,15 @@ export class DynamoAfiliadosRepository implements AfiliadosRepository {
           ingresosCentavos: Number(item.totalCentavos ?? 0),
           ventas: Number(item.ventas ?? 0),
         })),
-      comisiones: commissions.Items ?? [],
+      comisiones: (commissions.Items ?? []).map(item => ({
+        id: String(item.id ?? ''),
+        ordenId: String(item.ordenId ?? ''),
+        refId: String(item.refId ?? ''),
+        cursoTitulo: String(item.cursoTitulo ?? ''),
+        ingresoCentavos: Number(item.netoCentavos ?? item.originalCentavos ?? 0),
+        baseCentavos: Number(item.baseCentavos ?? 0),
+        creadoAt: String(item.creadoAt ?? ''),
+      })),
     }
   }
 

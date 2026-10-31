@@ -23,10 +23,11 @@ export const config = {
     localAuthEnabled: process.env.EDTECH_LOCAL_AUTH === 'true',
   },
   assistant: {
-    bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'amazon.nova-micro-v1:0',
+    bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
     enabled: process.env.EDTECH_AI_ENABLED === 'true',
     controlTable: process.env.EDTECH_CONTROL_TABLE ?? '',
     audioBucket: process.env.EDTECH_AUDIO_BUCKET ?? '',
+    mediaBucket: process.env.EDTECH_MEDIA_BUCKET ?? '',
     production: process.env.NODE_ENV === 'production',
   },
   iot: {

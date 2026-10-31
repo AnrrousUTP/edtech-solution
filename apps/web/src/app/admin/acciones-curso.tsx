@@ -6,19 +6,13 @@ import { useState } from 'react'
 export const AccionesCurso = ({
   cursoId,
   estado,
-  precio,
-  moneda,
 }: {
   cursoId: string
   estado: string
-  precio: number
-  moneda: string
 }): JSX.Element => {
   const router = useRouter()
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editandoPrecio, setEditandoPrecio] = useState(false)
-  const [nuevoPrecio, setNuevoPrecio] = useState(precio.toFixed(2))
 
   const ejecutar = async (accion: string, cuerpo: Record<string, unknown> = {}): Promise<void> => {
     setOcupado(true)
@@ -34,13 +28,12 @@ export const AccionesCurso = ({
       setError(datos.error ?? 'No se pudo completar la acción')
       return
     }
-    setEditandoPrecio(false)
     router.refresh()
   }
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {estado !== 'PUBLICADO' ? (
           <button
             type="button"
@@ -55,45 +48,17 @@ export const AccionesCurso = ({
             type="button"
             disabled={ocupado}
             onClick={() => void ejecutar('despublicar', { motivo: 'Retirado por docente' })}
-            className="boton-secundario px-3 py-1.5 text-xs"
+            className="admin-icon-button"
+            aria-label="Despublicar curso"
+            title="Despublicar curso"
           >
-            Despublicar
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
           </button>
         )}
-        <button
-          type="button"
-          disabled={ocupado}
-          onClick={() => setEditandoPrecio(v => !v)}
-          className="boton-secundario px-3 py-1.5 text-xs"
-        >
-          Precio
-        </button>
       </div>
-
-      {editandoPrecio && (
-        <div className="flex items-center gap-2">
-          <label className="sr-only" htmlFor={`precio-${cursoId}`}>
-            Nuevo precio en {moneda}
-          </label>
-          <input
-            id={`precio-${cursoId}`}
-            type="number"
-            min="0"
-            step="0.01"
-            value={nuevoPrecio}
-            onChange={evento => setNuevoPrecio(evento.target.value)}
-            className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-xs"
-          />
-          <button
-            type="button"
-            disabled={ocupado}
-            onClick={() => void ejecutar('precio', { precio: Number(nuevoPrecio) })}
-            className="boton-primario px-3 py-1.5 text-xs"
-          >
-            Guardar
-          </button>
-        </div>
-      )}
 
       {error && (
         <p className="text-xs text-alerta-700" role="alert">

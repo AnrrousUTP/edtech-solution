@@ -9298,11 +9298,14 @@
   }
 
   .admin-backlink {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid var(--gs-border);
+    border-radius: 999px;
+    background: #fff;
     color: var(--gs-primary);
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .admin-backlink {
@@ -9329,6 +9332,107 @@
     display: grid;
     gap: 24px;
     margin-top: 32px;
+  }
+
+  .admin-week-editor {
+    grid-column: 1 / -1;
+  }
+
+  .admin-week-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .admin-week-accordion,
+  .admin-lesson-accordion {
+    border: 1px solid var(--gs-border);
+    border-radius: 14px;
+    background: #fff;
+  }
+
+  .admin-week-accordion > summary,
+  .admin-lesson-accordion > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    color: var(--gs-ink);
+    font-weight: 700;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+
+  .admin-week-accordion > summary small {
+    color: var(--gs-muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .admin-week-content {
+    display: grid;
+    gap: 20px;
+    padding: 0 16px 16px;
+  }
+
+  .admin-week-section {
+    display: grid;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gs-border);
+  }
+
+  .admin-week-section h3 {
+    margin: 0;
+    color: var(--gs-ink);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .admin-material-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 0.35fr);
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--gs-border);
+    border-radius: 12px;
+    background: #f8fafd;
+  }
+
+  .admin-material-row .admin-form-wide,
+  .admin-material-extraction {
+    grid-column: 1 / -1;
+  }
+
+  .admin-material-extraction {
+    max-height: 220px;
+    overflow: auto;
+    margin: 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: #eef4ff;
+    color: var(--gs-ink);
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .admin-text-button {
+    width: fit-content;
+    color: #b42318;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .admin-lesson-accordion > .admin-form-grid {
+    padding: 0 14px 14px;
+  }
+
+  @media (max-width: 640px) {
+    .admin-material-row {
+      grid-template-columns: 1fr;
+    }
   }
 
   .admin-two-column {

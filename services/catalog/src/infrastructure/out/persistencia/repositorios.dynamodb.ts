@@ -188,8 +188,12 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
   async reemplazarBloques(leccionId: UniqueId, bloques: Bloque[]): Promise<void> {
     const pk = `LESSON#${leccionId.valor}`
     const existentes = await this.queryPartition(pk, 'BLOCK#')
+    const nuevasClaves = bloques.map((block, index) => `BLOCK#${String(block.orden ?? index + 1).padStart(5, '0')}`)
+    if (new Set(nuevasClaves).size !== nuevasClaves.length)
+      throw new Error('La lección contiene bloques con orden duplicado')
+    const clavesNuevas = new Set(nuevasClaves)
     const operations: Operations = [
-      ...existentes.map(row => ({
+      ...existentes.filter(row => !clavesNuevas.has(String(row.SK))).map(row => ({
         Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
       })),
       ...bloques.map((block, index) => ({
@@ -222,8 +226,12 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
   async reemplazarEjercicios(leccionId: UniqueId, ejercicios: Ejercicio[]): Promise<void> {
     const pk = `LESSON#${leccionId.valor}`
     const existentes = await this.queryPartition(pk, 'EXERCISE#')
+    const nuevasClaves = ejercicios.map((exercise, index) => `EXERCISE#${String(exercise.id ?? index).padStart(5, '0')}`)
+    if (new Set(nuevasClaves).size !== nuevasClaves.length)
+      throw new Error('La lección contiene ejercicios con identificadores duplicados')
+    const clavesNuevas = new Set(nuevasClaves)
     const operations: Operations = [
-      ...existentes.map(row => ({
+      ...existentes.filter(row => !clavesNuevas.has(String(row.SK))).map(row => ({
         Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
       })),
       ...ejercicios.map((exercise, index) => ({
@@ -471,7 +479,15 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
           titulo: tomo.titulo,
           descripcion: tomo.descripcion,
           umbral: tomo.umbral,
-          materiales: [],
+          materiales: (tomo.materiales ?? []).map(material => ({
+            id: material.id,
+            orden: material.orden,
+            titulo: material.titulo,
+            descripcion: material.descripcion,
+            tipo: material.tipo,
+            url: material.url,
+            ...(material.textoExtraido ? { textoExtraido: material.textoExtraido } : {}),
+          })),
           lecciones: tomo.lecciones.map(leccion => ({
             id: leccion.id,
             orden: leccion.orden,

@@ -159,7 +159,13 @@ variable "iot_thing_name" {
 variable "enable_ai" {
   description = "Activa Bedrock y Transcribe únicamente cuando la cuenta autorice los modelos."
   type        = bool
-  default     = false
+  default     = true
+}
+
+variable "assistant_bedrock_model_id" {
+  description = "Inference profile de Bedrock para el asistente académico."
+  type        = string
+  default     = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "enable_point_in_time_recovery" {
@@ -209,8 +215,14 @@ variable "cognito_domain" {
 }
 
 variable "amplify_execution_role_name" {
-  description = "Nombre del rol SSR de Amplify, una vez conectado y autorizado."
+  description = "Rol de servicio de Amplify para registros de SSR."
   type        = string
-  default     = ""
+  default     = "AmplifySSRLoggingRole-f6a10ac4-3aa3-4664-880b-a59b4f95b78e"
+}
+
+variable "amplify_compute_role_name" {
+  description = "Rol de cómputo SSR de Amplify con permisos limitados de la aplicación."
+  type        = string
+  default     = "edtech-lowcost-amplify-compute"
 }
 

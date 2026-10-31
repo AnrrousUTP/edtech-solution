@@ -30,6 +30,7 @@ export const materialResumen = z.object({
   descripcion: z.string().nullable(),
   tipo: z.string(),
   url: z.string(),
+  textoExtraido: z.string().optional(),
 })
 
 export const tomoDetalle = z.object({

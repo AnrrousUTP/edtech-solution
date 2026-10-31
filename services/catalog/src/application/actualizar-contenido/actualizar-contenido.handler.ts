@@ -8,7 +8,7 @@ import {
   type IEventPublisher,
   type Result,
 } from '@edtech/shared-kernel'
-import type { LeccionInfo, TomoInfo } from '../../domain/entities/curso.entity'
+import type { LeccionInfo, MaterialInfo, TomoInfo } from '../../domain/entities/curso.entity'
 import {
   ContenidoInvalidoError,
   CursoNoEncontradoError,
@@ -33,6 +33,7 @@ export type TomoEntrada = {
   titulo: string
   descripcion?: string
   umbral?: number
+  materiales?: Omit<MaterialInfo, 'id'>[]
   lecciones: LeccionEntrada[]
 }
 
@@ -99,6 +100,11 @@ export class ActualizarContenidoHandler implements CommandHandler<
         titulo: tomo.titulo,
         descripcion: tomo.descripcion ?? null,
         umbral,
+        materiales: (tomo.materiales ?? []).map((material, index) => ({
+          ...material,
+          id: UniqueId.nuevo().valor,
+          orden: material.orden ?? index + 1,
+        })),
         lecciones,
       })
     }

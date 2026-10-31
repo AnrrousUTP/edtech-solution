@@ -34,12 +34,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   const token = await accessToken()
   if (!token) return errorResponse('Inicia sesión para utilizar el asistente.', 401)
 
+  let perfil: { rol?: string } | null = null
   try {
     const auth = await fetch(`${config.apiBase}/api/identity/me`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     })
     if (!auth.ok) return errorResponse('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
+    const body = (await auth.json()) as { data?: { rol?: string } }
+    perfil = body.data ?? null
   } catch {
     return errorResponse('No pude validar tu sesión ahora.', 503)
   }
@@ -70,7 +73,40 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     await reserveAssistantChatQuota()
-    const text = await generateAssistantReply(parsed.data.messages, parsed.data.context)
+    const pregunta = parsed.data.messages.at(-1)?.content ?? ''
+    const pideCatalogo = /curso|cursos|ruta|rutas/i.test(pregunta)
+    let datosCatalogo = ''
+    if (pideCatalogo) {
+      try {
+        const ruta = perfil?.rol?.toLowerCase() === 'docente' ? '/api/catalog/admin/cursos' : '/api/catalog/cursos'
+        const catalogo = await fetch(`${config.catalogApiBase}${ruta}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        })
+        if (catalogo.ok) {
+          const body = (await catalogo.json()) as { data?: unknown }
+          const cursos = Array.isArray(body.data) ? body.data : []
+          datosCatalogo = `Cursos disponibles para este usuario: ${JSON.stringify(
+            cursos.slice(0, 30).map(valor => {
+              const curso = valor as Record<string, unknown>
+              return {
+                nombre: curso.titulo,
+                area: curso.tecnologia,
+                estado: curso.estado,
+                nivel: String(curso.nivelMin ?? '') + '-' + String(curso.nivelMax ?? ''),
+              }
+            }),
+          )}`
+        }
+      } catch {
+        datosCatalogo = ''
+      }
+    }
+    const contexto = {
+      ...parsed.data.context,
+      pageSummary: [parsed.data.context?.pageSummary, datosCatalogo].filter(Boolean).join('\n'),
+    }
+    const text = await generateAssistantReply(parsed.data.messages, contexto)
     return NextResponse.json({ text }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     if (error instanceof AssistantProviderError && error.code === 'not-configured') {

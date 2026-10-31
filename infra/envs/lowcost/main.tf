@@ -312,10 +312,14 @@ data "aws_iam_role" "amplify_execution" {
   count = var.amplify_execution_role_name != "" ? 1 : 0
   name  = var.amplify_execution_role_name
 }
+data "aws_iam_role" "amplify_compute" {
+  count = var.amplify_compute_role_name != "" ? 1 : 0
+  name  = var.amplify_compute_role_name
+}
 locals {
   iot_session_principals = concat(
     [aws_iam_role.lambda["iot-terminals"].arn],
-    var.amplify_execution_role_name != "" ? [data.aws_iam_role.amplify_execution[0].arn] : [],
+    var.amplify_compute_role_name != "" ? [data.aws_iam_role.amplify_compute[0].arn] : [],
   )
 }
 resource "aws_iam_role" "iot_browser_session" {
@@ -373,9 +377,9 @@ resource "aws_iam_role_policy" "iot_assume_session" {
   })
 }
 resource "aws_iam_role_policy" "amplify_iot_session" {
-  for_each = local.iot_enabled && var.amplify_execution_role_name != "" ? toset(["enabled"]) : toset([])
+  for_each = local.iot_enabled && var.amplify_compute_role_name != "" ? toset(["enabled"]) : toset([])
   name     = "edtech-lowcost-iot-browser-session"
-  role     = data.aws_iam_role.amplify_execution[0].name
+  role     = data.aws_iam_role.amplify_compute[0].name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -388,17 +392,34 @@ resource "aws_iam_role_policy" "amplify_iot_session" {
 }
 
 resource "aws_iam_role_policy" "amplify_ai" {
-  for_each = local.ai_enabled && var.amplify_execution_role_name != "" ? toset(["enabled"]) : toset([])
+  for_each = local.ai_enabled && var.amplify_compute_role_name != "" ? toset(["enabled"]) : toset([])
   name     = "edtech-lowcost-ai-and-transcription"
-  role     = var.amplify_execution_role_name
+  role     = data.aws_iam_role.amplify_compute[0].name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Effect = "Allow", Action = ["bedrock:InvokeModel"], Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-micro-v1:0" },
+      { Effect = "Allow", Action = ["bedrock:InvokeModel"], Resource = [
+        "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.assistant_bedrock_model_id}",
+        "arn:aws:bedrock:*::foundation-model/${trimprefix(var.assistant_bedrock_model_id, "us.")}",
+      ] },
       { Effect = "Allow", Action = ["transcribe:StartTranscriptionJob", "transcribe:GetTranscriptionJob"], Resource = "*" },
       { Effect = "Allow", Action = ["s3:PutObject", "s3:GetObject"], Resource = "${aws_s3_bucket.content.arn}/temporary-audio/*" },
       { Effect = "Allow", Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"], Resource = aws_dynamodb_table.domain["control"].arn }
     ]
+  })
+}
+
+resource "aws_iam_role_policy" "amplify_course_media" {
+  for_each = var.amplify_compute_role_name != "" ? toset(["enabled"]) : toset([])
+  name     = "edtech-lowcost-course-media"
+  role     = data.aws_iam_role.amplify_compute[0].name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:PutObject", "s3:GetObject"]
+      Resource = "${aws_s3_bucket.content.arn}/course-media/*"
+    }]
   })
 }
 
@@ -1552,6 +1573,7 @@ resource "aws_amplify_app" "production" {
   enable_auto_branch_creation = false
   enable_basic_auth           = false
   iam_service_role_arn        = var.amplify_execution_role_name != "" ? data.aws_iam_role.amplify_execution[0].arn : null
+  compute_role_arn            = var.amplify_compute_role_name != "" ? data.aws_iam_role.amplify_compute[0].arn : null
 
   custom_rule {
     source = "/<*>"
@@ -1589,7 +1611,8 @@ resource "aws_amplify_branch" "production" {
     EDTECH_IOT_DATA_ENDPOINT    = "https://${data.aws_iot_endpoint.data.endpoint_address}"
     EDTECH_IOT_SESSION_ROLE_ARN = aws_iam_role.iot_browser_session.arn
     EDTECH_IOT_THING_NAME       = var.iot_thing_name
-    BEDROCK_MODEL_ID            = "amazon.nova-micro-v1:0"
+    BEDROCK_MODEL_ID            = var.assistant_bedrock_model_id
+    EDTECH_MEDIA_BUCKET         = aws_s3_bucket.content.bucket
   }
 }
 

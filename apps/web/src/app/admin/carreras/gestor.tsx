@@ -25,7 +25,6 @@ export const GestorCarreras = ({
   const [mensaje, setMensaje] = useState<string | null>(null)
   const actual = carreras.find(c => c.id === seleccion)
   const [form, setForm] = useState({
-    slug: '',
     titulo: '',
     descripcion: '',
     imagenUrl: '',
@@ -35,7 +34,6 @@ export const GestorCarreras = ({
   const cargar = (carrera: CarreraResumen): void => {
     setSeleccion(carrera.id)
     setForm({
-      slug: carrera.slug,
       titulo: carrera.titulo,
       descripcion: carrera.descripcion,
       imagenUrl: carrera.imagenUrl ?? '',
@@ -81,7 +79,7 @@ export const GestorCarreras = ({
     }
     setMensaje('Ruta guardada')
     setSeleccion(null)
-    setForm({ slug: '', titulo: '', descripcion: '', imagenUrl: '', publicar: false, cursos: [] })
+    setForm({ titulo: '', descripcion: '', imagenUrl: '', publicar: false, cursos: [] })
     router.refresh()
   }
   return (
@@ -95,7 +93,6 @@ export const GestorCarreras = ({
             onClick={() => {
               setSeleccion(null)
               setForm({
-                slug: '',
                 titulo: '',
                 descripcion: '',
                 imagenUrl: '',
@@ -117,9 +114,7 @@ export const GestorCarreras = ({
             >
               <span>
                 <strong>{carrera.titulo}</strong>
-                <small>
-                  {carrera.slug} · {carrera.cursos.length} cursos
-                </small>
+            <small>{carrera.cursos.length} cursos</small>
               </span>
               <span className="admin-status">{carrera.estado}</span>
             </button>
@@ -131,15 +126,7 @@ export const GestorCarreras = ({
         <h2>{actual ? 'Editar ruta' : 'Crear ruta'}</h2>
         <div className="admin-form-grid">
           <label>
-            Slug
-            <input
-              required
-              value={form.slug}
-              onChange={e => setForm({ ...form, slug: e.target.value })}
-            />
-          </label>
-          <label>
-            Título
+            Nombre de la ruta
             <input
               required
               value={form.titulo}

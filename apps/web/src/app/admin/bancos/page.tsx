@@ -4,7 +4,11 @@ import { ErrorConAccion } from '@/componentes/base'
 import { esDocente, mfaPendiente } from '@/lib/sesion'
 import { GestorBancos } from './gestor'
 
-export default async function BancosAdmin(): Promise<JSX.Element> {
+export default async function BancosAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<{ curso?: string; tomo?: string }>
+}): Promise<JSX.Element> {
   if (!(await esDocente()))
     return (
       <ErrorConAccion
@@ -25,6 +29,7 @@ export default async function BancosAdmin(): Promise<JSX.Element> {
     catalogApi.bancosAdmin().catch(() => []),
     catalogApi.cursosAdmin().catch(() => []),
   ])
+  const filtros = await searchParams
   const detalles = await Promise.all(
     cursos.map(curso => catalogApi.cursoAdmin(curso.id).catch(() => null)),
   )
@@ -44,7 +49,12 @@ export default async function BancosAdmin(): Promise<JSX.Element> {
       <p className="admin-lead">
         Conocimiento previo, refuerzo y certificación viven en bancos versionables.
       </p>
-      <GestorBancos bancos={bancos} tomos={tomos} cursos={cursosDisponibles} />
+      <GestorBancos
+        bancos={bancos}
+        tomos={tomos}
+        cursos={cursosDisponibles}
+        seleccionInicial={{ cursoId: filtros.curso ?? '', tomoId: filtros.tomo ?? '' }}
+      />
     </div>
   )
 }

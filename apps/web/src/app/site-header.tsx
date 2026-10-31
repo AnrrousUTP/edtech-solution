@@ -27,12 +27,8 @@ const linksEstudiante = [
 
 const linksDocente = [
   { href: '/admin', label: 'Panel docente', index: '01', key: 'teacher-panel' },
-  { href: '/admin/usuarios', label: 'Estudiantes', index: '02', key: 'students' },
-  { href: '/admin/cursos/nuevo', label: 'Cursos', index: '03', key: 'courses' },
-  { href: '/admin/carreras', label: 'Rutas', index: '04', key: 'routes' },
-  { href: '/admin/bancos', label: 'Evaluaciones', index: '05', key: 'assessments' },
-  { href: '/admin/flashcards', label: 'Flashcards', index: '06', key: 'flashcards' },
-  { href: '/admin/metricas', label: 'Métricas', index: '07', key: 'metrics' },
+  { href: '/admin/carreras', label: 'Rutas', index: '02', key: 'routes' },
+  { href: '/admin/metricas', label: 'Métricas', index: '03', key: 'metrics' },
 ] as const
 
 const linksAfiliado = [
@@ -76,27 +72,10 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
     if (rol === 'estudiante') return linksEstudiante
     return linksPublicos
   })()
-  const links =
-    mostrarNavegacionDocente && afiliadosHabilitados
-      ? [
-          ...linksBase,
-          {
-            href: '/admin/afiliados',
-            label: 'Afiliados',
-            index: '08',
-            key: 'affiliates',
-          },
-        ]
-      : linksBase
+  const links = linksBase
   const activeKey = (() => {
     if (rol === 'docente') {
       if (!pathname.startsWith('/admin')) return 'home'
-      if (
-        pathname.startsWith('/admin/afiliados') ||
-        pathname.startsWith('/admin/comisiones') ||
-        pathname.startsWith('/admin/terminales')
-      )
-        return 'affiliates'
       if (pathname === '/admin') return 'teacher-panel'
       if (pathname.startsWith('/admin/usuarios')) return 'students'
       if (pathname.startsWith('/admin/cursos')) return 'courses'
@@ -190,14 +169,14 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
           </Link>
           {perfil !== null ? (
             <>
-              <Link
-                href={
-                  rol === 'docente' ? '/admin' : rol === 'afiliado' ? '/afiliados' : '/dashboard'
-                }
-                className="header-profile-name"
-              >
-                {perfil.nombre}
-              </Link>
+              {rol !== 'docente' && (
+                <Link
+                  href={rol === 'afiliado' ? '/afiliados' : '/dashboard'}
+                  className="header-profile-name"
+                >
+                  {perfil.nombre}
+                </Link>
+              )}
               <a href="/api/auth/logout" className="header-login-button">
                 Salir
               </a>

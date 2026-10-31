@@ -21,18 +21,20 @@ export const GestorBancos = ({
   bancos,
   tomos,
   cursos,
+  seleccionInicial = { cursoId: '', tomoId: '' },
 }: {
   bancos: BancoAdmin[]
   tomos: { id: string; titulo: string }[]
   cursos: { id: string; titulo: string }[]
+  seleccionInicial?: { cursoId: string; tomoId: string }
 }): JSX.Element => {
   const router = useRouter()
   const [seleccion, setSeleccion] = useState<string | null>(null)
   const actual = bancos.find(b => b.bancoId === seleccion)
   const [form, setForm] = useState({
-    uso: 'DIAGNOSTICO_PREVIO',
-    tomoId: '',
-    cursoId: '',
+    uso: seleccionInicial.tomoId ? 'EVALUACION_TOMO' : 'DIAGNOSTICO_PREVIO',
+    tomoId: seleccionInicial.tomoId,
+    cursoId: seleccionInicial.cursoId,
     titulo: '',
     preguntas: JSON.stringify(plantilla, null, 2),
   })
@@ -91,9 +93,9 @@ export const GestorBancos = ({
             onClick={() => {
               setSeleccion(null)
               setForm({
-                uso: 'DIAGNOSTICO_PREVIO',
-                tomoId: '',
-                cursoId: '',
+                uso: seleccionInicial.tomoId ? 'EVALUACION_TOMO' : 'DIAGNOSTICO_PREVIO',
+                tomoId: seleccionInicial.tomoId,
+                cursoId: seleccionInicial.cursoId,
                 titulo: '',
                 preguntas: JSON.stringify(plantilla, null, 2),
               })

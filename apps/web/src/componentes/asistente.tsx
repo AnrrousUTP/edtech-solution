@@ -320,6 +320,18 @@ const AssistantWidget = (): JSX.Element => {
     }
   }
 
+  useEffect(() => {
+    const abrirConConsulta = (event: Event): void => {
+      const detalle = (event as CustomEvent<{ prompt?: string }>).detail
+      if (!detalle?.prompt) return
+      setIsOpen(true)
+      setDraft(detalle.prompt.slice(0, 1000))
+      setError(null)
+    }
+    window.addEventListener('edtech:assistant:prompt', abrirConConsulta)
+    return () => window.removeEventListener('edtech:assistant:prompt', abrirConConsulta)
+  }, [])
+
   return (
     <div className="assistant-widget">
       {isOpen ? (

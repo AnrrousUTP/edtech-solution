@@ -39,7 +39,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
       .filter((detalle): detalle is NonNullable<typeof detalle> => detalle !== null)
       .map(detalle => [detalle.id, detalle]),
   )
-  const totalSemanas = detalles.reduce((total, detalle) => total + (detalle?.tomos.length ?? 0), 0)
   const totalEvaluaciones = bancos.filter(banco => banco.preguntas.length > 0).length
   const publicado = cursos.filter(curso => curso.estado === 'PUBLICADO').length
 
@@ -95,7 +94,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
         {[
           ['Cursos', cursos.length, 'en el catálogo'],
           ['Publicados', publicado, 'listos para estudiantes'],
-          ['Semanas', totalSemanas, 'dentro de las rutas'],
           ['Evaluaciones', totalEvaluaciones, 'con preguntas configuradas'],
         ].map(([titulo, valor, detalle]) => (
           <div key={String(titulo)} className="admin-overview-card">
@@ -145,12 +143,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
                 <span>
                   <strong>{estado.semanas.length}</strong> semanas
                 </span>
-                <span>
-                  <strong>
-                    {estado.semanas.reduce((total, semana) => total + semana.lecciones.length, 0)}
-                  </strong>{' '}
-                  lecciones
-                </span>
                 <span>{precioTexto(curso.precio, curso.moneda)}</span>
               </div>
               <div className="admin-readiness">
@@ -171,19 +163,13 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
               </div>
               <div className="admin-course-actions">
                 <Link href={`/admin/cursos/${curso.id}`} className="boton-primario text-xs">
-                  Abrir diseño
-                </Link>
-                <Link href={`/cursos/${curso.slug}`} className="boton-secundario text-xs">
-                  Vista pública
+                  Editar
                 </Link>
               </div>
               <div className="admin-course-footer">
-                <Link href={`/admin/bancos?curso=${curso.id}`}>Editar evaluaciones</Link>
                 <AccionesCurso
                   cursoId={curso.id}
                   estado={curso.estado}
-                  precio={curso.precio}
-                  moneda={curso.moneda}
                 />
               </div>
             </article>
