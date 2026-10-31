@@ -6,7 +6,7 @@ import { PerfilInvalidoError } from '../module.errors'
 import type { Email } from '../value-objects/email.vo'
 import { Nivel } from '../value-objects/nivel.vo'
 
-export type RolDominio = 'ESTUDIANTE' | 'ADMIN'
+export type RolDominio = 'ESTUDIANTE' | 'DOCENTE' | 'AFILIADO'
 export type OrigenNivel = 'TEST' | 'AUTODECLARADO' | 'PROGRESION'
 
 export type CambiosPerfil = {
@@ -33,8 +33,13 @@ export class Usuario extends AggregateRoot {
     super()
   }
 
-  /** Alta desde Cognito: rol ESTUDIANTE, nivel A, origen AUTODECLARADO (doc 08 §4). */
-  static crearDesdeCognito(id: UniqueId, email: Email, nombreVisible: string): Usuario {
+  /** Alta desde Cognito: rol único, nivel A, origen AUTODECLARADO (doc 08 §4). */
+  static crearDesdeCognito(
+    id: UniqueId,
+    email: Email,
+    nombreVisible: string,
+    rol: RolDominio = 'ESTUDIANTE',
+  ): Usuario {
     const nivelA = Nivel.crear('A')
     if (!nivelA.ok) throw nivelA.error // imposible: 'A' es válido por construcción
     const u = new Usuario({
@@ -44,11 +49,11 @@ export class Usuario extends AggregateRoot {
       avatarUrl: null,
       pais: null,
       idioma: 'es',
-      rol: 'ESTUDIANTE',
+      rol,
       nivel: nivelA.value,
       origenNivel: 'AUTODECLARADO',
     })
-    u.record(new UsuarioRegistradoEvent(id.valor, email.valor, nombreVisible, 'ESTUDIANTE'))
+    u.record(new UsuarioRegistradoEvent(id.valor, email.valor, nombreVisible, rol))
     return u
   }
 

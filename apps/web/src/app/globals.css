@@ -9008,6 +9008,7 @@
   }
 
   .auth-form input,
+  .auth-form select,
   .story-contact-form input,
   .story-contact-form textarea {
     width: 100%;
@@ -9024,6 +9025,7 @@
   }
 
   .auth-form input:focus,
+  .auth-form select:focus,
   .story-contact-form input:focus,
   .story-contact-form textarea:focus,
   .admin-form-grid input:focus,
@@ -9102,6 +9104,12 @@
     margin: 4px 0 0;
     color: var(--gs-muted);
     font-size: 12px;
+  }
+
+  .auth-field-hint {
+    color: var(--gs-muted);
+    font-size: 12px;
+    line-height: 1.5;
   }
 
   .auth-dev-link {

@@ -8,6 +8,7 @@ import {
 } from '@edtech/shared-kernel'
 import { Router, json, type Request, type Response } from 'express'
 import type { Config } from '../../config/config'
+import type { CrearOrdenCommand } from '../../../application/crear-orden/crear-orden.handler'
 
 const MAPA: Record<string, number> = {
   ORDEN_NO_ENCONTRADA: 404,
@@ -50,23 +51,36 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
+  const estudiante = [auth, requiereRol('estudiante')]
 
-  router.post('/ordenes/compra-directa', auth, async (req, res) => {
+  router.post('/ordenes', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
+    const retorno = new URL('/checkout/resultado', cfg.urlBase).toString()
+    const cancelacion = new URL('/cursos', cfg.urlBase).toString()
+    const cmd: CrearOrdenCommand = {
+      _tag: 'CrearOrden',
+      usuarioId: req.auth?.usuarioId ?? '',
+      cursoId: String(b.cursoId ?? ''),
+      urlRetorno: retorno,
+      urlCancelacion: cancelacion,
+      ...(typeof b.pruebaAtribucion === 'string' ? { pruebaAtribucion: b.pruebaAtribucion } : {}),
+    }
+    responder(res, await bus.dispatch(cmd), 201)
+  })
+
+  router.post('/ordenes/:id/capturar', ...estudiante, async (req, res) => {
     responder(
       res,
       await bus.dispatch({
-        _tag: 'CrearCompraDirecta',
+        _tag: 'CapturarPago',
+        ordenId: req.params.id ?? '',
         usuarioId: req.auth?.usuarioId ?? '',
-        cursoId: String(b.cursoId ?? ''),
-        ...(typeof b.pruebaAtribucion === 'string' ? { pruebaAtribucion: b.pruebaAtribucion } : {}),
       }),
-      201,
     )
   })
 
   /** Polling honesto del frontend tras capturar (doc 09 §2, paso 12). */
-  router.get('/ordenes/:id', auth, async (req, res) => {
+  router.get('/ordenes/:id', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({
@@ -77,14 +91,14 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.get('/mis-ordenes', auth, async (req, res) => {
+  router.get('/mis-ordenes', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({ _tag: 'MisOrdenes', usuarioId: req.auth?.usuarioId ?? '' }),
     )
   })
 
-  router.get('/admin/ordenes', auth, requiereRol('admin'), async (_req, res) => {
+  router.get('/admin/ordenes', auth, requiereRol('docente'), async (_req, res) => {
     responder(res, await queries.dispatch({ _tag: 'TodasLasOrdenes' }))
   })
 

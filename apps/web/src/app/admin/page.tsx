@@ -1,16 +1,16 @@
 import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
 import { ErrorConAccion, Etiqueta, precioTexto } from '@/componentes/base'
-import { esAdmin, mfaPendiente } from '@/lib/sesion'
+import { esDocente, mfaPendiente } from '@/lib/sesion'
 import { AccionesCurso } from './acciones-curso'
 
-// Pantalla 12: panel de admin. La autorización REAL la hace el servidor
-// (requiereRol('admin') en cada servicio): ocultar el enlace no es autorización.
+// Pantalla 12: panel docente. La autorización REAL la hace el servidor
+// (requiereRol('docente') en cada servicio): ocultar el enlace no es autorización.
 const PanelAdmin = async (): Promise<JSX.Element> => {
-  if (!(await esAdmin())) {
+  if (!(await esDocente())) {
     return (
       <ErrorConAccion
-        titulo="Necesitas permisos de administrador"
+        titulo="Necesitas el rol docente"
         detalle="Esta sección es para gestionar el catálogo. Si crees que deberías tener acceso, pídeselo a quien administra la plataforma."
         accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
@@ -21,7 +21,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
     return (
       <ErrorConAccion
         titulo="Configura tu segundo factor para entrar"
-        detalle="El panel de administración exige verificación en dos pasos (doc 08 §6). Toma un minuto."
+        detalle="El panel docente exige verificación en dos pasos (doc 08 §6). Toma un minuto."
         accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
@@ -193,7 +193,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
 
       {cursos.length === 0 && (
         <p className="mt-6 text-sm text-slate-600">
-          No hay cursos todavía. Créalos con la API de admin o con el seed (
+          No hay cursos todavía. Créalos desde el panel docente o con el seed (
           <code className="font-mono">bun run db:seed</code>).
         </p>
       )}

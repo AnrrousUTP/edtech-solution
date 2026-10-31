@@ -54,7 +54,7 @@ export const AccionesCurso = ({
           <button
             type="button"
             disabled={ocupado}
-            onClick={() => void ejecutar('despublicar', { motivo: 'Retirado por el admin' })}
+            onClick={() => void ejecutar('despublicar', { motivo: 'Retirado por docente' })}
             className="boton-secundario px-3 py-1.5 text-xs"
           >
             Despublicar

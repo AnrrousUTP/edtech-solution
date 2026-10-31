@@ -161,16 +161,12 @@ export const catalogApi = {
   contextoDeTomo: (tomoId: string) =>
     llamarOpcional(`/api/catalog/tomos/${tomoId}/contexto`, contextoTomo, { autenticado: false }),
 
-  nivelacion: () =>
-    llamarOpcional('/api/catalog/nivelacion', evaluacionPublica, { autenticado: false }),
+  nivelacion: () => llamarOpcional('/api/catalog/nivelacion', evaluacionPublica),
 
-  diagnostico: () =>
-    llamarOpcional('/api/catalog/diagnostico', evaluacionPublica, { autenticado: false }),
+  diagnostico: () => llamarOpcional('/api/catalog/diagnostico', evaluacionPublica),
 
   evaluacionInicial: (cursoId: string) =>
-    llamarOpcional(`/api/catalog/cursos/${cursoId}/evaluacion-inicial`, evaluacionPublica, {
-      autenticado: false,
-    }),
+    llamarOpcional(`/api/catalog/cursos/${cursoId}/evaluacion-inicial`, evaluacionPublica),
 
   // ── admin ──────────────────────────────────────────────────────────────────
   cursosAdmin: () => llamar('/api/catalog/admin/cursos', z.array(cursoResumen)),
@@ -232,7 +228,7 @@ export const catalogApi = {
       cuerpo: datos,
     }),
   actualizarCarrera: (id: string, datos: Record<string, unknown>) =>
-    llamar(`/api/catalog/admin/carreras/${id}`, z.object({ actualizado: z.boolean() }), {
+    llamar(`/api/catalog/admin/carreras/${id}`, z.object({ carreraId: z.string() }), {
       metodo: 'PUT',
       cuerpo: datos,
     }),
@@ -245,8 +241,12 @@ export const catalogApi = {
       { metodo: 'POST', cuerpo: datos },
     ),
   actualizarBanco: (id: string, datos: Record<string, unknown>) =>
-    llamar(`/api/catalog/admin/bancos/${id}`, z.object({ actualizado: z.boolean() }), {
-      metodo: 'PUT',
-      cuerpo: datos,
-    }),
+    llamar(
+      `/api/catalog/admin/bancos/${id}`,
+      z.object({ bancoId: z.string(), cantidadPreguntas: z.number() }),
+      {
+        metodo: 'PUT',
+        cuerpo: datos,
+      },
+    ),
 }

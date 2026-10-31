@@ -42,6 +42,12 @@ export type CrearOrdenResponse = {
   reutilizada: boolean
 }
 
+const agregarOrdenARetorno = (url: string, ordenId: string): string => {
+  const retorno = new URL(url)
+  retorno.searchParams.set('ordenId', ordenId)
+  return retorno.toString()
+}
+
 /** Lee el precio de SU proyección — NO llama a catalog (doc 09 §2, D14). */
 export class CrearOrdenHandler implements CommandHandler<
   CrearOrdenCommand,
@@ -83,7 +89,7 @@ export class CrearOrdenHandler implements CommandHandler<
         ordenId: pendiente.id.valor,
         monto: pendiente.monto,
         descripcion: precio.titulo,
-        urlRetorno: cmd.urlRetorno,
+        urlRetorno: agregarOrdenARetorno(cmd.urlRetorno, pendiente.id.valor),
         urlCancelacion: cmd.urlCancelacion,
       })
       if (isErr(r)) return Err(r.error)
@@ -118,7 +124,7 @@ export class CrearOrdenHandler implements CommandHandler<
       ordenId: orden.id.valor,
       monto: orden.monto,
       descripcion: precio.titulo,
-      urlRetorno: cmd.urlRetorno,
+      urlRetorno: agregarOrdenARetorno(cmd.urlRetorno, orden.id.valor),
       urlCancelacion: cmd.urlCancelacion,
     })
     if (isErr(r)) return Err(r.error)

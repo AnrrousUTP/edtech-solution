@@ -10,6 +10,7 @@ import {
 import { UsuarioNoEncontradoError, type IdentityError } from '../../domain/module.errors'
 import type { UsuarioRepository } from '../../domain/ports-out/usuario.repository'
 import { Usuario } from '../../domain/entities/usuario.entity'
+import type { RolDominio } from '../../domain/entities/usuario.entity'
 import { Email } from '../../domain/value-objects/email.vo'
 
 export type ObtenerPerfilQuery = Query & {
@@ -18,7 +19,7 @@ export type ObtenerPerfilQuery = Query & {
   /** Alta perezosa (doc 08 §4.3): si viene el email del token y el usuario no
    *  existe, se crea en el momento — un JWT válido de Cognito es prueba
    *  suficiente de que el usuario existe. */
-  readonly altaPerezosa?: { email: string; nombreVisible?: string }
+  readonly altaPerezosa?: { email: string; nombreVisible?: string; rol?: RolDominio }
 }
 
 export type PerfilResponse = {
@@ -56,6 +57,7 @@ export class ObtenerPerfilHandler implements QueryHandler<
           id,
           email.value,
           query.altaPerezosa.nombreVisible ?? email.value.valor.split('@')[0] ?? 'Estudiante',
+          query.altaPerezosa.rol ?? 'ESTUDIANTE',
         )
         const eventos = usuario.pullEvents()
         await this.usuarios.guardar(usuario, eventos)

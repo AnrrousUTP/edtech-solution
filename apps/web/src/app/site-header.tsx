@@ -25,13 +25,21 @@ const linksEstudiante = [
   { href: '/diagnostico', label: 'Diagnóstico', index: '04', key: 'diagnostic' },
 ] as const
 
-const linksAdmin = [
-  { href: '/admin', label: 'Panel', index: '01', key: 'admin' },
+const linksDocente = [
+  { href: '/admin', label: 'Panel docente', index: '01', key: 'teacher-panel' },
   { href: '/admin/usuarios', label: 'Estudiantes', index: '02', key: 'students' },
   { href: '/admin/cursos/nuevo', label: 'Cursos', index: '03', key: 'courses' },
   { href: '/admin/carreras', label: 'Rutas', index: '04', key: 'routes' },
   { href: '/admin/bancos', label: 'Evaluaciones', index: '05', key: 'assessments' },
-  { href: '/admin/metricas', label: 'Métricas', index: '06', key: 'metrics' },
+  { href: '/admin/flashcards', label: 'Flashcards', index: '06', key: 'flashcards' },
+  { href: '/admin/metricas', label: 'Métricas', index: '07', key: 'metrics' },
+] as const
+
+const linksAfiliado = [
+  { href: '/afiliados', label: 'Mi programa', index: '01', key: 'affiliate-home' },
+  { href: '/afiliados/qr', label: 'Mi QR', index: '02', key: 'affiliate-qr' },
+  { href: '/afiliados/ingresos', label: 'Ingresos', index: '03', key: 'affiliate-income' },
+  { href: '/cursos', label: 'Cursos', index: '04', key: 'catalog' },
 ] as const
 
 const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): JSX.Element => {
@@ -56,77 +64,87 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
     return () => window.removeEventListener('keydown', cerrarConEscape)
   }, [])
 
-  // El encabezado representa el área abierta, no solo el rol guardado en la
-  // cookie: así /dashboard conserva la navegación de estudiante incluso si
-  // otra pestaña del mismo navegador inició sesión como administrador.
-  const mostrarNavegacionAdmin =
-    pathname.startsWith('/admin') && (perfil?.roles.includes('admin') ?? false)
-  const linksBase = mostrarNavegacionAdmin ? linksAdmin : perfil ? linksEstudiante : linksPublicos
+  const rol = perfil?.rol ?? null
+  const mostrarNavegacionDocente = rol === 'docente'
+  const linksBase = (() => {
+    if (rol === 'docente') return linksDocente
+    if (rol === 'afiliado') {
+      return afiliadosHabilitados
+        ? linksAfiliado
+        : [{ href: '/cursos', label: 'Cursos', index: '01', key: 'catalog' }]
+    }
+    if (rol === 'estudiante') return linksEstudiante
+    return linksPublicos
+  })()
   const links =
-    afiliadosHabilitados && perfil
+    mostrarNavegacionDocente && afiliadosHabilitados
       ? [
           ...linksBase,
           {
-            href: mostrarNavegacionAdmin ? '/admin/afiliados' : '/afiliados',
+            href: '/admin/afiliados',
             label: 'Afiliados',
-            index: '07',
+            index: '08',
             key: 'affiliates',
           },
         ]
       : linksBase
-  const activeKey =
-    pathname.startsWith('/afiliados') ||
-    pathname.startsWith('/admin/afiliados') ||
-    pathname.startsWith('/admin/comisiones') ||
-    pathname.startsWith('/admin/terminales')
-      ? 'affiliates'
-      : mostrarNavegacionAdmin
-        ? pathname === '/admin'
-          ? 'admin'
-          : pathname.startsWith('/admin/usuarios')
-            ? 'students'
-            : pathname.startsWith('/admin/cursos')
-              ? 'courses'
-              : pathname.startsWith('/admin/carreras')
-                ? 'routes'
-                : pathname.startsWith('/admin/bancos')
-                  ? 'assessments'
-                  : pathname.startsWith('/admin/metricas')
-                    ? 'metrics'
-                    : 'admin'
-        : perfil
-          ? pathname === '/dashboard'
-            ? 'dashboard'
-            : pathname === '/nivelacion'
-              ? 'level'
-              : pathname === '/diagnostico'
-                ? 'diagnostic'
-                : 'catalog'
-          : pathname === '/cursos' || pathname.startsWith('/cursos/')
-            ? 'catalog'
-            : pathname === '/' && hash === '#rutas'
-              ? 'paths'
-              : pathname === '/' && hash === '#faq'
-                ? 'faq'
-                : 'home'
+  const activeKey = (() => {
+    if (rol === 'docente') {
+      if (!pathname.startsWith('/admin')) return 'home'
+      if (
+        pathname.startsWith('/admin/afiliados') ||
+        pathname.startsWith('/admin/comisiones') ||
+        pathname.startsWith('/admin/terminales')
+      )
+        return 'affiliates'
+      if (pathname === '/admin') return 'teacher-panel'
+      if (pathname.startsWith('/admin/usuarios')) return 'students'
+      if (pathname.startsWith('/admin/cursos')) return 'courses'
+      if (pathname.startsWith('/admin/carreras')) return 'routes'
+      if (pathname.startsWith('/admin/bancos')) return 'assessments'
+      if (pathname.startsWith('/admin/flashcards')) return 'flashcards'
+      if (pathname.startsWith('/admin/metricas')) return 'metrics'
+      return 'teacher-panel'
+    }
+    if (rol === 'afiliado') {
+      if (pathname.startsWith('/afiliados/qr')) return 'affiliate-qr'
+      if (pathname.startsWith('/afiliados/ingresos')) return 'affiliate-income'
+      if (pathname.startsWith('/afiliados')) return 'affiliate-home'
+      return 'catalog'
+    }
+    if (rol === 'estudiante') {
+      if (pathname === '/dashboard') return 'dashboard'
+      if (pathname === '/nivelacion') return 'level'
+      if (pathname === '/diagnostico') return 'diagnostic'
+      return 'catalog'
+    }
+    if (pathname === '/cursos' || pathname.startsWith('/cursos/')) return 'catalog'
+    if (pathname === '/' && hash === '#rutas') return 'paths'
+    if (pathname === '/' && hash === '#faq') return 'faq'
+    return 'home'
+  })()
 
   return (
     <header className="site-header sticky top-0 z-40">
       <nav
         className="header-space-nav mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4"
         aria-label={
-          mostrarNavegacionAdmin
-            ? 'Navegación administrativa'
-            : perfil
+          mostrarNavegacionDocente
+            ? 'Navegación docente'
+            : rol === 'estudiante'
               ? 'Navegación del estudiante'
-              : 'Navegación pública'
+              : rol === 'afiliado'
+                ? 'Navegación de afiliado'
+                : 'Navegación pública'
         }
       >
         <Link href="/" className="header-space-context" aria-label="EdTech, inicio">
           <EdtechLogo />
-          {mostrarNavegacionAdmin && <span className="header-mode-label">Administración</span>}
-          {perfil && !mostrarNavegacionAdmin && (
-            <span className="header-mode-label">Mi aprendizaje</span>
+          {mostrarNavegacionDocente && <span className="header-mode-label">Área docente</span>}
+          {perfil && !mostrarNavegacionDocente && (
+            <span className="header-mode-label">
+              {rol === 'afiliado' ? 'Área de afiliados' : 'Mi aprendizaje'}
+            </span>
           )}
         </Link>
 
@@ -173,7 +191,9 @@ const SiteHeader = ({ perfil, afiliadosHabilitados = false }: SiteHeaderProps): 
           {perfil !== null ? (
             <>
               <Link
-                href={mostrarNavegacionAdmin ? '/admin' : '/dashboard'}
+                href={
+                  rol === 'docente' ? '/admin' : rol === 'afiliado' ? '/afiliados' : '/dashboard'
+                }
                 className="header-profile-name"
               >
                 {perfil.nombre}

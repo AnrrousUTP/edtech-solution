@@ -24,11 +24,14 @@ import type { CarreraRepository } from '../../../domain/ports-out/carrera.reposi
 import type { Bloque, CursoRepository, Ejercicio } from '../../../domain/ports-out/curso.repository'
 import type { ContenidoStore } from '../../../domain/ports-out/contenido-store.port'
 import type {
+  BancoAdmin,
   CarreraResumen,
   CatalogoLectura,
+  ContextoTomo,
   CursoDetalle,
   CursoResumen,
   EvaluacionPublica,
+  LeccionContenidoAdmin,
   LeccionContenido,
   RespuestasBanco,
 } from '../../../domain/ports-out/catalogo-lectura.port'
@@ -319,6 +322,7 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       id: UniqueId.desde(String(row.id)),
       uso: row.uso,
       tomoId: typeof row.tomoId === 'string' ? row.tomoId : null,
+      cursoId: typeof row.cursoId === 'string' ? row.cursoId : null,
       titulo: String(row.titulo),
       preguntas: Array.isArray(row.preguntas) ? row.preguntas : [],
     } as never)
@@ -329,10 +333,16 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
     return row ? this.bancoDesde(row) : null
   }
 
-  async bancoPorUso(uso: UsoBanco, tomoId?: string): Promise<BancoPreguntas | null> {
+  async bancoPorUso(
+    uso: UsoBanco,
+    tomoId?: string,
+    cursoId?: string,
+  ): Promise<BancoPreguntas | null> {
     const rows = tomoId
       ? await this.queryIndex('GSI2', `TOMO#${tomoId}`, `USO#${uso}#`)
-      : await this.queryIndex('GSI1', `BANK_USE#${uso}`)
+      : cursoId
+        ? await this.queryIndex('GSI2', `COURSE#${cursoId}`, `USO#${uso}#`)
+        : await this.queryIndex('GSI1', `BANK_USE#${uso}`)
     return rows[0] ? this.bancoDesde(rows[0]) : null
   }
 
@@ -346,6 +356,7 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       id: banco.id.valor,
       uso: banco.uso,
       tomoId: banco.tomoId,
+      cursoId: banco.cursoId,
       titulo: banco.titulo,
       preguntas: jsonCopy(banco.preguntas),
       version: Number(actual?.version ?? 0) + 1,
@@ -355,7 +366,9 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       GSI1SK: `${banco.titulo.toLowerCase()}#${banco.id.valor}`,
       ...(banco.tomoId
         ? { GSI2PK: `TOMO#${banco.tomoId}`, GSI2SK: `USO#${banco.uso}#${banco.id.valor}` }
-        : {}),
+        : banco.cursoId
+          ? { GSI2PK: `COURSE#${banco.cursoId}`, GSI2SK: `USO#${banco.uso}#${banco.id.valor}` }
+          : {}),
     }
     assertDynamoItemSize(row)
     await this.dynamo.transact([
@@ -499,11 +512,43 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
     return {
       id: lesson.id,
       titulo: lesson.titulo,
+      cursoId: String(course.id),
       tomoId: tomo.id,
       bloques: blocks.map(({ orden, tipo, contenido }) => ({ orden, tipo, contenido })),
       ejercicios: exercises.map(exercise => ({
         id: exercise.id ?? '',
         enunciado: exercise.enunciado,
+        pistas: exercise.pistas,
+      })),
+    }
+  }
+
+  async leccionContenidoAdmin(leccionId: string): Promise<LeccionContenidoAdmin | null> {
+    const rows = await this.queryIndex('GSI2', 'COURSES#ALL')
+    const course = rows.find(
+      row =>
+        Array.isArray(row.tomos) &&
+        row.tomos.some((tomo: TomoInfo) => tomo.lecciones.some(lesson => lesson.id === leccionId)),
+    )
+    if (!course) return null
+    const tomo = (course.tomos as TomoInfo[]).find(candidate =>
+      candidate.lecciones.some(lesson => lesson.id === leccionId),
+    )!
+    const lesson = tomo.lecciones.find(candidate => candidate.id === leccionId)!
+    const [blocks, exercises] = await Promise.all([
+      this.bloquesDe(UniqueId.desde(leccionId)),
+      this.ejerciciosDe(UniqueId.desde(leccionId)),
+    ])
+    return {
+      id: lesson.id,
+      titulo: lesson.titulo,
+      cursoId: String(course.id),
+      tomoId: tomo.id,
+      bloques: blocks.map(({ orden, tipo, contenido }) => ({ orden, tipo, contenido })),
+      ejercicios: exercises.map(exercise => ({
+        id: exercise.id ?? '',
+        enunciado: exercise.enunciado,
+        solucionEsperada: exercise.solucionEsperada,
         pistas: exercise.pistas,
       })),
     }
@@ -522,6 +567,73 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
     return bank ? this.evaluacionPublica(bank, 60) : null
   }
 
+  async refuerzoDeTomo(tomoId: string): Promise<EvaluacionPublica | null> {
+    const bank = await this.bancoPorUso('REFUERZO', tomoId)
+    if (!bank) return null
+    const course = await this.findPublishedCourseForTomo(tomoId)
+    return this.evaluacionPublica(
+      bank,
+      course?.tomos.find(tomo => tomo.id === tomoId)?.umbral ?? 70,
+    )
+  }
+
+  async evaluacionInicialDeCurso(cursoId: string): Promise<EvaluacionPublica | null> {
+    if (!(await this.cursoPorId(cursoId, false))) return null
+    const bank = await this.bancoPorUso('EVALUACION_INICIAL', undefined, cursoId)
+    return bank ? this.evaluacionPublica(bank, 60) : null
+  }
+
+  async diagnosticoPrevio(): Promise<EvaluacionPublica | null> {
+    const bank = await this.bancoPorUso('DIAGNOSTICO_PREVIO')
+    return bank ? this.evaluacionPublica(bank, 60) : null
+  }
+
+  async contextoDeTomo(tomoId: string): Promise<ContextoTomo | null> {
+    const course = await this.findPublishedCourseForTomo(tomoId)
+    const tomo = course?.tomos.find(candidate => candidate.id === tomoId)
+    if (!course || !tomo) return null
+    return {
+      cursoId: course.id.valor,
+      cursoSlug: course.slug.valor,
+      cursoTitulo: course.titulo,
+      tomoId,
+      tomoTitulo: tomo.titulo,
+    }
+  }
+
+  async listarBancosAdmin(): Promise<BancoAdmin[]> {
+    const usos: UsoBanco[] = [
+      'DIAGNOSTICO_PREVIO',
+      'EVALUACION_INICIAL',
+      'NIVELACION',
+      'EVALUACION_TOMO',
+      'REFUERZO',
+    ]
+    const rows = (
+      await Promise.all(usos.map(uso => this.queryIndex('GSI1', `BANK_USE#${uso}`)))
+    ).flat()
+    return rows
+      .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), 'es'))
+      .map(row => ({
+        bancoId: String(row.id),
+        uso: String(row.uso),
+        tomoId: typeof row.tomoId === 'string' ? row.tomoId : null,
+        cursoId: typeof row.cursoId === 'string' ? row.cursoId : null,
+        titulo: String(row.titulo),
+        preguntas: (Array.isArray(row.preguntas) ? (row.preguntas as Pregunta[]) : []).map(
+          question => ({
+            id: question.id,
+            tipo: question.tipo,
+            nivel: question.nivel,
+            enunciado: question.enunciado,
+            opciones: question.opciones,
+            respuestaCorrecta: question.respuestaCorrecta,
+            puntaje: question.puntaje,
+          }),
+        ),
+      }))
+  }
+
   async respuestasDeBanco(bancoId: string): Promise<RespuestasBanco | null> {
     const bank = await this.get(bankKey(bancoId))
     if (!bank) return null
@@ -533,9 +645,11 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       umbral:
         bank.uso === 'NIVELACION'
           ? null
-          : ((await this.findPublishedCourseForTomo(String(bank.tomoId)))?.tomos.find(
-              t => t.id === bank.tomoId,
-            )?.umbral ?? 70),
+          : bank.uso === 'DIAGNOSTICO_PREVIO' || bank.uso === 'EVALUACION_INICIAL'
+            ? 60
+            : ((await this.findPublishedCourseForTomo(String(bank.tomoId)))?.tomos.find(
+                t => t.id === bank.tomoId,
+              )?.umbral ?? 70),
       preguntas: questions.map(question => ({
         id: question.id,
         tipo: question.tipo,
@@ -650,8 +764,8 @@ export class DynamoBancoRepository implements BancoRepository {
   porId(id: UniqueId): Promise<BancoPreguntas | null> {
     return this.store.bancoPorId(id)
   }
-  porUso(uso: UsoBanco, tomoId?: string): Promise<BancoPreguntas | null> {
-    return this.store.bancoPorUso(uso, tomoId)
+  porUso(uso: UsoBanco, tomoId?: string, cursoId?: string): Promise<BancoPreguntas | null> {
+    return this.store.bancoPorUso(uso, tomoId, cursoId)
   }
   guardar(banco: BancoPreguntas): Promise<void> {
     return this.store.guardarBanco(banco)

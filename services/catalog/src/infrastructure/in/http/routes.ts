@@ -8,6 +8,8 @@ import {
 } from '@edtech/shared-kernel'
 import { Router, json, type Request, type RequestHandler, type Response } from 'express'
 import type { Config } from '../../config/config'
+import type { CatalogError } from '../../../domain/module.errors'
+import type { LeccionContenido } from '../../../domain/ports-out/catalogo-lectura.port'
 
 const MAPA: Record<string, number> = {
   CURSO_NO_ENCONTRADO: 404,
@@ -42,12 +44,14 @@ const responder = <T>(
 }
 
 type Despacho = { code: string; message: string }
+type EnrollmentAccess = { tieneAcceso(usuarioId: string, cursoId: string): Promise<boolean> }
 
 export const crearRouter = (
   bus: CommandBus,
   queries: QueryBus,
   cfg: Config,
   internoToken: string,
+  enrollmentAccess: EnrollmentAccess,
 ): Router => {
   const router = Router()
   router.use(json({ limit: '2mb' }))
@@ -56,7 +60,8 @@ export const crearRouter = (
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
-  const admin = [auth, requiereRol('admin')]
+  const estudiante = [auth, requiereRol('estudiante')]
+  const admin = [auth, requiereRol('docente')]
 
   // ── Pública (el catálogo se ve sin cuenta, doc 08 §5) ─────────────────────
   router.get('/cursos', async (_req, res) => {
@@ -79,29 +84,89 @@ export const crearRouter = (
   })
 
   // Test de nivelación: preguntas SIN respuestas (I-5)
-  router.get('/nivelacion', async (_req, res) => {
+  router.get('/nivelacion', ...estudiante, async (_req, res) => {
     responder(res, await queries.dispatch({ _tag: 'ObtenerNivelacion' }))
   })
 
-  // ── Autenticada (contenido del curso; gating de matrícula: A-18) ──────────
-  router.get('/lecciones/:id', auth, async (req, res) => {
+  router.get('/diagnostico', ...estudiante, async (_req, res) => {
+    responder(res, await queries.dispatch({ _tag: 'ObtenerDiagnostico' }))
+  })
+
+  router.get('/cursos/:cursoId/evaluacion-inicial', ...estudiante, async (req, res) => {
     responder(
       res,
-      await queries.dispatch({ _tag: 'ObtenerLeccion', leccionId: req.params.id ?? '' }),
+      await queries.dispatch({
+        _tag: 'ObtenerEvaluacionInicial',
+        cursoId: req.params.cursoId ?? '',
+      }),
     )
   })
 
+  router.get('/tomos/:id/contexto', async (req, res) => {
+    responder(
+      res,
+      await queries.dispatch({ _tag: 'ObtenerContextoTomo', tomoId: req.params.id ?? '' }),
+    )
+  })
+
+  // ── Autenticada (contenido del curso; gating de matrícula: A-18) ──────────
+  router.get('/lecciones/:id', ...estudiante, async (req, res) => {
+    const resultado = await queries.dispatch<LeccionContenido, CatalogError>({
+      _tag: 'ObtenerLeccion',
+      leccionId: req.params.id ?? '',
+    })
+    if (!isOk(resultado)) {
+      responder(res, resultado)
+      return
+    }
+
+    const usuarioId = req.auth?.usuarioId
+    if (!usuarioId) {
+      res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'Falta el token' } })
+      return
+    }
+
+    try {
+      const tieneAcceso = await enrollmentAccess.tieneAcceso(usuarioId, resultado.value.cursoId)
+      if (!tieneAcceso) {
+        res.status(403).json({
+          error: {
+            code: 'MATRICULA_REQUERIDA',
+            message: 'Se requiere una matrícula activa para acceder al contenido.',
+          },
+        })
+        return
+      }
+    } catch {
+      res.status(503).json({
+        error: {
+          code: 'VALIDACION_MATRICULA_NO_DISPONIBLE',
+          message: 'No se pudo validar el acceso al curso. Inténtalo nuevamente.',
+        },
+      })
+      return
+    }
+
+    const { id, titulo, tomoId, bloques, ejercicios } = resultado.value
+    res.status(200).json({ data: { id, titulo, tomoId, bloques, ejercicios } })
+  })
+
   // Evaluación del tomo: preguntas SIN respuesta_correcta (I-5)
-  router.get('/tomos/:id/evaluacion', auth, async (req, res) => {
+  router.get('/tomos/:id/evaluacion', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({ _tag: 'ObtenerEvaluacion', tomoId: req.params.id ?? '' }),
     )
   })
 
+  router.get('/tomos/:id/refuerzo', ...estudiante, async (req, res) => {
+    responder(res, await queries.dispatch({ _tag: 'ObtenerRefuerzo', tomoId: req.params.id ?? '' }))
+  })
+
   // ── Interna (A-19): SOLO enrollment, con token compartido. No es pública. ──
   const interno: RequestHandler = (req, res, next) => {
-    if (req.headers['x-interno-token'] !== internoToken) {
+    const presentedToken = req.headers['x-interno-token']
+    if (!internoToken || typeof presentedToken !== 'string' || presentedToken !== internoToken) {
       res.status(401).json({ error: { code: 'NO_AUTORIZADO', message: 'Token interno inválido' } })
       return
     }
@@ -119,6 +184,10 @@ export const crearRouter = (
     responder(res, await queries.dispatch({ _tag: 'ListarCursos', incluirNoPublicados: true }))
   })
 
+  router.get('/admin/bancos', ...admin, async (_req, res) => {
+    responder(res, await queries.dispatch({ _tag: 'ListarBancosAdmin' }))
+  })
+
   router.get('/admin/cursos/:slugOId', ...admin, async (req, res) => {
     responder(
       res,
@@ -127,6 +196,13 @@ export const crearRouter = (
         slugOId: req.params.slugOId ?? '',
         incluirNoPublicados: true,
       }),
+    )
+  })
+
+  router.get('/admin/lecciones/:id', ...admin, async (req, res) => {
+    responder(
+      res,
+      await queries.dispatch({ _tag: 'ObtenerLeccionAdmin', leccionId: req.params.id ?? '' }),
     )
   })
 

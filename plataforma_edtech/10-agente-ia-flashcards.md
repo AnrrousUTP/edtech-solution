@@ -62,7 +62,7 @@ El mega-prompt pide un **Bedrock Agent nativo** (`aws_bedrockagent_agent` +
 `aws_bedrockagent_agent_action_group`). Se respeta, con una observación honesta escrita en
 `DECISIONS.md`:
 
-> Para *este* caso de uso —una sola llamada, prompt fijo, salida JSON, sin herramientas ni
+> Para _este_ caso de uso —una sola llamada, prompt fijo, salida JSON, sin herramientas ni
 > conversación— un `InvokeModel` directo sería más simple, más barato y más fácil de probar.
 > El Agent aporta cuando hay varias herramientas, memoria de sesión o razonamiento en
 > varios pasos. Se construye el Agent porque está pedido y porque deja lista la
@@ -101,8 +101,12 @@ export interface GeneradorFlashcardsPort {
     nivel: LetraNivel
     lecciones: { titulo: string; contenido: string }[]
     cantidadDeseada: number
-  }): Promise<Result<{ tarjetas: { anverso: string; reverso: string }[]; modeloUsado: string },
-                     GeneracionError>>
+  }): Promise<
+    Result<
+      { tarjetas: { anverso: string; reverso: string }[]; modeloUsado: string },
+      GeneracionError
+    >
+  >
 }
 ```
 
@@ -162,19 +166,19 @@ admin "para probar rápido", sin flag de entorno.
   `porTomoParaEstudiante()` filtra `estado = 'PUBLICADA'` en el SQL. Un endpoint nuevo que
   se olvide del filtro no puede exponer tarjetas sin revisar, porque no tiene forma de
   pedirlas.
-- El panel de admin permite **editar** el texto antes de aprobar; una tarjeta editada
+- El panel docente permite **editar** el texto antes de aprobar; una tarjeta editada
   guarda `editada = true`, lo que a los meses responde la pregunta "¿cuán bueno es el
   modelo realmente?" con datos en vez de con impresiones.
 - Rechazar exige un motivo. Es lo que permite mejorar el prompt con evidencia.
 
 ## 7. Costo y control
 
-| Concepto | Estimación |
-|---|---|
-| Tokens de entrada por tomo | ~4.000 (contenido de 4 lecciones) |
-| Tokens de salida por tomo | ~1.500 (12 tarjetas) |
-| Costo por generación | del orden de $0,03-0,05 |
-| Generaciones en el catálogo inicial | 6 tomos → una vez |
+| Concepto                            | Estimación                        |
+| ----------------------------------- | --------------------------------- |
+| Tokens de entrada por tomo          | ~4.000 (contenido de 4 lecciones) |
+| Tokens de salida por tomo           | ~1.500 (12 tarjetas)              |
+| Costo por generación                | del orden de $0,03-0,05           |
+| Generaciones en el catálogo inicial | 6 tomos → una vez                 |
 
 Es despreciable con este catálogo. Lo que **no** es despreciable es un bucle: un evento que
 dispara una generación que actualiza contenido que dispara otro evento. Protecciones:

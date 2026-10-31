@@ -36,9 +36,9 @@ El visitante necesita entender qué se aprende, cómo se comprueba y cuál es el
 
 El estudiante vuelve para continuar. Su pantalla principal debe priorizar una única acción “Continuar” con contexto: curso, lección, porcentaje y tiempo aproximado. El mapa tipo Duolingo funciona como orientación, siempre que muestre prerequisitos, estado bloqueado, estado disponible, estado completado y una razón visible para desbloquear. Una ruta llena de nodos sin jerarquía se convierte en un índice difícil de leer.
 
-### Administrador y docente
+### Docente (administración global)
 
-El administrador necesita supervisar estado, localizar problemas y editar contenido. La interfaz administrativa debe preferir tablas, filtros, estados y acciones explícitas. Puede compartir la identidad técnica de EdTech, pero no debe heredar el ritmo narrativo de la portada: aquí la velocidad y la precisión importan más que la sorpresa.
+El docente supervisa estado, localiza problemas y edita contenido con permisos globales. La interfaz debe preferir tablas, filtros, estados y acciones explícitas. Es el rol de gestión de EdTech y no hereda el ritmo narrativo de la portada: aquí la velocidad y la precisión importan más que la sorpresa.
 
 ## Jerarquía visual
 
@@ -187,7 +187,7 @@ Medir tareas, no opiniones generales:
 - Visitante: encontrar un curso Python inicial e iniciar registro.
 - Estudiante: continuar la siguiente lección y reconocer por qué está desbloqueada.
 - Estudiante: completar un ejercicio y explicar qué significa el feedback.
-- Administrador: localizar un curso publicado y cambiar su estado.
+- Docente: localizar un curso publicado y cambiar su estado.
 - Todas las personas: completar login, navegación y una acción principal con teclado.
 
 Registrar tiempo, errores, abandonos, preguntas de orientación y comprensión del estado. Una estética atractiva no compensa que una persona no sepa qué hacer después.

@@ -55,7 +55,7 @@ const PaginaCheckout = async ({
         </div>
       </div>
 
-      <Checkout cursoId={curso.id} cursoSlug={cursoSlug} />
+      <Checkout cursoId={curso.id} />
     </div>
   )
 }

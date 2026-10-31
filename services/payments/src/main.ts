@@ -11,6 +11,7 @@ const servidor = app.http.listen(cfg.puerto, () => {
 })
 
 if (app.poller) void app.poller.iniciar()
+if (app.pollerWebhooks) void app.pollerWebhooks.iniciar()
 
 // Job de expiración de órdenes PENDIENTE (doc 09 §8)
 const expiracion = setInterval(() => void app.expirarOrdenes(), 15 * 60 * 1000)

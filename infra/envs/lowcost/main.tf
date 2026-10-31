@@ -20,22 +20,74 @@ provider "aws" {
 }
 
 locals {
-  public_mode              = !var.pause_public_services && var.operation_mode == "publico"
-  workers_enabled          = local.public_mode && var.enable_workers && var.worker_release_ready
-  payments_enabled         = local.public_mode && contains(local.ready_api_domains, "payments")
-  payments_workers_enabled = local.payments_enabled && local.workers_enabled
-  enrollment_enabled       = local.public_mode && contains(local.ready_api_domains, "enrollment-progress")
-  outbox_enabled           = local.public_mode && var.enable_outbox_publisher && contains(local.ready_api_domains, "payments") && contains(local.ready_api_domains, "affiliates")
-  outbox_domains           = setintersection(local.lambda_domains, toset(["payments", "affiliates", "iot-terminals"]))
-  ai_enabled               = local.public_mode && var.enable_ai
-  iot_enabled              = local.public_mode && var.enable_iot && local.workers_enabled && contains(local.ready_api_domains, "iot-terminals")
-  affiliate_events_enabled = local.public_mode && var.enable_affiliate_events && contains(local.ready_api_domains, "affiliates")
-  # El primer despliegue público solo necesita el recorrido QR → compra → comisión → terminal.
-  # Los otros dominios se agregan explícitamente en una fase posterior.
+  public_mode       = !var.pause_public_services && var.operation_mode == "publico"
+  consumers_enabled = local.public_mode && var.enable_event_consumers && var.event_consumers_release_ready
+  payments_enabled  = local.public_mode && contains(local.ready_api_domains, "payments")
+  outbox_domains    = local.ready_api_domains
+  outbox_enabled    = local.public_mode && var.enable_outbox_publisher && length(local.outbox_domains) > 0
+  payments_events_enabled = local.payments_enabled && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "catalog",
+  )
+  enrollment_enabled = local.public_mode && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "enrollment-progress",
+  ) && contains(local.ready_api_domains, "catalog") && contains(local.ready_api_domains, "payments")
+  identity_events_enabled = local.public_mode && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "identity-access",
+  ) && contains(local.ready_api_domains, "enrollment-progress")
+  flashcards_enabled = local.public_mode && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "catalog",
+  ) && contains(local.ready_api_domains, "flashcards")
+  gamification_enabled = local.public_mode && contains(local.ready_api_domains, "gamification")
+  gamification_events_enabled = local.gamification_enabled && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "enrollment-progress",
+  ) && contains(local.ready_api_domains, "identity-access")
+  ai_enabled                        = local.public_mode && var.enable_ai
+  gamification_certificates_enabled = local.gamification_events_enabled
+  iot_enabled = local.public_mode && var.enable_iot && local.consumers_enabled && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "iot-terminals",
+  ) && contains(local.ready_api_domains, "affiliates")
+  affiliate_events_enabled = local.public_mode && local.consumers_enabled && var.enable_affiliate_events && local.outbox_enabled && contains(
+    local.ready_api_domains,
+    "affiliates",
+  ) && contains(local.ready_api_domains, "payments") && contains(local.ready_api_domains, "catalog")
   domains           = setunion(var.enabled_domains, toset(["control"]))
   lambda_domains    = setsubtract(local.domains, toset(["control"]))
   ready_api_domains = setintersection(local.lambda_domains, var.ready_api_domains)
-  artifact_bucket   = var.lambda_artifact_bucket != "" ? var.lambda_artifact_bucket : aws_s3_bucket.content.bucket
+  lambda_s3_permissions = {
+    catalog = {
+      actions       = ["s3:PutObject"]
+      object_prefix = "catalog/lecciones/*"
+    }
+    flashcards = {
+      actions       = ["s3:GetObject"]
+      object_prefix = "catalog/lecciones/*"
+    }
+    gamification = {
+      actions       = ["s3:GetObject", "s3:PutObject"]
+      object_prefix = "certificados/*"
+    }
+  }
+  active_lambda_s3_permissions = {
+    for domain, permissions in local.lambda_s3_permissions : domain => permissions
+    if contains(local.lambda_domains, domain)
+  }
+  api_domains = local.public_mode ? toset([
+    for domain in local.ready_api_domains : domain
+    if(domain != "payments" || local.payments_events_enabled) &&
+    (domain != "enrollment-progress" || local.enrollment_enabled) &&
+    (domain != "identity-access" || local.identity_events_enabled) &&
+    (domain != "flashcards" || local.flashcards_enabled) &&
+    (domain != "gamification" || (local.gamification_events_enabled && local.gamification_certificates_enabled)) &&
+    (domain != "affiliates" || local.affiliate_events_enabled) &&
+    (domain != "iot-terminals" || local.iot_enabled)
+  ]) : toset([])
+  artifact_bucket = var.lambda_artifact_bucket != "" ? var.lambda_artifact_bucket : aws_s3_bucket.content.bucket
   api_prefixes = {
     "identity-access"     = "/api/identity/{proxy+}"
     "catalog"             = "/api/catalog/{proxy+}"
@@ -46,6 +98,77 @@ locals {
     "affiliates"          = "/api/affiliates/{proxy+}"
     "iot-terminals"       = "/api/iot/{proxy+}"
   }
+}
+
+locals {
+  active_dlqs = merge(
+    local.payments_events_enabled ? { payments = { name = aws_sqs_queue.payments_events_dlq[0].name } } : {},
+    local.payments_events_enabled ? { payments_webhooks = { name = aws_sqs_queue.payments_webhooks_dlq[0].name } } : {},
+    local.enrollment_enabled ? { enrollment = { name = aws_sqs_queue.enrollment_events_dlq[0].name } } : {},
+    local.identity_events_enabled ? { identity = { name = aws_sqs_queue.identity_events_dlq[0].name } } : {},
+    local.flashcards_enabled ? {
+      flashcards            = { name = aws_sqs_queue.flashcards_events_dlq[0].name }
+      flashcards_generation = { name = aws_sqs_queue.flashcards_generation_dlq[0].name }
+    } : {},
+    local.gamification_events_enabled ? {
+      gamification              = { name = aws_sqs_queue.gamification_events_dlq[0].name }
+      gamification_certificates = { name = aws_sqs_queue.gamification_certificates_dlq[0].name }
+    } : {},
+    local.affiliate_events_enabled ? { affiliates = { name = aws_sqs_queue.affiliates_dlq[0].name } } : {},
+    local.iot_enabled ? { iot = { name = aws_sqs_queue.iot_events_dlq[0].name } } : {},
+  )
+
+  eventbridge_dlq_targets = merge(
+    local.payments_events_enabled ? {
+      payments = {
+        queue_url = aws_sqs_queue.payments_events_dlq[0].id
+        queue_arn = aws_sqs_queue.payments_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.payments_catalog[0].arn
+      }
+    } : {},
+    local.enrollment_enabled ? {
+      enrollment = {
+        queue_url = aws_sqs_queue.enrollment_events_dlq[0].id
+        queue_arn = aws_sqs_queue.enrollment_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.enrollment_events[0].arn
+      }
+    } : {},
+    local.identity_events_enabled ? {
+      identity = {
+        queue_url = aws_sqs_queue.identity_events_dlq[0].id
+        queue_arn = aws_sqs_queue.identity_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.identity_events[0].arn
+      }
+    } : {},
+    local.flashcards_enabled ? {
+      flashcards = {
+        queue_url = aws_sqs_queue.flashcards_events_dlq[0].id
+        queue_arn = aws_sqs_queue.flashcards_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.flashcards_events[0].arn
+      }
+    } : {},
+    local.gamification_events_enabled ? {
+      gamification = {
+        queue_url = aws_sqs_queue.gamification_events_dlq[0].id
+        queue_arn = aws_sqs_queue.gamification_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.gamification_events[0].arn
+      }
+    } : {},
+    local.affiliate_events_enabled ? {
+      affiliates = {
+        queue_url = aws_sqs_queue.affiliates_dlq[0].id
+        queue_arn = aws_sqs_queue.affiliates_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.affiliate_events[0].arn
+      }
+    } : {},
+    local.iot_enabled ? {
+      iot = {
+        queue_url = aws_sqs_queue.iot_events_dlq[0].id
+        queue_arn = aws_sqs_queue.iot_events_dlq[0].arn
+        rule_arn  = aws_cloudwatch_event_rule.iot_affiliate_events[0].arn
+      }
+    } : {},
+  )
 }
 
 resource "aws_dynamodb_table" "domain" {
@@ -279,35 +402,37 @@ resource "aws_iam_role_policy" "amplify_ai" {
   })
 }
 
-resource "aws_sqs_queue" "jobs_dlq" {
-  name                      = "edtech-lowcost-jobs-dlq"
-  message_retention_seconds = 1209600
-  sqs_managed_sse_enabled   = true
-}
-resource "aws_sqs_queue" "jobs" {
-  name                       = "edtech-lowcost-jobs"
-  visibility_timeout_seconds = 210
-  message_retention_seconds  = 345600
-  sqs_managed_sse_enabled    = true
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.jobs_dlq.arn
-    maxReceiveCount     = 4
-  })
-}
 resource "aws_sqs_queue" "payments_events_dlq" {
-  count                     = local.payments_workers_enabled ? 1 : 0
+  count                     = local.payments_events_enabled ? 1 : 0
   name                      = "edtech-lowcost-payments-events-dlq"
   message_retention_seconds = 1209600
   sqs_managed_sse_enabled   = true
 }
 resource "aws_sqs_queue" "payments_events" {
-  count                      = local.payments_workers_enabled ? 1 : 0
+  count                      = local.payments_events_enabled ? 1 : 0
   name                       = "edtech-lowcost-payments-events"
   visibility_timeout_seconds = 180
   message_retention_seconds  = 345600
   sqs_managed_sse_enabled    = true
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.payments_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "payments_webhooks_dlq" {
+  count                     = local.payments_events_enabled ? 1 : 0
+  name                      = "edtech-lowcost-payments-webhooks-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "payments_webhooks" {
+  count                      = local.payments_events_enabled ? 1 : 0
+  name                       = "edtech-lowcost-payments-webhooks"
+  visibility_timeout_seconds = 180
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.payments_webhooks_dlq[0].arn
     maxReceiveCount     = 4
   })
 }
@@ -325,6 +450,92 @@ resource "aws_sqs_queue" "enrollment_events" {
   sqs_managed_sse_enabled    = true
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.enrollment_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "identity_events_dlq" {
+  count                     = local.identity_events_enabled ? 1 : 0
+  name                      = "edtech-lowcost-identity-events-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "identity_events" {
+  count                      = local.identity_events_enabled ? 1 : 0
+  name                       = "edtech-lowcost-identity-events"
+  visibility_timeout_seconds = 180
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.identity_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "flashcards_events_dlq" {
+  count                     = local.flashcards_enabled ? 1 : 0
+  name                      = "edtech-lowcost-flashcards-events-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "flashcards_events" {
+  count = local.flashcards_enabled ? 1 : 0
+  name  = "edtech-lowcost-flashcards-events"
+  # La Lambda compartida con generación tiene timeout de 180 s; SQS requiere 6×.
+  visibility_timeout_seconds = 1080
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.flashcards_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "flashcards_generation_dlq" {
+  count                     = local.flashcards_enabled ? 1 : 0
+  name                      = "edtech-lowcost-flashcards-generation-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "flashcards_generation" {
+  count                      = local.flashcards_enabled ? 1 : 0
+  name                       = "edtech-lowcost-flashcards-generation"
+  visibility_timeout_seconds = 1080
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.flashcards_generation_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "gamification_events_dlq" {
+  count                     = local.gamification_events_enabled ? 1 : 0
+  name                      = "edtech-lowcost-gamification-events-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "gamification_events" {
+  count                      = local.gamification_events_enabled ? 1 : 0
+  name                       = "edtech-lowcost-gamification-events"
+  visibility_timeout_seconds = 180
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.gamification_events_dlq[0].arn
+    maxReceiveCount     = 4
+  })
+}
+resource "aws_sqs_queue" "gamification_certificates_dlq" {
+  count                     = local.gamification_certificates_enabled ? 1 : 0
+  name                      = "edtech-lowcost-gamification-certificates-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
+}
+resource "aws_sqs_queue" "gamification_certificates" {
+  count                      = local.gamification_certificates_enabled ? 1 : 0
+  name                       = "edtech-lowcost-gamification-certificates"
+  visibility_timeout_seconds = 180
+  message_retention_seconds  = 345600
+  sqs_managed_sse_enabled    = true
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.gamification_certificates_dlq[0].arn
     maxReceiveCount     = 4
   })
 }
@@ -371,7 +582,7 @@ resource "aws_iam_role" "iot_rule" {
 }
 resource "aws_iam_role_policy" "iot_rule" {
   count = local.iot_enabled ? 1 : 0
-  name  = "send-terminal-telemetry-to-jobs"
+  name  = "send-terminal-telemetry-to-iot-events"
   role  = aws_iam_role.iot_rule.id
   policy = jsonencode({
     Version   = "2012-10-17"
@@ -381,7 +592,7 @@ resource "aws_iam_role_policy" "iot_rule" {
 resource "aws_iot_topic_rule" "terminal_telemetry" {
   count       = local.iot_enabled ? 1 : 0
   name        = "edtech_lowcost_terminal_telemetry"
-  description = "Envía heartbeats y confirmaciones del terminal virtual a la cola de trabajo."
+  description = "Envía heartbeats y confirmaciones del terminal virtual a la cola de eventos IoT."
   enabled     = true
   sql         = "SELECT * FROM 'edtech/lowcost/terminals/${var.iot_thing_name}/telemetry'"
   sql_version = "2016-03-23"
@@ -393,12 +604,6 @@ resource "aws_iot_topic_rule" "terminal_telemetry" {
   depends_on = [aws_iam_role_policy.iot_rule]
 }
 resource "aws_cloudwatch_event_bus" "main" { name = "edtech-lowcost" }
-resource "aws_cloudwatch_event_rule" "jobs" {
-  name           = "edtech-lowcost-domain-events"
-  event_bus_name = aws_cloudwatch_event_bus.main.name
-  state          = local.workers_enabled ? "ENABLED" : "DISABLED"
-  event_pattern  = jsonencode({ source = [{ prefix = "edtech." }] })
-}
 resource "aws_cloudwatch_event_rule" "affiliate_events" {
   count          = local.affiliate_events_enabled ? 1 : 0
   name           = "edtech-lowcost-affiliate-conversions"
@@ -436,6 +641,7 @@ resource "aws_cloudwatch_event_target" "iot_affiliate_events" {
     maximum_event_age_in_seconds = 3600
     maximum_retry_attempts       = 2
   }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
 }
 resource "aws_sqs_queue_policy" "iot_affiliate_events" {
   count     = local.iot_enabled ? 1 : 0
@@ -462,6 +668,7 @@ resource "aws_cloudwatch_event_target" "affiliate_events" {
     maximum_event_age_in_seconds = 3600
     maximum_retry_attempts       = 2
   }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
 }
 resource "aws_sqs_queue_policy" "affiliate_events" {
   count     = local.affiliate_events_enabled ? 1 : 0
@@ -477,35 +684,11 @@ resource "aws_sqs_queue_policy" "affiliate_events" {
     }]
   })
 }
-resource "aws_cloudwatch_event_target" "jobs" {
-  rule           = aws_cloudwatch_event_rule.jobs.name
-  event_bus_name = aws_cloudwatch_event_bus.main.name
-  target_id      = "lowcost-jobs-queue"
-  arn            = aws_sqs_queue.jobs.arn
-  dead_letter_config { arn = aws_sqs_queue.jobs_dlq.arn }
-  retry_policy {
-    maximum_event_age_in_seconds = 3600
-    maximum_retry_attempts       = 2
-  }
-}
-resource "aws_sqs_queue_policy" "jobs_events" {
-  queue_url = aws_sqs_queue.jobs.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "events.amazonaws.com" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.jobs.arn
-      Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.jobs.arn } }
-    }]
-  })
-}
 resource "aws_cloudwatch_event_rule" "payments_catalog" {
-  count          = local.payments_workers_enabled ? 1 : 0
+  count          = local.payments_events_enabled ? 1 : 0
   name           = "edtech-lowcost-payments-catalog-prices"
   event_bus_name = aws_cloudwatch_event_bus.main.name
-  state          = local.payments_workers_enabled ? "ENABLED" : "DISABLED"
+  state          = local.payments_events_enabled ? "ENABLED" : "DISABLED"
   event_pattern = jsonencode({
     "detail-type" = [
       "catalog.curso-publicado.v1",
@@ -515,7 +698,7 @@ resource "aws_cloudwatch_event_rule" "payments_catalog" {
   })
 }
 resource "aws_cloudwatch_event_target" "payments_catalog" {
-  count          = local.payments_workers_enabled ? 1 : 0
+  count          = local.payments_events_enabled ? 1 : 0
   rule           = aws_cloudwatch_event_rule.payments_catalog[0].name
   event_bus_name = aws_cloudwatch_event_bus.main.name
   target_id      = "payments-course-price-projection"
@@ -525,6 +708,7 @@ resource "aws_cloudwatch_event_target" "payments_catalog" {
     maximum_event_age_in_seconds = 3600
     maximum_retry_attempts       = 2
   }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
 }
 resource "aws_cloudwatch_event_rule" "enrollment_events" {
   count          = local.enrollment_enabled ? 1 : 0
@@ -552,6 +736,125 @@ resource "aws_cloudwatch_event_target" "enrollment_events" {
     maximum_event_age_in_seconds = 3600
     maximum_retry_attempts       = 2
   }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
+}
+resource "aws_cloudwatch_event_rule" "identity_events" {
+  count          = local.identity_events_enabled ? 1 : 0
+  name           = "edtech-lowcost-identity-level-events"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  state          = "ENABLED"
+  event_pattern = jsonencode({
+    "detail-type" = [
+      "enrollment.curso-completado.v1",
+      "enrollment.test-nivelacion-completado.v1",
+    ]
+  })
+}
+resource "aws_cloudwatch_event_target" "identity_events" {
+  count          = local.identity_events_enabled ? 1 : 0
+  rule           = aws_cloudwatch_event_rule.identity_events[0].name
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  target_id      = "identity-level-events-queue"
+  arn            = aws_sqs_queue.identity_events[0].arn
+  dead_letter_config { arn = aws_sqs_queue.identity_events_dlq[0].arn }
+  retry_policy {
+    maximum_event_age_in_seconds = 3600
+    maximum_retry_attempts       = 2
+  }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
+}
+resource "aws_sqs_queue_policy" "identity_events" {
+  count     = local.identity_events_enabled ? 1 : 0
+  queue_url = aws_sqs_queue.identity_events[0].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.identity_events[0].arn
+      Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.identity_events[0].arn } }
+    }]
+  })
+}
+resource "aws_cloudwatch_event_rule" "flashcards_events" {
+  count          = local.flashcards_enabled ? 1 : 0
+  name           = "edtech-lowcost-flashcards-content-updates"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  state          = "ENABLED"
+  event_pattern = jsonencode({
+    "detail-type" = ["catalog.contenido-actualizado.v1"]
+  })
+}
+resource "aws_cloudwatch_event_target" "flashcards_events" {
+  count          = local.flashcards_enabled ? 1 : 0
+  rule           = aws_cloudwatch_event_rule.flashcards_events[0].name
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  target_id      = "flashcards-content-events-queue"
+  arn            = aws_sqs_queue.flashcards_events[0].arn
+  dead_letter_config { arn = aws_sqs_queue.flashcards_events_dlq[0].arn }
+  retry_policy {
+    maximum_event_age_in_seconds = 3600
+    maximum_retry_attempts       = 2
+  }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
+}
+resource "aws_sqs_queue_policy" "flashcards_events" {
+  count     = local.flashcards_enabled ? 1 : 0
+  queue_url = aws_sqs_queue.flashcards_events[0].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.flashcards_events[0].arn
+      Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.flashcards_events[0].arn } }
+    }]
+  })
+}
+resource "aws_cloudwatch_event_rule" "gamification_events" {
+  count          = local.gamification_events_enabled ? 1 : 0
+  name           = "edtech-lowcost-gamification-achievements"
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  state          = "ENABLED"
+  event_pattern = jsonencode({
+    "detail-type" = [
+      "enrollment.curso-completado.v1",
+      "enrollment.carrera-completada.v1",
+      "enrollment.leccion-completada.v1",
+      "enrollment.tomo-completado.v1",
+      "enrollment.evaluacion-aprobada.v1",
+      "identity.usuario-registrado.v1",
+    ]
+  })
+}
+resource "aws_cloudwatch_event_target" "gamification_events" {
+  count          = local.gamification_events_enabled ? 1 : 0
+  rule           = aws_cloudwatch_event_rule.gamification_events[0].name
+  event_bus_name = aws_cloudwatch_event_bus.main.name
+  target_id      = "gamification-domain-events-queue"
+  arn            = aws_sqs_queue.gamification_events[0].arn
+  dead_letter_config { arn = aws_sqs_queue.gamification_events_dlq[0].arn }
+  retry_policy {
+    maximum_event_age_in_seconds = 3600
+    maximum_retry_attempts       = 2
+  }
+  depends_on = [aws_sqs_queue_policy.eventbridge_dlqs]
+}
+resource "aws_sqs_queue_policy" "gamification_events" {
+  count     = local.gamification_events_enabled ? 1 : 0
+  queue_url = aws_sqs_queue.gamification_events[0].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.gamification_events[0].arn
+      Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.gamification_events[0].arn } }
+    }]
+  })
 }
 resource "aws_sqs_queue_policy" "enrollment_events" {
   count     = local.enrollment_enabled ? 1 : 0
@@ -568,7 +871,7 @@ resource "aws_sqs_queue_policy" "enrollment_events" {
   })
 }
 resource "aws_sqs_queue_policy" "payments_catalog" {
-  count     = local.payments_workers_enabled ? 1 : 0
+  count     = local.payments_events_enabled ? 1 : 0
   queue_url = aws_sqs_queue.payments_events[0].id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -580,6 +883,50 @@ resource "aws_sqs_queue_policy" "payments_catalog" {
       Condition = { ArnEquals = { "aws:SourceArn" = aws_cloudwatch_event_rule.payments_catalog[0].arn } }
     }]
   })
+}
+
+resource "aws_sqs_queue_policy" "eventbridge_dlqs" {
+  for_each  = local.eventbridge_dlq_targets
+  queue_url = each.value.queue_url
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowEventBridgeDeliveryToDlq"
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = each.value.queue_arn
+      Condition = { ArnEquals = { "aws:SourceArn" = each.value.rule_arn } }
+    }]
+  })
+}
+
+resource "aws_sns_topic" "event_alerts" {
+  count = length(local.active_dlqs) > 0 ? 1 : 0
+  name  = "edtech-lowcost-event-alerts"
+}
+
+resource "aws_sns_topic_subscription" "event_alerts" {
+  for_each  = length(local.active_dlqs) > 0 ? toset(var.budget_notification_emails) : toset([])
+  topic_arn = aws_sns_topic.event_alerts[0].arn
+  protocol  = "email"
+  endpoint  = each.value
+}
+
+resource "aws_cloudwatch_metric_alarm" "dlq_messages" {
+  for_each            = local.active_dlqs
+  alarm_name          = "edtech-lowcost-dlq-${each.key}"
+  alarm_description   = "Hay mensajes sin procesar en ${each.value.name}."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  dimensions          = { QueueName = each.value.name }
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 5
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.event_alerts[0].arn]
 }
 
 resource "aws_iam_role" "lambda" {
@@ -609,28 +956,26 @@ resource "aws_iam_role_policy" "lambda_runtime" {
       {
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchGetItem", "dynamodb:BatchWriteItem", "dynamodb:TransactWriteItems"]
-        Resource = [aws_dynamodb_table.domain[each.key].arn, "${aws_dynamodb_table.domain[each.key].arn}/index/*", aws_dynamodb_table.domain["control"].arn, "${aws_dynamodb_table.domain["control"].arn}/index/*"]
+        Resource = [aws_dynamodb_table.domain[each.key].arn, "${aws_dynamodb_table.domain[each.key].arn}/index/*"]
       },
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject"]
-        Resource = "${aws_s3_bucket.content.arn}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["events:PutEvents"]
-        Resource = aws_cloudwatch_event_bus.main.arn
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["sqs:SendMessage"]
-        Resource = aws_sqs_queue.jobs.arn
-      }
     ]
   })
 }
+resource "aws_iam_role_policy" "lambda_s3_content" {
+  for_each = local.active_lambda_s3_permissions
+  name     = "s3-content-${each.key}"
+  role     = aws_iam_role.lambda[each.key].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = each.value.actions
+      Resource = "${aws_s3_bucket.content.arn}/${each.value.object_prefix}"
+    }]
+  })
+}
 resource "aws_iam_role_policy" "affiliate_signing_parameter" {
-  count = local.public_mode && contains(local.ready_api_domains, "affiliates") ? 1 : 0
+  count = contains(local.api_domains, "affiliates") ? 1 : 0
   name  = "read-referral-signing-parameter"
   role  = aws_iam_role.lambda["affiliates"].id
   policy = jsonencode({
@@ -643,8 +988,8 @@ resource "aws_iam_role_policy" "affiliate_signing_parameter" {
   })
 }
 resource "aws_iam_role_policy" "payments_parameters" {
-  count = local.payments_enabled ? 1 : 0
-  name  = "read-referral-verification-parameter"
+  count = contains(local.api_domains, "payments") ? 1 : 0
+  name  = "read-paypal-and-referral-secrets"
   role  = aws_iam_role.lambda["payments"].id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -654,12 +999,16 @@ resource "aws_iam_role_policy" "payments_parameters" {
       Resource = [
         "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${var.referral_verification_parameter_name}",
       ]
+      }, {
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.paypal_secret_name}-*"
     }]
   })
 }
 
 resource "aws_iam_role_policy" "enrollment_catalog_invoke" {
-  count = local.public_mode && contains(local.ready_api_domains, "enrollment-progress") ? 1 : 0
+  count = local.enrollment_enabled ? 1 : 0
   name  = "invoke-private-catalog-tasks"
   role  = aws_iam_role.lambda["enrollment-progress"].id
   policy = jsonencode({
@@ -671,16 +1020,45 @@ resource "aws_iam_role_policy" "enrollment_catalog_invoke" {
     }]
   })
 }
+resource "aws_iam_role_policy" "catalog_enrollment_invoke" {
+  count = local.enrollment_enabled ? 1 : 0
+  name  = "verify-active-enrollment"
+  role  = aws_iam_role.lambda["catalog"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["lambda:InvokeFunction"]
+      Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:edtech-lowcost-enrollment-progress"
+    }]
+  })
+}
 resource "aws_iam_role_policy" "payments_event_consumer" {
-  count = local.payments_workers_enabled ? 1 : 0
+  count = local.payments_events_enabled ? 1 : 0
   name  = "consume-catalog-price-events"
   role  = aws_iam_role.lambda["payments"].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
+      Effect = "Allow"
+      Action = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+      Resource = [
+        aws_sqs_queue.payments_events[0].arn,
+        aws_sqs_queue.payments_webhooks[0].arn,
+      ]
+    }]
+  })
+}
+resource "aws_iam_role_policy" "payments_webhook_sender" {
+  count = local.payments_events_enabled ? 1 : 0
+  name  = "enqueue-verified-paypal-webhooks"
+  role  = aws_iam_role.lambda["payments"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
       Effect   = "Allow"
-      Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
-      Resource = aws_sqs_queue.payments_events[0].arn
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.payments_webhooks[0].arn
     }]
   })
 }
@@ -697,8 +1075,66 @@ resource "aws_iam_role_policy" "enrollment_event_consumer" {
     }]
   })
 }
+resource "aws_iam_role_policy" "identity_event_consumer" {
+  count = local.identity_events_enabled ? 1 : 0
+  name  = "consume-identity-and-enrollment-events"
+  role  = aws_iam_role.lambda["identity-access"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+      Resource = aws_sqs_queue.identity_events[0].arn
+    }]
+  })
+}
+resource "aws_iam_role_policy" "flashcards_queues" {
+  count = local.flashcards_enabled ? 1 : 0
+  name  = "consume-content-events-and-generate-flashcards"
+  role  = aws_iam_role.lambda["flashcards"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+        Resource = [aws_sqs_queue.flashcards_events[0].arn, aws_sqs_queue.flashcards_generation[0].arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.flashcards_generation[0].arn
+      },
+    ]
+  })
+}
+resource "aws_iam_role_policy" "gamification_queues" {
+  count = local.gamification_certificates_enabled ? 1 : 0
+  name  = "consume-achievements-and-certificate-jobs"
+  role  = aws_iam_role.lambda["gamification"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      local.gamification_events_enabled ? [{
+        Effect   = "Allow"
+        Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+        Resource = aws_sqs_queue.gamification_events[0].arn
+      }] : [],
+      [{
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.gamification_certificates[0].arn
+      }],
+      local.gamification_certificates_enabled ? [{
+        Effect   = "Allow"
+        Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+        Resource = aws_sqs_queue.gamification_certificates[0].arn
+      }] : [],
+    )
+  })
+}
 resource "aws_iam_role_policy" "flashcards_bedrock" {
-  count = local.ai_enabled && contains(local.ready_api_domains, "flashcards") ? 1 : 0
+  count = local.ai_enabled && contains(local.api_domains, "flashcards") ? 1 : 0
   name  = "invoke-nova-micro-flashcards"
   role  = aws_iam_role.lambda["flashcards"].id
   policy = jsonencode({
@@ -753,89 +1189,6 @@ resource "aws_iam_role_policy" "affiliate_event_consumer" {
   })
 }
 
-resource "aws_iam_role" "worker" {
-  name = "edtech-lowcost-worker-lambda"
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [{ Effect = "Allow", Principal = { Service = "lambda.amazonaws.com" }, Action = "sts:AssumeRole" }]
-  })
-}
-resource "aws_iam_role_policy_attachment" "worker_logs" {
-  role       = aws_iam_role.worker.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-resource "aws_iam_role_policy" "worker_runtime" {
-  name = "runtime"
-  role = aws_iam_role.worker.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      { Effect = "Allow", Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:TransactWriteItems"], Resource = [for table in aws_dynamodb_table.domain : "${table.arn}*"] },
-      { Effect = "Allow", Action = ["events:PutEvents"], Resource = aws_cloudwatch_event_bus.main.arn },
-      { Effect = "Allow", Action = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"], Resource = aws_sqs_queue.jobs.arn },
-      { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.content.arn}/*" },
-    ]
-  })
-}
-resource "aws_iam_role_policy" "worker_transcribe" {
-  count = local.ai_enabled ? 1 : 0
-  name  = "process-approved-transcription-jobs"
-  role  = aws_iam_role.worker.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["transcribe:StartTranscriptionJob", "transcribe:GetTranscriptionJob", "transcribe:DeleteTranscriptionJob"]
-      Resource = "*"
-    }]
-  })
-}
-resource "aws_iam_role_policy" "worker_ai" {
-  count = local.ai_enabled ? 1 : 0
-  name  = "invoke-approved-bedrock-model"
-  role  = aws_iam_role.worker.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["bedrock:InvokeModel"]
-      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/amazon.nova-micro-v1:0"
-    }]
-  })
-}
-resource "aws_lambda_function" "worker" {
-  count                          = local.workers_enabled ? 1 : 0
-  function_name                  = "edtech-lowcost-worker"
-  role                           = aws_iam_role.worker.arn
-  runtime                        = "nodejs22.x"
-  handler                        = "worker.handler"
-  architectures                  = ["arm64"]
-  memory_size                    = 512
-  timeout                        = 180
-  s3_bucket                      = local.artifact_bucket
-  s3_key                         = "${var.lambda_artifact_prefix}/worker.zip"
-  reserved_concurrent_executions = local.workers_enabled ? 1 : 0
-  environment {
-    variables = {
-      NODE_ENV       = "production"
-      PERSISTENCE    = "dynamodb"
-      CONTROL_TABLE  = aws_dynamodb_table.domain["control"].name
-      CONTENT_BUCKET = aws_s3_bucket.content.bucket
-      EVENT_BUS_NAME = aws_cloudwatch_event_bus.main.name
-      AI_ENABLED     = tostring(local.ai_enabled)
-    }
-  }
-  depends_on = [aws_iam_role_policy_attachment.worker_logs]
-}
-resource "aws_lambda_event_source_mapping" "jobs" {
-  count                              = local.workers_enabled ? 1 : 0
-  event_source_arn                   = aws_sqs_queue.jobs.arn
-  function_name                      = aws_lambda_function.worker[0].arn
-  batch_size                         = 5
-  maximum_batching_window_in_seconds = 2
-  function_response_types            = ["ReportBatchItemFailures"]
-  enabled                            = true
-}
 resource "aws_lambda_event_source_mapping" "affiliate_events" {
   count                              = local.affiliate_events_enabled ? 1 : 0
   event_source_arn                   = aws_sqs_queue.affiliates[0].arn
@@ -861,7 +1214,7 @@ resource "aws_lambda_event_source_mapping" "iot_events" {
   ]
 }
 resource "aws_lambda_event_source_mapping" "payments_events" {
-  count                              = local.payments_workers_enabled ? 1 : 0
+  count                              = local.payments_events_enabled ? 1 : 0
   event_source_arn                   = aws_sqs_queue.payments_events[0].arn
   function_name                      = aws_lambda_function.api["payments"].arn
   batch_size                         = 5
@@ -871,6 +1224,19 @@ resource "aws_lambda_event_source_mapping" "payments_events" {
   depends_on = [
     aws_sqs_queue_policy.payments_catalog,
     aws_iam_role_policy.payments_event_consumer,
+  ]
+}
+resource "aws_lambda_event_source_mapping" "payments_webhooks" {
+  count                              = local.payments_events_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.payments_webhooks[0].arn
+  function_name                      = aws_lambda_function.api["payments"].arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 1
+  enabled                            = true
+  depends_on = [
+    aws_iam_role_policy.payments_event_consumer,
+    aws_iam_role_policy.payments_webhook_sender,
   ]
 }
 resource "aws_lambda_event_source_mapping" "enrollment_events" {
@@ -887,6 +1253,65 @@ resource "aws_lambda_event_source_mapping" "enrollment_events" {
     aws_iam_role_policy.enrollment_catalog_invoke,
   ]
 }
+resource "aws_lambda_event_source_mapping" "identity_events" {
+  count                              = local.identity_events_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.identity_events[0].arn
+  function_name                      = aws_lambda_function.api["identity-access"].arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 2
+  enabled                            = true
+  depends_on = [
+    aws_sqs_queue_policy.identity_events,
+    aws_iam_role_policy.identity_event_consumer,
+  ]
+}
+resource "aws_lambda_event_source_mapping" "flashcards_events" {
+  count                              = local.flashcards_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.flashcards_events[0].arn
+  function_name                      = aws_lambda_function.api["flashcards"].arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 2
+  enabled                            = true
+  depends_on = [
+    aws_sqs_queue_policy.flashcards_events,
+    aws_iam_role_policy.flashcards_queues,
+  ]
+}
+resource "aws_lambda_event_source_mapping" "flashcards_generation" {
+  count                              = local.flashcards_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.flashcards_generation[0].arn
+  function_name                      = aws_lambda_function.api["flashcards"].arn
+  batch_size                         = 1
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 0
+  enabled                            = true
+  depends_on                         = [aws_iam_role_policy.flashcards_queues]
+}
+resource "aws_lambda_event_source_mapping" "gamification_events" {
+  count                              = local.gamification_events_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.gamification_events[0].arn
+  function_name                      = aws_lambda_function.api["gamification"].arn
+  batch_size                         = 5
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 2
+  enabled                            = true
+  depends_on = [
+    aws_sqs_queue_policy.gamification_events,
+    aws_iam_role_policy.gamification_queues,
+  ]
+}
+resource "aws_lambda_event_source_mapping" "gamification_certificates" {
+  count                              = local.gamification_certificates_enabled ? 1 : 0
+  event_source_arn                   = aws_sqs_queue.gamification_certificates[0].arn
+  function_name                      = aws_lambda_function.api["gamification"].arn
+  batch_size                         = 1
+  function_response_types            = ["ReportBatchItemFailures"]
+  maximum_batching_window_in_seconds = 0
+  enabled                            = true
+  depends_on                         = [aws_iam_role_policy.gamification_queues]
+}
 
 resource "aws_iam_role" "scheduler" {
   name = "edtech-lowcost-scheduler"
@@ -895,34 +1320,8 @@ resource "aws_iam_role" "scheduler" {
     Statement = [{ Effect = "Allow", Principal = { Service = "scheduler.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
 }
-resource "aws_iam_role_policy" "scheduler" {
-  count = local.workers_enabled ? 1 : 0
-  name  = "invoke-worker"
-  role  = aws_iam_role.scheduler.id
-  policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [{ Effect = "Allow", Action = ["lambda:InvokeFunction"], Resource = aws_lambda_function.worker[0].arn }]
-  })
-}
-resource "aws_scheduler_schedule" "expire_orders" {
-  count                        = local.workers_enabled ? 1 : 0
-  name                         = "edtech-lowcost-expire-orders"
-  schedule_expression          = "rate(15 minutes)"
-  schedule_expression_timezone = "UTC"
-  state                        = local.workers_enabled ? "ENABLED" : "DISABLED"
-  flexible_time_window { mode = "OFF" }
-  target {
-    arn      = aws_lambda_function.worker[0].arn
-    role_arn = aws_iam_role.scheduler.arn
-    input    = jsonencode({ task = "expire-orders" })
-    retry_policy {
-      maximum_event_age_in_seconds = 3600
-      maximum_retry_attempts       = 2
-    }
-  }
-}
 resource "aws_iam_role_policy" "scheduler_payments" {
-  count = local.payments_workers_enabled ? 1 : 0
+  count = local.payments_events_enabled ? 1 : 0
   name  = "invoke-payments-expiration"
   role  = aws_iam_role.scheduler.id
   policy = jsonencode({
@@ -935,11 +1334,11 @@ resource "aws_iam_role_policy" "scheduler_payments" {
   })
 }
 resource "aws_scheduler_schedule" "expire_payment_orders" {
-  count                        = local.payments_workers_enabled ? 1 : 0
+  count                        = local.payments_events_enabled ? 1 : 0
   name                         = "edtech-lowcost-expire-payment-orders"
   schedule_expression          = "rate(15 minutes)"
   schedule_expression_timezone = "UTC"
-  state                        = local.payments_workers_enabled ? "ENABLED" : "DISABLED"
+  state                        = local.payments_events_enabled ? "ENABLED" : "DISABLED"
   flexible_time_window { mode = "OFF" }
   target {
     arn      = aws_lambda_function.api["payments"].arn
@@ -1035,7 +1434,7 @@ resource "aws_lambda_event_source_mapping" "outbox" {
 }
 
 resource "aws_lambda_function" "api" {
-  for_each      = local.public_mode ? local.ready_api_domains : toset([])
+  for_each      = local.api_domains
   function_name = "edtech-lowcost-${each.key}"
   role          = aws_iam_role.lambda[each.key].arn
   runtime       = "nodejs22.x"
@@ -1057,12 +1456,20 @@ resource "aws_lambda_function" "api" {
       COGNITO_ISSUER                       = var.cognito_issuer
       COGNITO_CLIENT_ID                    = var.cognito_client_id
       COGNITO_JWKS_URI                     = var.cognito_jwks_uri
+      ENROLLMENT_FUNCTION_NAME             = each.key == "catalog" ? "edtech-lowcost-enrollment-progress" : ""
       REFERRAL_SIGNING_PARAMETER_NAME      = each.key == "affiliates" ? var.referral_signing_parameter_name : ""
       REFERRAL_VERIFICATION_PARAMETER_NAME = each.key == "payments" ? var.referral_verification_parameter_name : ""
+      PAYPAL_SECRET_NAME                   = each.key == "payments" ? var.paypal_secret_name : ""
+      QUEUE_WEBHOOKS_URL                   = local.payments_events_enabled && each.key == "payments" ? aws_sqs_queue.payments_webhooks[0].url : ""
+      URL_BASE                             = each.key == "payments" ? "https://${var.amplify_branch_name}.${var.amplify_default_domain}" : ""
       CONTROL_TABLE                        = aws_dynamodb_table.domain["control"].name
       CONTENT_BUCKET                       = aws_s3_bucket.content.bucket
+      BUCKET_MEDIA                         = aws_s3_bucket.content.bucket
       EVENT_BUS_NAME                       = aws_cloudwatch_event_bus.main.name
-      JOBS_QUEUE_URL                       = aws_sqs_queue.jobs.url
+      QUEUE_URL                            = local.flashcards_enabled && each.key == "flashcards" ? aws_sqs_queue.flashcards_events[0].url : ""
+      QUEUE_GENERACION_URL                 = local.flashcards_enabled && each.key == "flashcards" ? aws_sqs_queue.flashcards_generation[0].url : ""
+      QUEUE_CERTIFICADOS_URL               = local.gamification_certificates_enabled && each.key == "gamification" ? aws_sqs_queue.gamification_certificates[0].url : ""
+      GENERADOR_FLASHCARDS                 = local.ai_enabled && each.key == "flashcards" ? "bedrock" : "fake"
       LOWCOST_MODE                         = var.operation_mode
       AI_ENABLED                           = tostring(local.ai_enabled)
       IOT_ENABLED                          = tostring(local.iot_enabled)
@@ -1079,14 +1486,20 @@ resource "aws_lambda_function" "api" {
       condition     = startswith(var.cognito_issuer, "https://") && var.cognito_client_id != "" && startswith(var.cognito_jwks_uri, "https://")
       error_message = "Configura issuer HTTPS, client ID y JWKS HTTPS de Cognito antes de habilitar una API."
     }
+    precondition {
+      condition     = each.key != "payments" || (trimspace(var.paypal_secret_name) != "" && trimspace(var.amplify_default_domain) != "")
+      error_message = "Payments requiere el nombre del secreto PayPal y el dominio de Amplify para construir retornos HTTPS."
+    }
   }
   depends_on = [
     aws_iam_role_policy_attachment.lambda_logs,
     aws_iam_role_policy.affiliate_signing_parameter,
     aws_iam_role_policy.payments_parameters,
+    aws_iam_role_policy.payments_webhook_sender,
     aws_iam_role_policy.enrollment_event_consumer,
     aws_iam_role_policy.iot_data_plane,
     aws_iam_role_policy.enrollment_catalog_invoke,
+    aws_iam_role_policy.catalog_enrollment_invoke,
   ]
 }
 
@@ -1167,7 +1580,8 @@ resource "aws_amplify_branch" "production" {
     COGNITO_REGION              = var.aws_region
     COGNITO_DOMINIO             = var.cognito_domain
     COGNITO_CLIENT_ID           = var.cognito_client_id
-    EDTECH_AFFILIATES_ENABLED   = tostring(local.public_mode && contains(local.ready_api_domains, "affiliates"))
+    COGNITO_ISSUER              = var.cognito_issuer
+    EDTECH_AFFILIATES_ENABLED   = tostring(contains(local.api_domains, "affiliates"))
     EDTECH_AI_ENABLED           = tostring(local.ai_enabled)
     EDTECH_CONTROL_TABLE        = aws_dynamodb_table.domain["control"].name
     EDTECH_AUDIO_BUCKET         = aws_s3_bucket.content.bucket
@@ -1184,7 +1598,7 @@ resource "aws_cloudwatch_log_group" "api" {
   retention_in_days = 7
 }
 resource "aws_lambda_permission" "api" {
-  for_each      = local.public_mode ? local.ready_api_domains : toset([])
+  for_each      = local.api_domains
   statement_id  = "AllowHttpApiInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api[each.key].function_name
@@ -1192,14 +1606,14 @@ resource "aws_lambda_permission" "api" {
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }
 resource "aws_apigatewayv2_integration" "api" {
-  for_each               = local.public_mode ? local.ready_api_domains : toset([])
+  for_each               = local.api_domains
   api_id                 = aws_apigatewayv2_api.http.id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.api[each.key].invoke_arn
   payload_format_version = "2.0"
 }
 resource "aws_apigatewayv2_route" "api" {
-  for_each  = { for domain, prefix in local.api_prefixes : domain => prefix if local.public_mode && contains(local.ready_api_domains, domain) }
+  for_each  = { for domain, prefix in local.api_prefixes : domain => prefix if contains(local.api_domains, domain) }
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "ANY ${each.value}"
   target    = "integrations/${aws_apigatewayv2_integration.api[each.key].id}"

@@ -10,6 +10,7 @@ if (
     'enrollment-progress',
     'identity-access',
     'flashcards',
+    'gamification',
     'iot-terminals',
     'payments',
     'outbox',

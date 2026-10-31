@@ -20,7 +20,7 @@ import type { GeneradorFlashcardsPort } from '../../domain/ports-out/generador-f
 const CURSO = crypto.randomUUID()
 const TOMO = crypto.randomUUID()
 const HASH = 'hash-contenido-original'
-const ADMIN = crypto.randomUUID()
+const DOCENTE = crypto.randomUUID()
 
 const montar = (
   generador: GeneradorFlashcardsPort & { llamadas: number } = new GeneradorDePrueba(),
@@ -97,7 +97,7 @@ describe('Flujo completo: generación → HITL → estudiante (I-8)', () => {
         _tag: 'AprobarTarjeta',
         mazoId,
         tarjetaId: tarjeta.id,
-        revisorId: ADMIN,
+        revisorId: DOCENTE,
       })
       expect(r.ok).toBe(true)
     }
@@ -124,14 +124,14 @@ describe('Flujo completo: generación → HITL → estudiante (I-8)', () => {
       _tag: 'AprobarTarjeta',
       mazoId,
       tarjetaId: mazo!.tarjetas[0]!.id,
-      revisorId: ADMIN,
+      revisorId: DOCENTE,
     })
 
     const sinMotivo = await rechazar.execute({
       _tag: 'RechazarTarjeta',
       mazoId,
       tarjetaId: mazo!.tarjetas[1]!.id,
-      revisorId: ADMIN,
+      revisorId: DOCENTE,
       motivo: '   ',
     })
     expect(sinMotivo.ok).toBe(false)
@@ -141,7 +141,7 @@ describe('Flujo completo: generación → HITL → estudiante (I-8)', () => {
       _tag: 'RechazarTarjeta',
       mazoId,
       tarjetaId: mazo!.tarjetas[1]!.id,
-      revisorId: ADMIN,
+      revisorId: DOCENTE,
       motivo: 'La respuesta inventa un método que no existe',
     })
 
@@ -160,7 +160,7 @@ describe('Flujo completo: generación → HITL → estudiante (I-8)', () => {
       _tag: 'AprobarTarjeta',
       mazoId,
       tarjetaId: mazo!.tarjetas[0]!.id,
-      revisorId: ADMIN,
+      revisorId: DOCENTE,
       edicion: { anverso: 'Pregunta corregida', reverso: 'Respuesta corregida' },
     })
 
@@ -197,7 +197,7 @@ describe('Caché por hash (doc 10 §5)', () => {
       _tag: 'AprobarTarjeta',
       mazoId: v1!.id.valor,
       tarjetaId: v1!.tarjetas[0]!.id,
-      revisorId: ADMIN,
+      revisorId: DOCENTE,
     })
 
     const nueva = await solicitar.execute(solicitud('hash-contenido-editado'))

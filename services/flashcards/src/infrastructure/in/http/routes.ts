@@ -45,10 +45,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
-  const admin = [auth, requiereRol('admin')]
+  const admin = [auth, requiereRol('docente')]
 
   /** Estudiante: SOLO tarjetas PUBLICADA — el filtro está en el repositorio (I-8). */
-  router.get('/tomos/:tomoId', auth, async (req, res) => {
+  router.get('/tomos/:tomoId', auth, requiereRol('estudiante'), async (req, res) => {
     responder(
       res,
       await queries.dispatch({ _tag: 'TarjetasDeTomo', tomoId: req.params.tomoId ?? '' }),

@@ -22,7 +22,7 @@ Reglas de negocio:
 - Un **curso** se completa cuando todos sus tomos están completados → emite
   **insignia + certificado menor**.
 - El catálogo inicial cubre **HTML, CSS y Express**, agrupados en la carrera
-  *"Desarrollo Web desde Cero"*.
+  _"Desarrollo Web desde Cero"_.
 
 ## 2. Escala de niveles A-N (D11)
 
@@ -30,19 +30,19 @@ El mega-prompt dejaba la escala "a definir". Queda fijada así: **14 niveles (A-
 agrupados en 4 tramos**. El tramo es lo que ve el estudiante; la letra es lo que usa el
 motor de recomendación.
 
-| Tramo | Niveles | Qué significa | Ejemplo de curso |
-|---|---|---|---|
-| **Fundamentos** | A · B · C · D | No ha escrito código nunca o solo copió snippets | HTML Esencial (A-B), CSS Esencial (C-D) |
-| **Intermedio** | E · F · G · H | Construye páginas completas, entiende el modelo de caja y el DOM | CSS Layout (E-F), JavaScript del navegador (G-H) |
-| **Avanzado** | I · J · K | Programa del lado servidor, entiende HTTP y persistencia | Express y APIs REST (I-J), Bases de datos (K) |
-| **Profesional** | L · M · N | Arquitectura, pruebas, despliegue | Testing y CI (L), Arquitectura de aplicaciones (M-N) |
+| Tramo           | Niveles       | Qué significa                                                    | Ejemplo de curso                                     |
+| --------------- | ------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
+| **Fundamentos** | A · B · C · D | No ha escrito código nunca o solo copió snippets                 | HTML Esencial (A-B), CSS Esencial (C-D)              |
+| **Intermedio**  | E · F · G · H | Construye páginas completas, entiende el modelo de caja y el DOM | CSS Layout (E-F), JavaScript del navegador (G-H)     |
+| **Avanzado**    | I · J · K     | Programa del lado servidor, entiende HTTP y persistencia         | Express y APIs REST (I-J), Bases de datos (K)        |
+| **Profesional** | L · M · N     | Arquitectura, pruebas, despliegue                                | Testing y CI (L), Arquitectura de aplicaciones (M-N) |
 
 **Cómo se asigna el nivel.** El test de nivelación son 20 preguntas de dificultad creciente
 etiquetadas con su nivel A-N. El nivel asignado es **el nivel más alto en el que el
 estudiante acertó ≥ 60 % de las preguntas de ese nivel y de todos los anteriores**. Si no
 alcanza el umbral en ningún nivel → **A**. El estudiante puede **saltar el test** y elegir
 tramo manualmente; queda registrado como `origen_nivel = AUTODECLARADO`, que el dashboard
-del admin distingue de `TEST`.
+del docente distingue de `TEST`.
 
 **Regla de no-castigo.** El nivel nunca baja automáticamente. Solo sube: al completar un
 curso, el nivel del estudiante pasa a `max(nivel_actual, nivel_max_del_curso)`.
@@ -72,12 +72,13 @@ progreso por curso, y el **panel de flashcards** de repaso de lo ya cursado.
 
 ## 4. Vistas de usuario
 
-| Rol (grupo Cognito) | Puede |
-|---|---|
-| `estudiante` | Ver catálogo, hacer el test, comprar, consumir cursos, hacer evaluaciones, ver su progreso, insignias y certificados, repasar con flashcards |
-| `admin` | Todo lo del estudiante + crear/editar/publicar carreras, cursos, tomos, lecciones y bancos de preguntas · fijar precios · **aprobar, editar o rechazar flashcards generadas por IA** · ver métricas de matrícula y pagos |
+| Rol (grupo Cognito) | Puede                                                                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `estudiante`        | Cliente/estudiante: ver catálogo, comprar, consumir cursos, hacer evaluaciones, ver progreso, insignias y certificados, repasar con flashcards |
+| `docente`           | Gestionar globalmente cursos, rutas, evaluaciones, flashcards, estudiantes y métricas                                                          |
+| `afiliado`          | Usar su panel, QR, enlaces e ingresos de afiliación                                                                                            |
 
-No hay rol "instructor" en Fase 1: el admin es el cliente que gestiona su propio catálogo.
+Cada correo conserva un único rol de aplicación. Para usar otro rol se registra otra cuenta con otro correo. Las cuentas docentes se aprovisionan por el equipo; el registro público no concede permisos de gestión.
 
 ## 5. Los seis bounded contexts
 
@@ -125,7 +126,7 @@ misma transacción.
   dos veces (idempotente) · un intento de evaluación es inmutable una vez entregado ·
   el tomo se completa **solo** si todas sus lecciones están completas y la evaluación
   aprobada · la matrícula solo se habilita por `PagoConfirmadoEvent` o por alta manual del
-  admin (cursos gratuitos), nunca por una llamada del frontend.
+  docente (cursos gratuitos), nunca por una llamada del frontend.
 - **Publica:** `MatriculaCreadaEvent`, `LeccionCompletadaEvent`, `TomoCompletadoEvent`,
   `CursoCompletadoEvent`, `CarreraCompletadaEvent`, `EvaluacionAprobadaEvent`,
   `EvaluacionReprobadaEvent`, `TestNivelacionCompletadoEvent`.
@@ -159,7 +160,7 @@ misma transacción.
   proyecta).
 - **Agregado raíz:** `MazoFlashcards`.
 - **Invariantes:** ninguna tarjeta llega al estudiante sin pasar por `publicada` (HITL, sin
-  excepción ni bypass de admin en caliente) · una regeneración no borra tarjetas ya
+  excepción ni bypass docente en caliente) · una regeneración no borra tarjetas ya
   publicadas: crea una versión nueva del mazo y la deja en revisión · el hash del contenido
   fuente decide si hace falta regenerar (caché, doc 10 §5).
 - **Publica:** `MazoGeneradoEvent`, `MazoPublicadoEvent`, `TarjetaRechazadaEvent`.

@@ -87,7 +87,7 @@ export class Matricula extends AggregateRoot {
     tomo: TomoProyectado,
     ahora: Date,
   ): Result<void, EnrollmentError> {
-    if (this.props.estado !== 'ACTIVA') return Err(new MatriculaNoActivaError(this.props.id.valor))
+    if (!this.tieneAcceso(ahora)) return Err(new MatriculaNoActivaError(this.props.id.valor))
     if (this.props.leccionesCompletadas.has(leccionId)) return Ok(undefined) // idempotente
     if (!tomo.leccionIds.includes(leccionId)) return Err(new LeccionFueraDelCursoError(leccionId))
 
@@ -111,9 +111,10 @@ export class Matricula extends AggregateRoot {
     tomo: TomoProyectado,
     evaluacionAprobada: boolean,
     puntaje: number,
+    ahora: Date,
   ): boolean {
     if (this.props.tomosCompletados.has(tomo.id)) return false
-    if (this.props.estado !== 'ACTIVA') return false
+    if (!this.tieneAcceso(ahora)) return false
     if (!evaluacionAprobada) return false
     if (!tomo.leccionIds.every(l => this.props.leccionesCompletadas.has(l))) return false
 
@@ -133,6 +134,7 @@ export class Matricula extends AggregateRoot {
   /** El curso se completa cuando todos sus tomos están completados (doc 02 §1). */
   intentarCompletarCurso(curso: CursoProyectado, ahora: Date): boolean {
     if (this.props.cursoCompletado) return false
+    if (!this.tieneAcceso(ahora)) return false
     if (curso.tomos.length === 0) return false
     if (!curso.tomos.every(t => this.props.tomosCompletados.has(t.id))) return false
 
@@ -157,6 +159,13 @@ export class Matricula extends AggregateRoot {
   revocar(): void {
     if (this.props.estado === 'REVOCADA') return
     this.props.estado = 'REVOCADA'
+  }
+
+  tieneAcceso(ahora: Date): boolean {
+    return (
+      this.props.estado === 'ACTIVA' &&
+      (this.props.accesoHasta === null || this.props.accesoHasta.getTime() > ahora.getTime())
+    )
   }
 
   get id(): UniqueId {

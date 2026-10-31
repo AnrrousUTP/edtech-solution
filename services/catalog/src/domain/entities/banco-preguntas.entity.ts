@@ -19,6 +19,7 @@ type Props = {
   id: UniqueId
   uso: UsoBanco
   tomoId: string | null // NULL si uso = NIVELACION (CHECK del doc 03 §5)
+  cursoId: string | null
   titulo: string
   preguntas: Pregunta[]
 }
@@ -31,16 +32,22 @@ export class BancoPreguntas extends AggregateRoot {
   static crear(datos: {
     uso: UsoBanco
     tomoId: string | null
+    cursoId?: string | null
     titulo: string
   }): Result<BancoPreguntas, CatalogError> {
     const necesitaTomo = datos.uso === 'EVALUACION_TOMO' || datos.uso === 'REFUERZO'
+    const necesitaCurso = datos.uso === 'EVALUACION_INICIAL'
+    const cursoId = datos.cursoId ?? null
     if (necesitaTomo !== (datos.tomoId !== null))
       return Err(new BancoInvalidoError('Solo los bancos de tomo y refuerzo necesitan un tomo'))
+    if (necesitaCurso !== (cursoId !== null) || (necesitaCurso && datos.tomoId !== null))
+      return Err(new BancoInvalidoError('El test inicial necesita un curso y no un tomo'))
     return Ok(
       new BancoPreguntas({
         id: UniqueId.nuevo(),
         uso: datos.uso,
         tomoId: datos.tomoId,
+        cursoId,
         titulo: datos.titulo,
         preguntas: [],
       }),
@@ -73,8 +80,29 @@ export class BancoPreguntas extends AggregateRoot {
   get tomoId(): string | null {
     return this.props.tomoId
   }
+  get cursoId(): string | null {
+    return this.props.cursoId
+  }
   get titulo(): string {
     return this.props.titulo
+  }
+  actualizarConfiguracion(datos: {
+    uso: UsoBanco
+    tomoId: string | null
+    cursoId: string | null
+    titulo: string
+  }): Result<void, CatalogError> {
+    const necesitaTomo = datos.uso === 'EVALUACION_TOMO' || datos.uso === 'REFUERZO'
+    const necesitaCurso = datos.uso === 'EVALUACION_INICIAL'
+    if (necesitaTomo !== (datos.tomoId !== null))
+      return Err(new BancoInvalidoError('Solo los bancos de tomo y refuerzo necesitan un tomo'))
+    if (necesitaCurso !== (datos.cursoId !== null) || (necesitaCurso && datos.tomoId !== null))
+      return Err(new BancoInvalidoError('El test inicial necesita un curso y no un tomo'))
+    this.props.uso = datos.uso
+    this.props.tomoId = datos.tomoId
+    this.props.cursoId = datos.cursoId
+    this.props.titulo = datos.titulo
+    return Ok(undefined)
   }
   get preguntas(): readonly Pregunta[] {
     return this.props.preguntas

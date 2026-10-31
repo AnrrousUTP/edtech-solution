@@ -17,6 +17,7 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   const r = Router()
   r.use(json({ limit: '16kb' }))
   const auth = requiereAuth({ issuer: cfg.issuer, clientId: cfg.clientId, jwksUri: cfg.jwksUri })
+  const afiliado = [auth, requiereRol('afiliado')]
   const wrap =
     (f: (req: Request) => Promise<unknown>) =>
     (req: Request, res: Response, next: NextFunction): void => {
@@ -35,17 +36,17 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   )
   r.get(
     '/me',
-    auth,
+    ...afiliado,
     wrap(req => repo.porUsuario(req.auth!.usuarioId)),
   )
   r.post(
     '/me',
-    auth,
+    ...afiliado,
     wrap(req => repo.activar(req.auth!.usuarioId)),
   )
   r.put(
     '/me',
-    auth,
+    ...afiliado,
     wrap(async req => {
       const slug = req.body?.cursoSlug
       if (slug !== null && (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)))
@@ -56,12 +57,12 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   )
   r.post(
     '/atribucion',
-    auth,
+    ...afiliado,
     wrap(req => handler.prueba(req.auth!.usuarioId, optionalId(req.body?.visitaId))),
   )
   r.get(
     '/ingresos',
-    auth,
+    ...afiliado,
     wrap(req =>
       repo.resumen(
         req.auth!.usuarioId,
@@ -73,12 +74,12 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   )
   r.get(
     '/notificaciones',
-    auth,
+    ...afiliado,
     wrap(req => repo.notificaciones(req.auth!.usuarioId)),
   )
   r.post(
     '/notificaciones/:id/leida',
-    auth,
+    ...afiliado,
     wrap(async req => {
       const id = optionalId(req.params.id)
       if (!id || !(await repo.leerNotificacion(req.auth!.usuarioId, id)))
@@ -89,13 +90,13 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   r.get(
     '/admin',
     auth,
-    requiereRol('admin'),
+    requiereRol('docente'),
     wrap(() => repo.admin()),
   )
   r.put(
     '/admin/:id',
     auth,
-    requiereRol('admin'),
+    requiereRol('docente'),
     wrap(async req => {
       const id = optionalId(req.params.id)
       if (!id || typeof req.body?.activo !== 'boolean')

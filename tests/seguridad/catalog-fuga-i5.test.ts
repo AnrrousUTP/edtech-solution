@@ -1,6 +1,6 @@
 // I-5 (doc 03 §5): respuesta_correcta y solucion_esperada no pueden aparecer en
 // NINGUNA respuesta HTTP pública. Este test levanta el servicio real contra el
-// Postgres y el jwt-local del compose, crea contenido como admin y hace grep
+// Postgres y el jwt-local del compose, crea contenido como docente y hace grep
 // del body como estudiante. Se salta solo si el entorno local no está arriba.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
@@ -27,7 +27,7 @@ describe.skipIf(!entornoArriba)('I-5: fuga de respuestas correctas', () => {
   let detener: (() => void) | null = null
   let tomoId = ''
   let leccionId = ''
-  let adminToken = ''
+  let docenteToken = ''
   let estudianteToken = ''
 
   beforeAll(async () => {
@@ -52,11 +52,11 @@ describe.skipIf(!entornoArriba)('I-5: fuga de respuestas correctas', () => {
     const puerto = (servidor.address() as { port: number }).port
     base = `http://localhost:${puerto}/api/catalog`
 
-    adminToken = await token(['admin'])
+    docenteToken = await token(['docente'])
     estudianteToken = await token(['estudiante'])
 
-    // Crear curso + contenido + banco con respuestas, como admin
-    const auth = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+    // Crear curso + contenido + banco con respuestas, como docente
+    const auth = { Authorization: `Bearer ${docenteToken}`, 'Content-Type': 'application/json' }
     const slugUnico = `fuga-i5-${Date.now()}`
     const creado = (await (
       await fetch(`${base}/admin/cursos`, {

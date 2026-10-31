@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { authLocalDisponible, config, destinoInterno } from '@/lib/config'
-import { COOKIE_ACCESO, COOKIE_PERFIL, claimsDeToken } from '@/lib/sesion'
+import { COOKIE_ACCESO, COOKIE_PERFIL, claimsDeToken, rolDeGrupos } from '@/lib/sesion'
 
 const cookieOptions = { sameSite: 'lax' as const, path: '/', maxAge: 3600 }
 
@@ -36,6 +36,8 @@ const guardarSesion = (
 ): Response => {
   const claimsAcceso = claimsDeToken(tokens.access_token) ?? {}
   const claimsId = tokens.id_token ? (claimsDeToken(tokens.id_token) ?? {}) : {}
+  const rol = rolDeGrupos(claimsAcceso['cognito:groups'])
+  if (!rol) return respuestaError('La sesión local debe tener exactamente un rol válido', 403)
   respuesta.cookies.set(COOKIE_ACCESO, tokens.access_token, { httpOnly: true, ...cookieOptions })
   respuesta.cookies.set(
     COOKIE_PERFIL,
@@ -44,12 +46,11 @@ const guardarSesion = (
         usuarioId: String(claimsAcceso.sub ?? ''),
         email: String(claimsId.email ?? ''),
         nombre: String(claimsId.nombre_visible ?? claimsId.email ?? 'Usuario Local'),
-        roles: Array.isArray(claimsAcceso['cognito:groups'])
-          ? claimsAcceso['cognito:groups']
-          : ['estudiante'],
+        rol,
+        roles: rol ? [rol] : [],
       }),
     ),
-    cookieOptions,
+    { ...cookieOptions, httpOnly: true },
   )
   respuesta.headers.set('x-auth-destino', destino)
   return respuesta
@@ -65,7 +66,10 @@ export const GET = async (peticion: Request): Promise<Response> => {
 
   const url = new URL(peticion.url)
   const destino = destinoInterno(url.searchParams.get('destino'))
-  const rol = url.searchParams.get('rol') === 'admin' ? 'admin' : 'estudiante'
+  const pedido = url.searchParams.get('rol')
+  const rol = ['estudiante', 'docente', 'afiliado'].includes(String(pedido))
+    ? String(pedido)
+    : 'estudiante'
   const sub = url.searchParams.get('sub') ?? crypto.randomUUID()
 
   const respuesta = await fetch(`${config.cognito.issuerLocal}/token`, {
@@ -74,7 +78,12 @@ export const GET = async (peticion: Request): Promise<Response> => {
       sub,
       groups: [rol],
       email: `${rol}@edtech.test`,
-      nombre: rol === 'admin' ? 'Admin Local' : 'Estudiante Local',
+      nombre:
+        rol === 'docente'
+          ? 'Docente Local'
+          : rol === 'afiliado'
+            ? 'Afiliado Local'
+            : 'Estudiante Local',
     }),
   })
   if (!respuesta.ok) return NextResponse.redirect(new URL('/?error=jwt-local', config.appUrl))
@@ -95,11 +104,17 @@ export const GET = async (peticion: Request): Promise<Response> => {
       JSON.stringify({
         usuarioId: String(claims.sub ?? sub),
         email: `${rol}@edtech.test`,
-        nombre: rol === 'admin' ? 'Admin Local' : 'Estudiante Local',
+        nombre:
+          rol === 'docente'
+            ? 'Docente Local'
+            : rol === 'afiliado'
+              ? 'Afiliado Local'
+              : 'Estudiante Local',
+        rol,
         roles: [rol],
       }),
     ),
-    { sameSite: 'lax', path: '/', maxAge: 3600 },
+    { sameSite: 'lax', path: '/', maxAge: 3600, httpOnly: true },
   )
   return redireccion
 }
@@ -113,6 +128,8 @@ export const POST = async (peticion: Request): Promise<Response> => {
 
   if (['register', 'confirm', 'forgot', 'reset'].includes(accion)) {
     const { accion: _accion, destino: _destino, ...datos } = cuerpo
+    if (accion === 'register' && !['estudiante', 'afiliado'].includes(String(datos.rol)))
+      return respuestaError('El rol docente requiere aprovisionamiento del equipo', 400)
     return pedir(accion, datos)
   }
 

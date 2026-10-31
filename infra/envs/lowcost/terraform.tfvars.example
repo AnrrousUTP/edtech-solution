@@ -1,5 +1,5 @@
 content_bucket_name       = "edtech-lowcost-<account-id>-<region>"
-enabled_domains           = ["catalog", "payments", "affiliates", "iot-terminals"]
+enabled_domains           = ["identity-access", "catalog", "enrollment-progress", "gamification", "flashcards", "payments", "affiliates", "iot-terminals"]
 lambda_artifact_prefix    = "lowcost/releases/<immutable-build-id>"
 allowed_origins           = ["https://<amplify-domain>"]
 budget_notification_emails = ["correo-autorizado@example.com"]
@@ -8,11 +8,12 @@ cognito_issuer            = ""
 cognito_client_id         = ""
 cognito_jwks_uri          = ""
 referral_signing_parameter_name = "/edtech/lowcost/affiliate-signing-key"
+paypal_secret_name = "edtech/lowcost/paypal"
 
 # Aplicación gradual: los valores iniciales dejan el servicio sin rutas públicas.
 pause_public_services = true
-enable_workers        = false
-worker_release_ready  = false
+enable_event_consumers        = false
+event_consumers_release_ready = false
 enable_affiliate_events = false
 enable_iot            = false
 enable_ai             = false

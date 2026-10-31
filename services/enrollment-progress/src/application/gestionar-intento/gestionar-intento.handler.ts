@@ -17,6 +17,7 @@ import {
   CursoNoProyectadoError,
   IntentoAjenoError,
   IntentoNoEncontradoError,
+  MatriculaNoActivaError,
   MatriculaNoEncontradaError,
   SinMatriculaError,
   TomoNoEncontradoError,
@@ -59,6 +60,7 @@ export class IniciarIntentoHandler implements CommandHandler<
     cmd: IniciarIntentoCommand,
   ): Promise<Result<IniciarIntentoResponse, EnrollmentError>> {
     const usuarioId = UniqueId.desde(cmd.usuarioId)
+    const ahora = this.reloj.ahora()
     let matriculaId: UniqueId | null = null
 
     if (cmd.tipo !== 'NIVELACION' && cmd.tipo !== 'DIAGNOSTICO_PREVIO') {
@@ -70,6 +72,7 @@ export class IniciarIntentoHandler implements CommandHandler<
         UniqueId.desde(cmd.cursoId),
       )
       if (!matricula) return Err(new SinMatriculaError(cmd.usuarioId, cmd.cursoId))
+      if (!matricula.tieneAcceso(ahora)) return Err(new MatriculaNoActivaError(matricula.id.valor))
       const curso = await this.cursos.porId(cmd.cursoId)
       if (!curso) return Err(new CursoNoProyectadoError(cmd.cursoId))
       if (cmd.tipo !== 'EVALUACION_INICIAL' && cmd.tomoId && !curso.tomoPorId(cmd.tomoId))
@@ -83,7 +86,7 @@ export class IniciarIntentoHandler implements CommandHandler<
       bancoId: UniqueId.desde(cmd.bancoId),
       matriculaId,
       tomoId: cmd.tomoId ?? null,
-      ahora: this.reloj.ahora(),
+      ahora,
     })
     await this.intentos.guardar(intento)
     return Ok({ intentoId: intento.id.valor })
@@ -132,27 +135,36 @@ export class EntregarIntentoHandler implements CommandHandler<
     if (intento.usuarioId.valor !== cmd.usuarioId.toLowerCase())
       return Err(new IntentoAjenoError(cmd.intentoId))
 
+    const ahora = this.reloj.ahora()
+    let matriculaActualizada: Awaited<ReturnType<MatriculaRepository['porId']>> = null
+    if (intento.matriculaId) {
+      matriculaActualizada = await this.matriculas.porId(intento.matriculaId)
+      if (!matriculaActualizada)
+        return Err(new MatriculaNoEncontradaError(intento.matriculaId.valor))
+      if (!matriculaActualizada.tieneAcceso(ahora))
+        return Err(new MatriculaNoActivaError(matriculaActualizada.id.valor))
+    }
+
     // A-19: si catalog no responde, el intento queda EN_CURSO y se reintenta
     const banco = await this.respuestasPort.respuestasDe(intento.bancoId.valor)
     if (isErr(banco)) return Err(banco.error)
 
     const umbral = intento.tipo === 'NIVELACION' ? 60 : (banco.value.umbral ?? 70)
-    const r = intento.entregar(cmd.respuestas, banco.value.preguntas, umbral, this.reloj.ahora())
+    const r = intento.entregar(cmd.respuestas, banco.value.preguntas, umbral, ahora)
     if (isErr(r)) return Err(r.error)
 
     // Preparar el avance antes de persistir la entrega para que el adaptador
     // DynamoDB pueda guardar ambos agregados y sus outbox en una transacción.
     let tomoCompletado = false
     let cursoCompletado = false
-    let matriculaActualizada: Awaited<ReturnType<MatriculaRepository['porId']>> = null
     if (intento.tipo === 'TOMO' && r.value.aprobado && intento.matriculaId && intento.tomoId) {
-      const matricula = await this.matriculas.porId(intento.matriculaId)
+      const matricula = matriculaActualizada
       if (!matricula) return Err(new MatriculaNoEncontradaError(intento.matriculaId.valor))
       const curso = await this.cursos.porId(matricula.cursoId.valor)
       if (!curso) return Err(new CursoNoProyectadoError(matricula.cursoId.valor))
       const tomo = curso.tomoPorId(intento.tomoId)
       if (!tomo) return Err(new TomoNoEncontradoError(intento.tomoId))
-      tomoCompletado = matricula.intentarCompletarTomo(tomo, true, r.value.porcentaje)
+      tomoCompletado = matricula.intentarCompletarTomo(tomo, true, r.value.porcentaje, ahora)
       if (tomoCompletado) {
         const cascada = await intentarCascadaCurso(matricula, curso, {
           matriculas: this.matriculas,

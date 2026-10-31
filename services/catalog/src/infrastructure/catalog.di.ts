@@ -655,7 +655,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
     }
   })
 
-  const admin = [requiereAuth(authConfig), requiereRol('admin')] as const
+  const admin = [requiereAuth(authConfig), requiereRol('docente')] as const
   http.get('/api/catalog/admin/cursos', ...admin, async (_req, res, next) => {
     try {
       responder(res, await listarCursos(db, true))

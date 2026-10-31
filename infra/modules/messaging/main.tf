@@ -82,13 +82,18 @@ resource "aws_sqs_queue_policy" "permitir_eventbridge" {
   queue_url = aws_sqs_queue.cola[each.value].id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "events.amazonaws.com" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.cola[each.value].arn
-      Condition = { StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.actual.account_id } }
-    }]
+    Statement = [
+      for nombre, regla in local.reglas : {
+        Effect    = "Allow"
+        Principal = { Service = "events.amazonaws.com" }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.cola[each.value].arn
+        Condition = {
+          ArnEquals    = { "aws:SourceArn" = aws_cloudwatch_event_rule.regla[nombre].arn }
+          StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.actual.account_id }
+        }
+      } if regla.destino == each.value
+    ]
   })
 }
 
@@ -102,7 +107,10 @@ resource "aws_sqs_queue_policy" "permitir_eventbridge_dlq_entrega" {
       Principal = { Service = "events.amazonaws.com" }
       Action    = "sqs:SendMessage"
       Resource  = aws_sqs_queue.dlq_entrega[each.key].arn
-      Condition = { StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.actual.account_id } }
+      Condition = {
+        ArnEquals    = { "aws:SourceArn" = aws_cloudwatch_event_rule.regla[each.key].arn }
+        StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.actual.account_id }
+      }
     }]
   })
 }

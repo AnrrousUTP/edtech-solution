@@ -6,14 +6,14 @@
 
 ## 1. Layout de schemas y roles
 
-| Schema | Rol de conexión | Secreto en Secrets Manager |
-|---|---|---|
-| `identity` | `svc_identity` | `edtech/dev/db/identity` |
-| `catalog` | `svc_catalog` | `edtech/dev/db/catalog` |
-| `enrollment` | `svc_enrollment` | `edtech/dev/db/enrollment` |
+| Schema         | Rol de conexión    | Secreto en Secrets Manager   |
+| -------------- | ------------------ | ---------------------------- |
+| `identity`     | `svc_identity`     | `edtech/dev/db/identity`     |
+| `catalog`      | `svc_catalog`      | `edtech/dev/db/catalog`      |
+| `enrollment`   | `svc_enrollment`   | `edtech/dev/db/enrollment`   |
 | `gamification` | `svc_gamification` | `edtech/dev/db/gamification` |
-| `flashcards` | `svc_flashcards` | `edtech/dev/db/flashcards` |
-| `payments` | `svc_payments` | `edtech/dev/db/payments` |
+| `flashcards`   | `svc_flashcards`   | `edtech/dev/db/flashcards`   |
+| `payments`     | `svc_payments`     | `edtech/dev/db/payments`     |
 
 Bootstrap (corre una sola vez, desde el módulo `database/` con el usuario maestro):
 
@@ -67,7 +67,7 @@ CREATE TABLE <schema>.processed_events (
 CREATE INDEX ON <schema>.processed_events (processed_at);
 ```
 
-**Uso obligatorio en todo consumidor**, dentro de la *misma* transacción que el efecto:
+**Uso obligatorio en todo consumidor**, dentro de la _misma_ transacción que el efecto:
 
 ```
 BEGIN;
@@ -85,7 +85,7 @@ Retención: un job diario borra filas con `processed_at < now() - interval '30 d
 ## 4. `identity`
 
 ```sql
-CREATE TYPE identity.rol_dominio  AS ENUM ('ESTUDIANTE','ADMIN');
+CREATE TYPE identity.rol_dominio  AS ENUM ('ESTUDIANTE','DOCENTE','AFILIADO');
 CREATE TYPE identity.origen_nivel AS ENUM ('TEST','AUTODECLARADO','PROGRESION');
 
 CREATE TABLE identity.usuarios (
@@ -474,13 +474,13 @@ schema después.
 **Lo que se hace en su lugar,** por orden de preferencia:
 
 1. **Proyección local alimentada por eventos** — la opción por defecto. Existen dos:
-   `enrollment.cursos_proyeccion` y `payments.precios_proyeccion`. Son *read models*: se
+   `enrollment.cursos_proyeccion` y `payments.precios_proyeccion`. Son _read models_: se
    reconstruyen enteros reprocesando eventos, y nunca son la fuente de verdad.
 2. **Que el evento traiga el dato** — si `gamification` necesita el título del curso para
    el certificado, `CursoCompletadoEvent` lo trae. Es más barato que cualquier consulta.
 3. **Llamada HTTP síncrona a la API pública del otro servicio** — solo fuera del camino
    caliente, solo con timeout y fallback, y **justificada en `DECISIONS.md`**. En Fase 1
-   hay exactamente un caso permitido: el panel de admin pidiendo el detalle de un curso a
+   hay exactamente un caso permitido: el panel docente pidiendo el detalle de un curso a
    `catalog` para mostrarlo junto a las flashcards en revisión.
 
 **Cómo se detecta una violación:** el arch-check (doc 12 §2, regla 5) hace `grep` de
@@ -491,12 +491,12 @@ falla el build si aparece.
 
 El módulo `database/` deja `dev` con datos usables, no vacío:
 
-- 1 carrera *Desarrollo Web desde Cero* con 3 cursos: **HTML Esencial** (A-B, $0),
+- 1 carrera _Desarrollo Web desde Cero_ con 3 cursos: **HTML Esencial** (A-B, $0),
   **CSS desde Cero** (C-E, $19.90), **APIs con Express** (I-J, $29.90).
 - Cada curso con 2 tomos × 4 lecciones × 3 bloques.
 - 1 banco de nivelación con 20 preguntas etiquetadas A-N.
 - 1 banco de evaluación por tomo, 8 preguntas cada uno.
-- 2 usuarios: `admin@edtech.test` (grupo `admin`) y `estudiante@edtech.test`.
+- 2 usuarios de demo: `docente@edtech.test` (grupo `docente`) y `estudiante@edtech.test`.
 
 El seed es **idempotente** (`ON CONFLICT DO NOTHING` con IDs fijos) para poder correrlo
 en cada `docker compose up` sin duplicar.

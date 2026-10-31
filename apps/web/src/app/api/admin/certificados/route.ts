@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { gamificationApi } from '@/api/resto'
 import { ErrorApi } from '@/lib/api'
-import { esAdmin } from '@/lib/sesion'
+import { docenteHabilitado } from '@/lib/sesion'
 
 export const POST = async (peticion: Request): Promise<Response> => {
-  if (!(await esAdmin())) return NextResponse.json({ error: 'Requiere rol admin' }, { status: 403 })
+  if (!(await docenteHabilitado()))
+    return NextResponse.json({ error: 'Requiere rol docente con MFA configurado' }, { status: 403 })
   const cuerpo = (await peticion.json()) as {
     tipo?: 'curso' | 'carrera'
     datos?: Record<string, string>

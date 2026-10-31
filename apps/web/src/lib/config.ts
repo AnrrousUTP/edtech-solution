@@ -17,8 +17,9 @@ export const config = {
     region: process.env.COGNITO_REGION ?? 'us-east-1',
     dominio: process.env.COGNITO_DOMINIO ?? '',
     clientId: process.env.COGNITO_CLIENT_ID ?? '',
+    issuer: process.env.COGNITO_ISSUER ?? '',
     /** Emisor local (jwt-local) cuando no hay Cognito: solo desarrollo. */
-    issuerLocal: process.env.JWT_LOCAL_URL ?? '',
+    issuerLocal: process.env.JWT_LOCAL_URL ?? process.env.COGNITO_ISSUER ?? '',
     localAuthEnabled: process.env.EDTECH_LOCAL_AUTH === 'true',
   },
   assistant: {
@@ -38,7 +39,9 @@ export const config = {
 
 export const hayCognito = (): boolean => Boolean(config.cognito.dominio && config.cognito.clientId)
 export const authLocalDisponible = (): boolean =>
-  Boolean(config.cognito.issuerLocal && config.cognito.localAuthEnabled)
+  !config.production &&
+  !hayCognito() &&
+  Boolean(process.env.JWT_LOCAL_URL?.trim() && config.cognito.localAuthEnabled)
 
 export const destinoInterno = (
   valor: string | null | undefined,

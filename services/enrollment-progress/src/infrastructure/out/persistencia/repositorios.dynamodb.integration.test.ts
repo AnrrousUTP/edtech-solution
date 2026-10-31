@@ -123,7 +123,9 @@ if (endpoint) {
         ).ok,
       ).toBe(true)
       const progresoEvaluacion = await matriculas.porId(matricula.id)
-      expect(progresoEvaluacion?.intentarCompletarTomo(curso!.tomos[0]!, true, 100)).toBe(true)
+      expect(
+        progresoEvaluacion?.intentarCompletarTomo(curso!.tomos[0]!, true, 100, new Date()),
+      ).toBe(true)
       expect(progresoEvaluacion?.intentarCompletarCurso(curso!, new Date())).toBe(true)
       await intentos.guardarEntregaConProgreso(entregable!, progresoEvaluacion!)
       expect((await intentos.porId(intento.id))?.respuestas).toEqual([

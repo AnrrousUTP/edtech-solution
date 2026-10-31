@@ -38,7 +38,7 @@ La revisión se realizó sobre los archivos actuales, incluyendo modificaciones 
 | Postgres 16 local y Aurora en destino                            | Libro de comisiones y estado de terminales                    | Esquemas, roles, migraciones e índices                       |
 | EventBridge, SQS y DLQ                                           | Separar pago, comisión y señal del dispositivo                | Ampliar `tools/eventos.json` y consumidores                  |
 | LocalStack 3; servicios locales events, sqs, s3 y secretsmanager | Mantener el entorno AWS simulado existente                    | Incorporar MQTT y puente local para Shadow/Rules             |
-| Autenticación local y Cognito en AWS                             | Identidad de comprador, afiliado y administrador              | Autorización de recursos y continuidad de atribución         |
+| Autenticación local y Cognito en AWS                             | Identidad de comprador, afiliado y docente                    | Autorización de recursos y continuidad de atribución         |
 | Terraform por entorno y por servicio, ECS Fargate y ECR          | Desplegar infraestructura y contenedores                      | IoT, nuevos servicios y trabajador del simulador             |
 | Docker Compose y override de Anrrous Dev                         | Pago simulado y demostración local                            | Nuevo perfil, configuración de URL y datos de demostración   |
 
@@ -151,15 +151,15 @@ Rutas propuestas; se integrarán con los layouts existentes y con el sistema de 
 | `/afiliados/notificaciones` | Nuevas comisiones y cambios de estado                                                            | Marcar como leídas; propietario                                                                   |
 | `/afiliados/terminal`       | Estado del terminal, última conexión, mensaje y curso                                            | Solicitar terminal, configurar el asignado y abrir vista previa; propietario                      |
 | `/terminales/<id>/vista`    | QR permanente y promoción; aviso breve de nueva venta                                            | Presentación pública con acceso limitado y revocable; no muestra ingresos privados ni compradores |
-| `/admin/afiliados`          | Actividad, afiliados y alertas de operación                                                      | Suspender/reactivar y revisar atribuciones; administrador                                         |
-| `/admin/comisiones`         | Ventas referidas, comisiones registradas y ajustes por reembolso                                 | Consultar y verificar el cálculo; administrador                                                   |
-| `/admin/terminales`         | Dispositivos, estado, configuración y fallas                                                     | Asociar, desactivar y revisar mensajes; administrador                                             |
+| `/admin/afiliados`          | Actividad, afiliados y alertas de operación                                                      | Suspender/reactivar y revisar atribuciones; docente                                               |
+| `/admin/comisiones`         | Ventas referidas, comisiones registradas y ajustes por reembolso                                 | Consultar y verificar el cálculo; docente                                                         |
+| `/admin/terminales`         | Dispositivos, estado, configuración y fallas                                                     | Asociar, desactivar y revisar mensajes; docente                                                   |
 
 Diseño: tarjetas blancas sobre fondo suave, tokens `--gs-*`, tipografías existentes, tablas contenidas y estados indicados con texto. Preservar Next.js 15 y componentes existentes; no cambiar de framework ni de identidad visual para esta funcionalidad.
 
 Cada vista tendrá estados de carga, sin datos, error con reintento, permisos insuficientes y terminal desconectado. QR con URL alternativa visible, controles accesibles por teclado, foco visible y objetivos táctiles de al menos 44 px. Verificar anchos de 375, 768, 1024 y 1440 px.
 
-Los endpoints comprueban propietario o administrador en el servidor. Una cuenta no puede consultar ingresos ajenos cambiando un ID. No se expondrán correos, nombres de compradores ni capturas del proveedor en vistas públicas.
+Los endpoints comprueban propietario o docente en el servidor. Una cuenta no puede consultar ingresos ajenos cambiando un ID. No se expondrán correos, nombres de compradores ni capturas del proveedor en vistas públicas.
 
 ## 6. Arquitectura propuesta
 
@@ -272,7 +272,7 @@ Una identidad MQTT no tendrá réplicas concurrentes con el mismo client ID. Pri
 
 ### Aprovisionamiento y límites de la primera versión
 
-El programa de afiliados estará disponible para todos los usuarios habilitados, pero el alta de un afiliado no creará una tarea ECS. Para la demo se aprovisionará un terminal mediante Terraform y el administrador lo asignará a un afiliado desde EdTech. La solicitud de terminal tendrá estados solicitado, asignado, desactivado y error; se mostrará claramente cuándo todavía no hay dispositivo asignado.
+El programa de afiliados estará disponible para todos los usuarios habilitados, pero el alta de un afiliado no creará una tarea ECS. Para la demo se aprovisionará un terminal mediante Terraform y el docente lo asignará a un afiliado desde EdTech. La solicitud de terminal tendrá estados solicitado, asignado, desactivado y error; se mostrará claramente cuándo todavía no hay dispositivo asignado.
 
 La base de terminales conservará la correspondencia entre `deviceId`, Thing, identidad MQTT y proceso simulador autorizado. Una reasignación revoca la vista previa anterior, actualiza el propietario y genera una nueva versión de configuración. No permite al navegador elegir libremente una Thing o un topic. El número de simuladores estará limitado por configuración. El aprovisionamiento automático de terminales adicionales será un entregable separado: registro en IoT, arranque de trabajador, permisos, límites y recuperación ante alta parcial.
 
@@ -306,7 +306,7 @@ Para escanear desde un teléfono, la URL del QR no puede usar `localhost`. Confi
 
 La documentación local ya señala problemas de watchers bajo `/mnt/d`. Preferir checkout en filesystem nativo de WSL para desarrollo continuo, o polling si se conserva el montaje. No mover el checkout ni reinstalar dependencias entre Windows y WSL automáticamente.
 
-Datos de demo: Ana afiliada, Bruno comprador, administrador, curso de USD 40 y terminal de Ana. Compra simulada: USD 2 registrados en Ingresos y una notificación; evento repetido: sigue USD 2; reembolso total: ingreso neto USD 0. Se incluirá una orden sin referido para demostrar que no genera comisión.
+Datos de demo: Ana afiliada, Bruno comprador, docente, curso de USD 40 y terminal de Ana. Compra simulada: USD 2 registrados en Ingresos y una notificación; evento repetido: sigue USD 2; reembolso total: ingreso neto USD 0. Se incluirá una orden sin referido para demostrar que no genera comisión.
 
 ## 10. Terraform y configuración de AWS
 
@@ -368,7 +368,7 @@ Restaurar imágenes anteriores por digest, deshabilitar la función desde config
 | 2. Afiliación y QR            | Esquema, roles, alta idempotente, enlace público, QR real y vistas de activación/compartir                                  | Un usuario obtiene un QR estable y un teléfono abre su destino local                              |
 | 3. Atribución y pago          | Visitas, cookie, continuidad de sesión, prueba firmada y snapshot de orden; outbox de payments                              | Compra fake conserva al afiliado correcto y solo pago confirmado publica venta                    |
 | 4. Ingresos y notificación    | Registro de comisiones, idempotencia, notificación, total e historial; ajustes por reembolso                                | USD 40 muestra USD 2 en Ingresos una vez y genera una notificación; duplicados/reembolsos cuadran |
-| 5. Administración y permisos  | Consulta de afiliados, ventas y comisiones; control de acceso por propietario y administrador                               | Nadie consulta ingresos ajenos; el administrador puede verificar las ventas referidas             |
+| 5. Administración y permisos  | Consulta de afiliados, ventas y comisiones; control de acceso por propietario y docente                                     | Nadie consulta ingresos ajenos; el docente puede verificar las ventas referidas                   |
 | 6. IoT local                  | Terminal, broker, puente, Shadow local, configuración, heartbeat y alertas                                                  | Mostrar QR, cambiar promoción, recibir aviso, desconectar y recuperar estado                      |
 | 7. Infraestructura y CI       | Terraform, IAM, nuevo trabajador, matrices, Dockerfiles, migraciones y orquestador                                          | Checks locales pasan y el procedimiento de primera cuenta está preparado                          |
 | 8. Integración local completa | E2E, reintentos, eventos fuera de orden, seguridad y vistas responsive                                                      | Demo reproducible sin AWS con informe de resultados                                               |

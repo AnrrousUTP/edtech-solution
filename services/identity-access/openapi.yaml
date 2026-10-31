@@ -38,7 +38,7 @@ paths:
         '401': { description: Sin token }
   /usuarios/{id}:
     get:
-      summary: Perfil de un usuario (solo admin)
+      summary: Perfil de un usuario (solo docente)
       security: [{ bearerAuth: [] }]
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PerfilEnvelope' }
-        '403': { description: Requiere rol admin }
+        '403': { description: Requiere rol docente }
         '404': { description: No existe }
 components:
   securitySchemes:
@@ -66,6 +66,6 @@ components:
             avatarUrl: { type: string, nullable: true }
             pais: { type: string, nullable: true }
             idioma: { type: string }
-            rol: { type: string, enum: [ESTUDIANTE, ADMIN] }
+            rol: { type: string, enum: [ESTUDIANTE, DOCENTE, AFILIADO] }
             nivel: { type: string, pattern: '^[A-N]$' }
             origenNivel: { type: string, enum: [TEST, AUTODECLARADO, PROGRESION] }

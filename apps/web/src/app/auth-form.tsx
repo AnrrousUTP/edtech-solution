@@ -20,6 +20,7 @@ export const AuthForm = ({
   const [fase, setFase] = useState<AuthPhase>('formulario')
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
+  const [rol, setRol] = useState<'estudiante' | 'afiliado'>('estudiante')
   const [password, setPassword] = useState('')
   const [codigo, setCodigo] = useState('')
   const [authSession, setAuthSession] = useState('')
@@ -78,7 +79,7 @@ export const AuthForm = ({
     }
 
     if (mode === 'register' && fase === 'formulario') {
-      const cuerpo = await api('register', { nombre, email, password })
+      const cuerpo = await api('register', { nombre, email, password, rol })
       if (cuerpo) {
         setFase('confirmar')
         setMensaje(
@@ -156,6 +157,19 @@ export const AuthForm = ({
             placeholder="Ada Lovelace"
             required
           />
+        </label>
+      )}
+      {mode === 'register' && fase === 'formulario' && (
+        <label>
+          Rol de esta cuenta
+          <select value={rol} onChange={e => setRol(e.target.value as typeof rol)}>
+            <option value="estudiante">Estudiante / cliente</option>
+            <option value="afiliado">Afiliado</option>
+          </select>
+          <span className="auth-field-hint">
+            Cada correo tiene un solo rol. Las cuentas docentes, con acceso de gestión, las habilita
+            el equipo.
+          </span>
         </label>
       )}
       <label>

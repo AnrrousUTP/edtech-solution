@@ -12,7 +12,7 @@ Usar Drizzle en los nuevos contextos. La confirmación de payments y sus eventos
 
 La emulación de IoT Rules y Shadow se ubica en el adaptador `LocalIoTGateway` del servicio de terminales. MQTT se transporta realmente por Mosquitto; el proceso `terminal-simulator` aplica versiones y confirma avisos. Configuración y telemetría se guardan en el esquema de terminales; el adaptador convierte MQTT en SQS local. No se necesita un contenedor separado para ese puente.
 
-Un solo terminal de demo, asignado por administrador. Cada cuenta puede participar como afiliado sin iniciar contenedores adicionales. Los tokens de vista previa son revocables y no exponen identidad ni ingresos.
+Un solo terminal de demo, asignado por el rol docente. Cada cuenta puede participar como afiliado sin iniciar contenedores adicionales. Los tokens de vista previa son revocables y no exponen identidad ni ingresos.
 
 ## Límite
 

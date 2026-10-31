@@ -9,6 +9,7 @@ const supportedDomains = new Set([
   'enrollment-progress',
   'identity-access',
   'flashcards',
+  'gamification',
   'iot-terminals',
   'payments',
   'outbox',

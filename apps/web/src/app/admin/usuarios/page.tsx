@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { gamificationApi, identityApi, type PerfilGamificacion } from '@/api/resto'
 import { ErrorConAccion, NivelBadge, Vacio } from '@/componentes/base'
-import { esAdmin, mfaPendiente } from '@/lib/sesion'
+import { esDocente, mfaPendiente } from '@/lib/sesion'
 
 const NOMBRES_INSIGNIAS: Record<string, string> = {
   PRIMER_CURSO: 'Primer despegue',
@@ -80,11 +80,11 @@ const AvatarPerfil = ({
 )
 
 const AdminUsuarios = async (): Promise<JSX.Element> => {
-  if (!(await esAdmin())) {
+  if (!(await esDocente())) {
     return (
       <ErrorConAccion
-        titulo="Necesitas permisos de administrador"
-        detalle="La lectura del progreso de estudiantes es solo para administradores."
+        titulo="Necesitas el rol docente"
+        detalle="La lectura del progreso de estudiantes es solo para docentes."
         accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
@@ -94,7 +94,7 @@ const AdminUsuarios = async (): Promise<JSX.Element> => {
     return (
       <ErrorConAccion
         titulo="Configura tu segundo factor para entrar"
-        detalle="El panel de administración exige verificación en dos pasos."
+        detalle="El área docente exige verificación en dos pasos."
         accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
@@ -102,7 +102,7 @@ const AdminUsuarios = async (): Promise<JSX.Element> => {
 
   const [usuarios, perfiles] = await Promise.all([
     identityApi.usuariosAdmin().catch(() => []),
-    gamificationApi.perfilesAdmin().catch(() => []),
+    gamificationApi.perfilesDocente().catch(() => []),
   ])
   const perfilPorUsuario = new Map(perfiles.map(perfil => [perfil.usuarioId, perfil]))
   const filas = usuarios.map(usuario => ({
@@ -127,7 +127,7 @@ const AdminUsuarios = async (): Promise<JSX.Element> => {
         <svg className="inline-icon" aria-hidden="true" viewBox="0 0 24 24">
           <path d="M19 12H5M11 6l-6 6 6 6" />
         </svg>
-        Administración
+        Área docente
       </Link>
 
       <div className="admin-students-heading">

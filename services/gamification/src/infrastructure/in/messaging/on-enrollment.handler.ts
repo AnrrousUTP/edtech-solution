@@ -66,8 +66,9 @@ export const onEvaluacionAprobada = (sobre: SobreEvento): Command | null => {
   return cmd
 }
 
-/** identity.usuario-registrado.v1 → crea el perfil de gamificación. */
-export const onUsuarioRegistrado = (sobre: SobreEvento): Command => {
+/** identity.usuario-registrado.v1 → crea el perfil de gamificación del estudiante. */
+export const onUsuarioRegistrado = (sobre: SobreEvento): Command | null => {
+  if (sobre.payload.rol !== 'ESTUDIANTE') return null
   const cmd: CrearPerfilCommand = {
     _tag: 'CrearPerfil',
     usuarioId: String(sobre.payload.usuarioId),

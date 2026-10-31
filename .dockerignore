@@ -4,6 +4,10 @@
 .agents
 .env
 .env.*
+.local
+tmp
+study-video-temp
+study-video-temptranscript-*.srt
 **/node_modules
 **/.next
 **/.terraform

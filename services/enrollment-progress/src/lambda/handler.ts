@@ -6,6 +6,7 @@ import {
   CommandBus,
   QueryBus,
   RelojSistema,
+  UniqueId,
   errorMiddleware,
   noEncontradoMiddleware,
   parseSobre,
@@ -50,6 +51,7 @@ import {
 type SqsRecord = { messageId: string; body: string }
 type SqsEvent = { Records?: SqsRecord[] }
 type SqsResponse = { batchItemFailures: { itemIdentifier: string }[] }
+type CourseAccessTask = { task: 'verify-course-access'; usuarioId: string; cursoId: string }
 type LambdaHandler = (event: object, context: object) => Promise<unknown>
 type Translator = (event: SobreEvento) => Command | null
 
@@ -66,6 +68,7 @@ let runtime:
       http: LambdaHandler
       dynamodb: DynamoDBClient
       processQueue: (event: SqsEvent) => Promise<SqsResponse>
+      verifyCourseAccess: (usuarioId: string, cursoId: string) => Promise<boolean>
     }>
   | undefined
 
@@ -132,7 +135,7 @@ const createRuntime = async () => {
   const queries = new QueryBus()
   queries.register(new EvaluacionInicialHandler(intentos))
   queries.register(new MisMatriculasHandler(matriculas, proyeccion))
-  queries.register(new ProgresoCursoHandler(matriculas, proyeccion))
+  queries.register(new ProgresoCursoHandler(matriculas, proyeccion, reloj))
 
   const app = express()
   app.use(requestContextMiddleware)
@@ -178,10 +181,19 @@ const createRuntime = async () => {
     return { batchItemFailures }
   }
 
+  const verifyCourseAccess = async (usuarioId: string, cursoId: string): Promise<boolean> => {
+    const matricula = await matriculas.porUsuarioYCurso(
+      UniqueId.desde(usuarioId),
+      UniqueId.desde(cursoId),
+    )
+    return matricula?.tieneAcceso(reloj.ahora()) ?? false
+  }
+
   return {
     http: serverlessExpress({ app }) as unknown as LambdaHandler,
     dynamodb,
     processQueue,
+    verifyCourseAccess,
   }
 }
 
@@ -190,5 +202,11 @@ export const handler: LambdaHandler = async (event, context) => {
   const services = await runtime
   const sqs = event as SqsEvent
   if (Array.isArray(sqs.Records)) return services.processQueue(sqs)
+  const task = event as Partial<CourseAccessTask>
+  if (task.task === 'verify-course-access') {
+    if (typeof task.usuarioId !== 'string' || typeof task.cursoId !== 'string')
+      return { hasAccess: false }
+    return { hasAccess: await services.verifyCourseAccess(task.usuarioId, task.cursoId) }
+  }
   return services.http(event, context)
 }

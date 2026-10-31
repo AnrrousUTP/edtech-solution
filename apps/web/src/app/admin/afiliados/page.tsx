@@ -1,16 +1,16 @@
 import Link from 'next/link'
 import { afiliadosApi } from '@/api/afiliados'
-import { esAdmin, mfaPendiente } from '@/lib/sesion'
+import { esDocente, mfaPendiente } from '@/lib/sesion'
 import { config } from '@/lib/config'
 import { ErrorConAccion } from '@/componentes/base'
 import { Accion, AutoActualizar } from '../../afiliados/widgets'
 import { dinero } from '../../afiliados/datos'
 export default async function Page(): Promise<JSX.Element> {
-  if (!config.affiliatesEnabled || !(await esAdmin()) || (await mfaPendiente()))
+  if (!config.affiliatesEnabled || !(await esDocente()) || (await mfaPendiente()))
     return (
       <ErrorConAccion
-        titulo="Acceso administrativo requerido"
-        detalle="Inicia sesión con una cuenta administradora habilitada."
+        titulo="Acceso docente requerido"
+        detalle="Inicia sesión con una cuenta docente habilitada."
         accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
@@ -20,7 +20,7 @@ export default async function Page(): Promise<JSX.Element> {
       <AutoActualizar />
       <div className="affiliate-section-head">
         <div>
-          <p className="affiliate-eyebrow">Administración</p>
+          <p className="affiliate-eyebrow">Área docente</p>
           <h1>Afiliados</h1>
           <p>Revisa recomendaciones, ventas e ingresos registrados.</p>
         </div>

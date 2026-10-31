@@ -59,15 +59,15 @@ const destination = await request('/api/afiliados/configuracion', anaCookie, 'PU
 })
 if (destination.status !== 200)
   throw new Error('Publica los cursos con seed antes de preparar la demo')
-const admin = await fetch(`${JWT}/token`, {
+const docente = await fetch(`${JWT}/token`, {
   method: 'POST',
-  body: JSON.stringify({ groups: ['admin'] }),
+  body: JSON.stringify({ groups: ['docente'] }),
 })
-const adminCookie = `edtech_access=${((await admin.json()) as { access_token: string }).access_token}`
+const docenteCookie = `edtech_access=${((await docente.json()) as { access_token: string }).access_token}`
 const currentTerminal = await request('/api/afiliados/terminal', anaCookie)
 if (!currentTerminal.data.data?.terminal) {
   await waitFor('proyección del afiliado', async () => {
-    const r = await request('/api/afiliados/admin/terminales/asignacion', adminCookie, 'PUT', {
+    const r = await request('/api/afiliados/admin/terminales/asignacion', docenteCookie, 'PUT', {
       usuarioId: ANA,
     })
     return r.status === 200

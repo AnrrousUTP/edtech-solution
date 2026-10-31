@@ -14,7 +14,18 @@ output "content_bucket" {
 }
 
 output "event_bus_name" { value = aws_cloudwatch_event_bus.main.name }
-output "jobs_queue_url" { value = aws_sqs_queue.jobs.url }
+output "event_alerts_topic_arn" {
+  value       = try(aws_sns_topic.event_alerts[0].arn, "")
+  description = "Topic SNS de alertas de DLQ; vacío cuando los consumidores están apagados."
+}
+output "identity_events_queue_url" {
+  value       = try(aws_sqs_queue.identity_events[0].url, "")
+  description = "URL para conectar Cognito post-confirmation con identity-access al reactivar el corte."
+}
+output "identity_events_queue_arn" {
+  value       = try(aws_sqs_queue.identity_events[0].arn, "")
+  description = "ARN de la cola de identidad para conceder SendMessage a Cognito post-confirmation."
+}
 output "iot_data_endpoint" {
   value       = "https://${data.aws_iot_endpoint.data.endpoint_address}"
   description = "Endpoint ATS para MQTT sobre WebSocket firmado."

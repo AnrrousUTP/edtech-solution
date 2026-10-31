@@ -6,10 +6,12 @@ import {
   CommandBus,
   DynamoRepository,
   QueryBus,
+  conContexto,
   errorMiddleware,
   noEncontradoMiddleware,
+  parseSobre,
   requestContextMiddleware,
-  type IEventPublisher,
+  type SobreEvento,
 } from '@edtech/shared-kernel'
 import { ActualizarPerfilHandler } from '../application/actualizar-perfil/actualizar-perfil.handler'
 import { CrearUsuarioHandler } from '../application/crear-usuario/crear-usuario.handler'
@@ -19,13 +21,22 @@ import { ObtenerPerfilHandler } from '../application/obtener-perfil/obtener-perf
 import { SubirNivelPorCursoHandler } from '../application/subir-nivel/subir-nivel.handler'
 import { cargarConfig } from '../infrastructure/config/config'
 import { crearRouter } from '../infrastructure/in/http/routes'
+import { crearProcesador } from '../infrastructure/in/messaging/sqs.consumer'
+import { DynamoEventInbox } from '../infrastructure/out/persistencia/inbox.dynamodb'
 import { DynamoUsuarioRepository } from '../infrastructure/out/persistencia/usuario.repository.dynamodb'
 
-type LambdaHandler = (event: object, context: object) => Promise<unknown>
+type ExpressLambda = (event: object, context: object) => Promise<unknown>
+type SqsRecord = { messageId?: string; body?: string }
+type LambdaEvent = { Records?: SqsRecord[] }
+type Runtime = {
+  expressHandler: ExpressLambda
+  procesar: (sobre: SobreEvento) => Promise<'ACK' | 'NACK'>
+  dynamodb: DynamoDBClient
+}
 
-let runtime: Promise<{ expressHandler: LambdaHandler }> | undefined
+let runtime: Promise<Runtime> | undefined
 
-const crearRuntime = async () => {
+const crearRuntime = async (): Promise<Runtime> => {
   const cfg = cargarConfig()
   if (cfg.persistence !== 'dynamodb' || !cfg.dynamoTable) {
     throw new Error('Identity Lambda requiere PERSISTENCE=dynamodb y DYNAMODB_TABLE')
@@ -34,7 +45,7 @@ const crearRuntime = async () => {
     throw new Error('Identity Lambda requiere issuer, client ID y JWKS HTTPS de Cognito')
   }
 
-  const dynamodbClient = new DynamoDBClient({
+  const dynamodb = new DynamoDBClient({
     region: cfg.region,
     ...(cfg.awsEndpoint
       ? {
@@ -43,14 +54,15 @@ const crearRuntime = async () => {
         }
       : {}),
   })
-  const documentClient = DynamoDBDocumentClient.from(dynamodbClient, {
+  const documentClient = DynamoDBDocumentClient.from(dynamodb, {
     marshallOptions: { removeUndefinedValues: true, convertClassInstanceToMap: true },
   })
   const usuarios = new DynamoUsuarioRepository(
     new DynamoRepository(documentClient, cfg.dynamoTable),
   )
-  // Los eventos ya se guardan como outbox dentro de la transacción del repositorio.
-  const publisher: IEventPublisher = { publish: async () => undefined }
+  const inbox = new DynamoEventInbox(documentClient, cfg.dynamoTable)
+  // Los eventos emitidos por esta Lambda se guardan en outbox junto con el perfil.
+  const publisher = { publish: async () => undefined }
 
   const commands = new CommandBus()
   commands.register(new CrearUsuarioHandler(usuarios, publisher))
@@ -67,7 +79,7 @@ const crearRuntime = async () => {
   app.get('/health', (_req, res) => res.json({ ok: true, servicio: 'identity-access' }))
   app.get('/ready', async (_req, res) => {
     try {
-      await dynamodbClient.send(new DescribeTableCommand({ TableName: cfg.dynamoTable }))
+      await dynamodb.send(new DescribeTableCommand({ TableName: cfg.dynamoTable }))
       res.json({ listo: true, persistencia: 'dynamodb' })
     } catch {
       res.status(503).json({ listo: false, persistencia: 'dynamodb' })
@@ -78,12 +90,34 @@ const crearRuntime = async () => {
   app.use(errorMiddleware)
 
   return {
-    expressHandler: serverlessExpress({ app }) as unknown as LambdaHandler,
+    expressHandler: serverlessExpress({ app }) as unknown as ExpressLambda,
+    procesar: crearProcesador(inbox, commands),
+    dynamodb,
   }
 }
 
-export const handler: LambdaHandler = async (event, context) => {
+export const handler = async (event: object, context: object): Promise<unknown> => {
   runtime ??= crearRuntime()
   const services = await runtime
-  return services.expressHandler(event, context)
+  const records = (event as LambdaEvent).Records
+  if (!Array.isArray(records)) return services.expressHandler(event, context)
+
+  const batchItemFailures: { itemIdentifier: string }[] = []
+  for (const record of records) {
+    const itemIdentifier = record.messageId
+    if (!itemIdentifier || !record.body) {
+      if (itemIdentifier) batchItemFailures.push({ itemIdentifier })
+      continue
+    }
+    const sobre = parseSobre(record.body)
+    if (!sobre.ok) {
+      batchItemFailures.push({ itemIdentifier })
+      continue
+    }
+    const resultado = await conContexto({ correlationId: sobre.value.correlationId }, () =>
+      services.procesar(sobre.value),
+    )
+    if (resultado === 'NACK') batchItemFailures.push({ itemIdentifier })
+  }
+  return { batchItemFailures }
 }

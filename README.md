@@ -43,6 +43,14 @@ asignación del terminal y los límites del despliegue en
 docker compose --profile full up -d --build # 6 servicios + web + gateway + postgres + localstack
 ```
 
+Las pruebas de persistencia destino usan DynamoDB Local en memoria y no necesitan AWS:
+
+```bash
+docker compose --profile dynamodb up -d dynamodb-local
+```
+
+Define `DYNAMODB_LOCAL_ENDPOINT=http://127.0.0.1:8000` en el entorno de `bun test` para activar las suites DynamoDB.
+
 ### Podman en Ubuntu sobre WSL2
 
 El flujo con Podman está probado en Ubuntu ejecutado sobre WSL2. No se necesita
@@ -169,7 +177,7 @@ docker compose --profile full down
 
 Perfiles de compose: `base` (infra), `pagos`, `contenido`, `full`. Para entrar sin
 Cognito, el perfil `full` activa `EDTECH_LOCAL_AUTH=true` y
-`http://localhost:3000/api/auth/local?rol=estudiante` (o `rol=admin`)
+`http://localhost:3000/api/auth/local?rol=estudiante` (o `rol=docente` para la gestión global)
 emite un token local y deja la sesión puesta. Esa bandera debe omitirse en AWS.
 
 La web también expone `/login`, `/register`, `/recuperar` y `/admin/login`. Si

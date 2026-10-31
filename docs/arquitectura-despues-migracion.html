@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Diseño objetivo de EdTech tras la migración serverless a AWS. Entorno low-cost no aplicado; AWS permanece pausado." />
+    <title>Después de la migración · Arquitectura EdTech</title>
+    <style>
+      :root{color-scheme:dark;--bg:#020809;--surface:#041114;--surface-2:#06191c;--ink:#e9fbfa;--muted:#a1b8b9;--teal:#19e4df;--green:#77dc60;--blue:#66c9ff;--purple:#b18aff;--pink:#ff4ca5;--orange:#ff9d36;--line:#147f80;--soft-line:#15565a;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-synthesis:none;text-rendering:optimizeLegibility;background:var(--bg);color:var(--ink)}
+      *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;line-height:1.45;background:radial-gradient(ellipse at 48% 34%,#052023 0,#020b0d 44%,#010506 100%)}a{color:var(--teal);text-underline-offset:3px}.topbar{border-bottom:1px solid #103e40;background:rgba(2,9,11,.9)}.topbar-inner{max-width:1680px;margin:auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:11px;font-size:.94rem;font-weight:750;letter-spacing:.04em}.aws-mark{display:grid;place-items:center;width:39px;height:34px;border:1px solid var(--teal);border-radius:7px;color:var(--bg);background:var(--teal);font-weight:900;letter-spacing:-.08em}.nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.nav a,.nav button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:7px 12px;border:1px solid #14585b;border-radius:8px;background:#031416;color:#bdeeed;text-decoration:none;font:inherit;font-size:.82rem}.nav a:hover,.nav button:hover{border-color:var(--teal);color:var(--teal)}main{max-width:1680px;margin:auto;padding:24px 22px 30px}.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin:0 0 15px}.eyebrow{margin:0 0 6px;color:var(--teal);font-size:.75rem;font-weight:800;letter-spacing:.17em;text-transform:uppercase}h1{margin:0;font-size:clamp(1.55rem,3vw,2.6rem);line-height:1.08;letter-spacing:-.04em}.subhead{margin:7px 0 0;color:#afc3c4;font-size:.94rem}.status{display:inline-flex;align-items:center;gap:9px;flex:0 0 auto;padding:9px 12px;border:1px solid #a86a22;border-radius:8px;background:#1a1005;color:#ffd38d;font-size:.77rem;font-weight:800;letter-spacing:.04em}.status-dot{width:8px;height:8px;border-radius:50%;background:#ffb74e;box-shadow:0 0 10px #ff9d36}.diagram-wrap{overflow:auto;border:1px solid #10575a;border-radius:12px;background:#01090b;box-shadow:0 18px 55px rgba(0,0,0,.42);scrollbar-color:#155d60 #021013}.diagram{display:block;width:100%;min-width:1120px;height:auto}.diagram text{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}.frame{fill:#020b0d;stroke:#168d8b;stroke-width:1.5}.region{fill:#031315;stroke:#1baaa4;stroke-width:1.35;stroke-dasharray:5 5}.zone{fill:#041517;fill-opacity:.58;stroke:#2a7475;stroke-width:1.2}.zone.green{stroke:#4b9b47}.zone.pink{stroke:#a83f73}.zone-title{fill:#20e2dc;font-size:14px;font-weight:800;letter-spacing:1.2px}.caption{fill:#99b6b7;font-size:11px}.tiny{fill:#a3bdbd;font-size:10px}.cloud-label{fill:#e8f7f7;font-size:18px;font-weight:750}.aws-chip{fill:#16d8d3}.aws-chip-text{fill:#001214;font-size:15px;font-weight:900}.node{fill:#06191c;stroke:#168985;stroke-width:1.35}.node.edge{stroke:#36b9b2}.node.auth{stroke:#9473de}.node.data{stroke:#66bd50}.node.optional{stroke:#6b6860;stroke-dasharray:5 4}.node.external{stroke:#159493}.node-title{fill:#f0ffff;font-size:15px;font-weight:750}.node-copy{fill:#b5cbcb;font-size:11.5px}.node-mini{fill:#8fa8aa;font-size:10.5px}.node-accent{fill:#20e2dc;font-size:10px;font-weight:800;letter-spacing:.7px}.service{fill:#071416;stroke:#b8762a;stroke-width:1.25;stroke-dasharray:4 3}.service-soft{fill:#101611;stroke:#686044;stroke-width:1.2;stroke-dasharray:4 4}.service-title{fill:#fff2df;font-size:12px;font-weight:750}.service-sub{fill:#c5b39d;font-size:10px}.flow{fill:none;stroke:#f0f8f7;stroke-width:2.1;marker-end:url(#arrow-sync)}.flow-data{fill:none;stroke:#42c9b8;stroke-width:2;marker-end:url(#arrow-data)}.flow-auth{fill:none;stroke:#b18aff;stroke-width:2;stroke-dasharray:6 5;marker-end:url(#arrow-auth)}.flow-event{fill:none;stroke:#ff4ca5;stroke-width:2.2;stroke-dasharray:7 6;marker-end:url(#arrow-event)}.flow-optional{fill:none;stroke:#9d9b90;stroke-width:1.6;stroke-dasharray:4 5;marker-end:url(#arrow-muted)}.flow-label{fill:#b8d2d2;font-size:10px;font-weight:650}.legend{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:10px 10px 0;padding:10px 12px;border:1px solid #176366;border-radius:9px;background:#031012;color:#bdd0d1;font-size:.76rem}.legend-title{color:var(--teal);font-weight:800;letter-spacing:.09em}.legend-item{display:inline-flex;align-items:center;gap:7px}.legend-line{width:26px;height:0;border-top:2px solid #f0f8f7}.legend-line.data{border-color:#42c9b8}.legend-line.auth{border-color:#b18aff;border-top-style:dashed}.legend-line.event{border-color:#ff4ca5;border-top-style:dashed}.legend-box{width:21px;height:13px;border:1px dashed var(--orange);border-radius:2px}.legend-box.off{border-color:#8e8b80}.transition{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:14px 6px 0;padding:13px 14px;border-top:1px solid #12484b;border-bottom:1px solid #12484b;color:#bdd1d2;font-size:.83rem;text-align:center}.transition b{color:var(--teal);font-weight:750}.transition .old{color:#a3afb0}.transition .arrow{color:var(--green);font-size:1.1rem}.footnote{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:13px 7px 0;color:#95aaab;font-size:.76rem}.footnote strong{color:#d4e9e8;font-weight:650}.foot-links{display:flex;flex-wrap:wrap;gap:14px}.foot-links a{color:#8fdcdb}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      @media(max-width:760px){.topbar-inner{align-items:flex-start;padding:10px 14px;flex-direction:column}.nav{width:100%}.nav a,.nav button{flex:1}.heading{align-items:flex-start;flex-direction:column;gap:12px}main{padding:18px 12px 24px}.diagram-wrap{border-radius:8px}.legend{gap:12px}.footnote{align-items:flex-start;flex-direction:column}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{body{background:#02090b;-webkit-print-color-adjust:exact;print-color-adjust:exact}.topbar{display:none}main{max-width:none;padding:8px}.diagram{min-width:0}.diagram-wrap{overflow:visible;box-shadow:none}.legend,.transition,.footnote{break-inside:avoid}}
+    </style>
+  </head>
+  <body>
+    <header class="topbar"><div class="topbar-inner"><div class="brand"><span class="aws-mark" aria-hidden="true">aws</span><span>EDTECH&nbsp; / &nbsp;AWS CLOUD</span></div><nav class="nav" aria-label="Navegación de documentos"><a href="arquitectura-antes-migracion.html">← Arquitectura antes</a><a href="tablero-migracion.html">Tablero de migración</a><button type="button" onclick="window.print()">Imprimir / PDF</button></nav></div></header>
+    <main>
+      <section class="heading" aria-labelledby="page-title"><div><p class="eyebrow">Vista 02 · Arquitectura objetivo</p><h1 id="page-title">Después de la migración</h1><p class="subhead">Diseño serverless · una cuenta por rol · permisos por dominio</p></div><div class="status"><span class="status-dot" aria-hidden="true"></span>AWS PAUSADO · LOW-COST NO APLICADO</div></section>
+      <div class="diagram-wrap" role="region" aria-label="Diagrama de arquitectura destino; desplazable horizontalmente en pantallas pequeñas" tabindex="0">
+        <svg class="diagram" viewBox="0 0 1600 960" role="img" aria-labelledby="svg-title svg-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="svg-title">Arquitectura objetivo EdTech después de la migración</title>
+          <desc id="svg-desc">Estudiantes, docentes y afiliados acceden a Next.js en Amplify Hosting. Cognito mantiene una cuenta y un rol por correo. API Gateway enruta solicitudes a funciones Lambda, que validan JWT, rol y permisos. DynamoDB y S3 guardan datos y contenido. El flujo asíncrono usa outbox, DynamoDB Streams, EventBridge, colas SQS y consumidores. PayPal integra pagos; Bedrock e IoT quedan opcionales y apagados. Este es el diseño destino; el entorno low-cost no está aplicado y AWS permanece pausado.</desc>
+          <defs>
+            <marker id="arrow-sync" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f0f8f7"/></marker>
+            <marker id="arrow-data" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#42c9b8"/></marker>
+            <marker id="arrow-auth" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b18aff"/></marker>
+            <marker id="arrow-event" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ff4ca5"/></marker>
+            <marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9d9b90"/></marker>
+          </defs>
+
+          <!-- Usuarios -->
+          <rect class="zone" x="18" y="104" width="180" height="696" rx="13"/>
+          <text class="zone-title" x="38" y="139">USUARIOS</text>
+          <text class="caption" x="38" y="158">un correo · un rol</text>
+          <rect class="node" x="34" y="180" width="148" height="132" rx="10"/>
+          <circle cx="65" cy="212" r="16" fill="none" stroke="#20e2dc" stroke-width="2"/><path d="M43 259c2-20 42-20 44 0M49 234c1-12 30-12 32 0" fill="none" stroke="#20e2dc" stroke-width="2" stroke-linecap="round"/>
+          <text class="node-title" x="99" y="210">Estudiante</text><text class="node-copy" x="99" y="231">/ cliente</text><text class="node-mini" x="48" y="289">compra · cursos · avance</text>
+          <rect class="node" x="34" y="328" width="148" height="157" rx="10"/>
+          <circle cx="65" cy="361" r="16" fill="none" stroke="#20e2dc" stroke-width="2"/><path d="M43 408c2-20 42-20 44 0M49 383c1-12 30-12 32 0" fill="none" stroke="#20e2dc" stroke-width="2" stroke-linecap="round"/>
+          <text class="node-title" x="99" y="358">Docente</text><text class="node-copy" x="99" y="379">antes “admin”</text><text class="node-mini" x="48" y="437">gestión global de</text><text class="node-mini" x="48" y="453">cursos · flashcards</text><text class="node-mini" x="48" y="469">estudiantes · métricas</text>
+          <rect class="node" x="34" y="501" width="148" height="132" rx="10"/>
+          <circle cx="65" cy="533" r="16" fill="none" stroke="#20e2dc" stroke-width="2"/><path d="M43 580c2-20 42-20 44 0M49 555c1-12 30-12 32 0" fill="none" stroke="#20e2dc" stroke-width="2" stroke-linecap="round"/>
+          <text class="node-title" x="99" y="532">Afiliado</text><text class="node-copy" x="99" y="553">panel · QR</text><text class="node-mini" x="48" y="610">referidos · ingresos</text>
+          <text class="tiny" x="38" y="675">Rutas y encabezado</text><text class="tiny" x="38" y="691">cambian según el rol.</text>
+          <rect x="35" y="720" width="145" height="42" rx="7" fill="#071b1c" stroke="#248f88"/><text class="node-accent" x="52" y="745">ROL ÚNICO POR CUENTA</text>
+
+          <!-- Marco AWS y región -->
+          <rect class="frame" x="215" y="30" width="1166" height="905" rx="13"/>
+          <rect class="aws-chip" x="215" y="30" width="48" height="43" rx="8"/><text class="aws-chip-text" x="224" y="58">aws</text>
+          <text class="cloud-label" x="278" y="58">AWS Cloud</text>
+          <text class="caption" x="1168" y="57">cuenta lowcost</text>
+          <rect class="region" x="241" y="79" width="1113" height="836" rx="11"/>
+          <text class="zone-title" x="729" y="99">REGIÓN AWS · SERVERLESS · SIN VPC / NAT</text>
+
+          <!-- Conectores detrás de servicios -->
+          <path class="flow" d="M198 244H222V181H294"/><text class="flow-label" x="212" y="230">HTTPS</text>
+          <path class="flow" d="M470 228V264H270V376H290"/><text class="flow-label" x="402" y="267">/api/*</text>
+          <path class="flow-auth" d="M828 225V289H496V372"/><text class="flow-label" x="582" y="282">JWT · un rol por cuenta</text>
+          <path class="flow" d="M490 407H513"/><text class="flow-label" x="490" y="393">rutas API</text>
+          <path class="flow-data" d="M903 555V578H634V624"/>
+          <path class="flow-data" d="M903 578H1133V624"/>
+          <text class="flow-label" x="784" y="596">lectura / escritura por dominio · permisos IAM acotados</text>
+          <path class="flow-event" d="M468 837H488"/><path class="flow-event" d="M666 837H696"/><path class="flow-event" d="M870 837H904"/><path class="flow-event" d="M1095 837H1132"/>
+          <path class="flow" d="M1418 270H1388V267H250V407H290"/><text class="flow-label" x="550" y="261">PayPal · webhook firmado</text>
+          <path class="flow" d="M892 484V576H1375V251H1410"/><text class="flow-label" x="1058" y="568">API de pagos</text>
+
+          <!-- Capa de identidad y presentación -->
+          <rect class="zone" x="270" y="112" width="1044" height="143" rx="11"/>
+          <text class="zone-title" x="292" y="136">PRESENTACIÓN Y ACCESO</text>
+          <rect class="node edge" x="295" y="151" width="354" height="77" rx="9"/>
+          <rect x="311" y="169" width="35" height="35" rx="8" fill="#072829" stroke="#20e2dc"/><path d="M319 190l9-14 9 14M322 185h12" fill="none" stroke="#20e2dc" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="node-title" x="359" y="179">AWS Amplify Hosting</text><text class="node-copy" x="359" y="198">Next.js SSR · CDN administrado</text><text class="node-mini" x="359" y="216">encabezado y páginas por rol</text>
+          <rect class="node auth" x="693" y="151" width="270" height="77" rx="9"/>
+          <circle cx="719" cy="184" r="15" fill="none" stroke="#b18aff" stroke-width="2"/><path d="M713 184h12M719 178v12" stroke="#b18aff" stroke-width="2" stroke-linecap="round"/>
+          <text class="node-title" x="745" y="179">Amazon Cognito</text><text class="node-copy" x="745" y="199">sesión · JWT · grupo único</text><text class="node-mini" x="745" y="216">MFA para cuentas docentes</text>
+          <rect class="node" x="1007" y="151" width="279" height="77" rx="9"/>
+          <circle cx="1033" cy="184" r="15" fill="none" stroke="#69c9ff" stroke-width="2"/><path d="M1025 188h16M1026 181h14M1028 174h10" stroke="#69c9ff" stroke-width="1.5" stroke-linecap="round"/>
+          <text class="node-title" x="1058" y="179">CloudWatch</text><text class="node-copy" x="1058" y="199">logs · métricas · alertas DLQ</text><text class="node-mini" x="1058" y="216">se activa con los servicios</text>
+
+          <!-- API y funciones -->
+          <rect class="zone" x="270" y="276" width="1044" height="300" rx="11"/>
+          <text class="zone-title" x="292" y="301">API Y CÓMPUTO POR DOMINIO</text>
+          <rect class="node edge" x="296" y="347" width="194" height="119" rx="10"/>
+          <circle cx="326" cy="379" r="16" fill="none" stroke="#69c9ff" stroke-width="2"/><path d="M318 379h16M326 371v16" stroke="#69c9ff" stroke-width="2" stroke-linecap="round"/>
+          <text class="node-title" x="352" y="376">API Gateway</text><text class="node-copy" x="316" y="407">HTTP API · HTTPS · CORS</text><text class="node-copy" x="316" y="426">rutas por dominio habilitado</text><text class="node-mini" x="316" y="449">control de tráfico · sin WAF</text>
+          <rect x="519" y="310" width="770" height="245" rx="11" fill="#07120f" fill-opacity=".58" stroke="#a56524" stroke-width="1.4" stroke-dasharray="6 4"/>
+          <text class="node-accent" x="542" y="334" style="fill:#ffab4a">AWS LAMBDA · FUNCIONES AISLADAS POR DOMINIO</text>
+          <rect class="service" x="539" y="350" width="165" height="77" rx="8"/><text class="service-title" x="553" y="378">identity-access</text><text class="service-sub" x="553" y="400">cuentas · permisos</text>
+          <rect class="service" x="724" y="350" width="165" height="77" rx="8"/><text class="service-title" x="738" y="378">catalog</text><text class="service-sub" x="738" y="400">cursos · lecciones</text>
+          <rect class="service" x="909" y="350" width="165" height="77" rx="8"/><text class="service-title" x="923" y="378">enrollment-progress</text><text class="service-sub" x="923" y="400">matrícula · avance</text>
+          <rect class="service" x="1094" y="350" width="165" height="77" rx="8"/><text class="service-title" x="1108" y="378">gamification</text><text class="service-sub" x="1108" y="400">logros · certificados</text>
+          <rect class="service" x="539" y="445" width="165" height="77" rx="8"/><text class="service-title" x="553" y="473">flashcards</text><text class="service-sub" x="553" y="495">tarjetas · estudio</text>
+          <rect class="service" x="724" y="445" width="165" height="77" rx="8"/><text class="service-title" x="738" y="473">payments</text><text class="service-sub" x="738" y="495">órdenes · PayPal</text>
+          <rect class="service" x="909" y="445" width="165" height="77" rx="8"/><text class="service-title" x="923" y="473">affiliates</text><text class="service-sub" x="923" y="495">referidos · comisiones</text>
+          <rect class="service-soft" x="1094" y="445" width="165" height="77" rx="8"/><text class="service-title" x="1108" y="473" style="fill:#c6c0ad">iot-terminals</text><text class="service-sub" x="1108" y="495">opcional · desactivado</text>
+          <text class="tiny" x="542" y="542">Cada handler valida JWT, rol y permisos. Docente administra cursos, flashcards, estudiantes y métricas.</text>
+
+          <!-- Persistencia -->
+          <rect class="zone green" x="270" y="594" width="1044" height="142" rx="11"/>
+          <text class="zone-title" x="292" y="619" style="fill:#8ee774">DATOS Y ARCHIVOS</text>
+          <rect class="node data" x="296" y="630" width="674" height="91" rx="9"/>
+          <path d="M316 652c0-7 20-7 20 0v35c0 7-20 7-20 0zM316 652c0 7 20 7 20 0M316 663c0 7 20 7 20 0M316 675c0 7 20 7 20 0" fill="none" stroke="#8ee774" stroke-width="1.5"/>
+          <text class="node-title" x="348" y="653">Amazon DynamoDB</text><text class="node-mini" x="348" y="671">bajo demanda · tabla e índices por dominio</text>
+          <g fill="#071c15" stroke="#3d8050" stroke-width=".8"><rect x="313" y="684" width="68" height="25" rx="4"/><rect x="385" y="684" width="68" height="25" rx="4"/><rect x="457" y="684" width="68" height="25" rx="4"/><rect x="529" y="684" width="68" height="25" rx="4"/><rect x="601" y="684" width="68" height="25" rx="4"/><rect x="673" y="684" width="68" height="25" rx="4"/><rect x="745" y="684" width="68" height="25" rx="4"/><rect x="817" y="684" width="68" height="25" rx="4"/><rect x="889" y="684" width="68" height="25" rx="4"/></g>
+          <g class="tiny" text-anchor="middle" style="font-size:9px"><text x="347" y="701">identity</text><text x="419" y="701">catalog</text><text x="491" y="701">enrollment</text><text x="563" y="701">gamification</text><text x="635" y="701">flashcards</text><text x="707" y="701">payments</text><text x="779" y="701">affiliates</text><text x="851" y="701">iot</text><text x="923" y="701">control</text></g>
+          <rect class="node data" x="994" y="630" width="292" height="91" rx="9"/>
+          <path d="M1015 650h30v27h-30zM1019 646h30v27M1023 642h30v27" fill="none" stroke="#8ee774" stroke-width="1.4"/>
+          <text class="node-title" x="1064" y="658">Amazon S3</text><text class="node-copy" x="1015" y="691">lecciones · certificados</text><text class="node-mini" x="1015" y="708">acceso privado por prefijo</text>
+
+          <!-- Eventos -->
+          <rect class="zone pink" x="270" y="755" width="1044" height="151" rx="11"/>
+          <text class="zone-title" x="292" y="780" style="fill:#ff79b9">MENSAJERÍA ASÍNCRONA · OUTBOX → EVENTBRIDGE → SQS</text>
+          <rect class="node data" x="294" y="802" width="174" height="69" rx="8"/><text class="node-title" x="311" y="830">Outbox DynamoDB</text><text class="node-mini" x="311" y="850">Streams · eventos de dominio</text>
+          <rect class="node" x="494" y="802" width="172" height="69" rx="8"/><text class="node-title" x="510" y="830">Lambda publicadora</text><text class="node-mini" x="510" y="850">reintento · idempotencia</text>
+          <rect class="node" x="702" y="802" width="168" height="69" rx="8"/><text class="node-title" x="720" y="830">EventBridge</text><text class="node-mini" x="720" y="850">bus edtech-lowcost</text>
+          <rect class="node" x="910" y="802" width="185" height="69" rx="8"/><circle cx="931" cy="829" r="9" fill="none" stroke="#ff4ca5" stroke-width="1.7"/><path d="M927 829h8M931 825v8" stroke="#ff4ca5" stroke-width="1.4"/><text class="node-title" x="949" y="827">Colas SQS</text><text class="node-mini" x="928" y="850">por dominio · webhooks · DLQ</text>
+          <rect class="node" x="1138" y="802" width="148" height="69" rx="8"/><text class="node-title" x="1154" y="830">Consumidores</text><text class="node-mini" x="1154" y="850">Lambda · por evento</text>
+          <text class="tiny" x="294" y="891">Productores de dominio escriben eventos en outbox. Colas, consumidores y alertas se activan por dominio validado.</text>
+
+          <!-- Integraciones externas y opcionales -->
+          <rect class="zone" x="1402" y="104" width="180" height="696" rx="13"/>
+          <text class="zone-title" x="1420" y="139">INTEGRACIONES</text>
+          <rect class="node external" x="1418" y="174" width="148" height="167" rx="9"/>
+          <text class="node-accent" x="1434" y="198">PAGOS EXTERNOS</text><text class="node-title" x="1434" y="229">PayPal API</text>
+          <path d="M1444 255h57l-5 48h-49zM1453 248h38" fill="none" stroke="#67b7ff" stroke-width="2" stroke-linejoin="round"/>
+          <text class="node-mini" x="1434" y="321">API · webhook firmado</text>
+          <rect class="node optional" x="1418" y="369" width="148" height="154" rx="9"/>
+          <text class="node-accent" x="1434" y="394" style="fill:#c7c1af">IA · OPCIONAL</text><text class="node-title" x="1434" y="427" style="fill:#d2d0c5">Amazon Bedrock</text><text class="node-mini" x="1434" y="450">generación de flashcards</text><text class="node-mini" x="1434" y="470">desactivado al inicio</text><text class="tiny" x="1434" y="501">sin llamadas por defecto</text>
+          <rect class="node optional" x="1418" y="550" width="148" height="154" rx="9"/>
+          <text class="node-accent" x="1434" y="575" style="fill:#c7c1af">TERMINALES · OPCIONAL</text><text class="node-title" x="1434" y="608" style="fill:#d2d0c5">AWS IoT Core</text><text class="node-mini" x="1434" y="631">sesión limitada afiliado</text><text class="node-mini" x="1434" y="651">reglas / eventos</text><text class="tiny" x="1434" y="682">desactivado al inicio</text>
+          <text class="tiny" x="1419" y="746">Opciones aparte del corte</text><text class="tiny" x="1419" y="762">público inicial.</text>
+
+          <!-- Leyenda inferior del diagrama -->
+          <rect x="18" y="938" width="1564" height="1" fill="#146366"/>
+        </svg>
+      </div>
+      <div class="legend" aria-label="Leyenda del diagrama"><span class="legend-title">LEYENDA</span><span class="legend-item"><i class="legend-line"></i>Solicitud / respuesta</span><span class="legend-item"><i class="legend-line auth"></i>Autenticación / JWT</span><span class="legend-item"><i class="legend-line data"></i>Datos</span><span class="legend-item"><i class="legend-line event"></i>Evento / cola</span><span class="legend-item"><i class="legend-box"></i>Lambda activa al habilitar dominio</span><span class="legend-item"><i class="legend-box off"></i>Opcional / apagado</span></div>
+      <div class="transition" aria-label="Cambios principales de la migración"><span class="old">ECS Fargate · ALB · Aurora PostgreSQL</span><span class="arrow" aria-hidden="true">→</span><b>API Gateway · Lambda · DynamoDB · S3</b></div>
+      <div class="footnote"><span><strong>Alcance:</strong> destino sin históricos; Aurora y ECS salen del stack. Diagrama objetivo, no desplegado.</span><span class="foot-links"><a href="arquitectura-antes-migracion.html">Ver arquitectura antes</a><a href="tablero-migracion.html">Tablero de migración</a><a href="../infra/envs/lowcost/README.md">Runbook de despliegue</a></span></div>
+    </main>
+  </body>
+</html>

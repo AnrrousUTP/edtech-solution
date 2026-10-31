@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "docker compose --profile full up",
+    "dev": "docker compose --profile full up --build",
     "test": "bun test",
     "arch": "bun run tools/arch-check.ts && bunx depcruise --config .dependency-cruiser.cjs services packages",
     "estructura": "bun run tools/check-structure.ts",
@@ -33,6 +33,7 @@
   },
   "overrides": {
     "@aws-sdk/client-s3": "3.1149.0",
+    "@aws-sdk/s3-request-presigner": "3.1149.0",
     "@smithy/types": "4.19.0"
   },
   "devDependencies": {

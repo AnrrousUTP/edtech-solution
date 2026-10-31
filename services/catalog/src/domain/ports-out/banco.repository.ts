@@ -3,6 +3,6 @@ import type { BancoPreguntas, UsoBanco } from '../entities/banco-preguntas.entit
 
 export interface BancoRepository {
   porId(id: UniqueId): Promise<BancoPreguntas | null>
-  porUso(uso: UsoBanco, tomoId?: string): Promise<BancoPreguntas | null>
+  porUso(uso: UsoBanco, tomoId?: string, cursoId?: string): Promise<BancoPreguntas | null>
   guardar(banco: BancoPreguntas): Promise<void>
 }

@@ -11,6 +11,7 @@ import type { Config } from '../../config/config'
 import type { CambiosPerfil } from '../../../domain/entities/usuario.entity'
 import type { PerfilResponse } from '../../../application/obtener-perfil/obtener-perfil.handler'
 import type { UsuarioListado } from '../../../application/listar-usuarios/listar-usuarios.handler'
+import type { RolDominio } from '../../../domain/entities/usuario.entity'
 
 // Mapa explícito código de dominio → HTTP (doc 04 §8). Sin instanceof.
 const MAPA: Record<string, number> = {
@@ -47,6 +48,19 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
 
   router.get('/me', auth, async (req, res) => {
     const usuarioId = req.auth?.usuarioId ?? ''
+    const rolAplicacion = req.auth?.roles.length === 1 ? req.auth.roles[0] : undefined
+    if (!rolAplicacion) {
+      res
+        .status(403)
+        .json({ error: { code: 'ROL_INVALIDO', message: 'La cuenta debe tener un solo rol' } })
+      return
+    }
+    const rol: RolDominio =
+      rolAplicacion === 'docente'
+        ? 'DOCENTE'
+        : rolAplicacion === 'afiliado'
+          ? 'AFILIADO'
+          : 'ESTUDIANTE'
     const r = await queries.dispatch<PerfilResponse, { code: string; message: string }>({
       _tag: 'ObtenerPerfil',
       usuarioId,
@@ -55,6 +69,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
       altaPerezosa: {
         email: req.auth?.email ?? `${usuarioId}@pendiente.edtech`,
         ...(req.auth?.nombreVisible ? { nombreVisible: req.auth.nombreVisible } : {}),
+        rol,
       },
     })
     responder(res, r)
@@ -77,7 +92,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     responder(res, r)
   })
 
-  router.get('/usuarios/:id', auth, requiereRol('admin'), async (req, res) => {
+  router.get('/usuarios/:id', auth, requiereRol('docente'), async (req, res) => {
     const r = await queries.dispatch<PerfilResponse, { code: string; message: string }>({
       _tag: 'ObtenerPerfil',
       usuarioId: req.params.id ?? '',
@@ -85,7 +100,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     responder(res, r)
   })
 
-  router.get('/usuarios', auth, requiereRol('admin'), async (_req, res) => {
+  router.get('/usuarios', auth, requiereRol('docente'), async (_req, res) => {
     const r = await queries.dispatch<UsuarioListado[], { code: string; message: string }>({
       _tag: 'ListarUsuarios',
     })

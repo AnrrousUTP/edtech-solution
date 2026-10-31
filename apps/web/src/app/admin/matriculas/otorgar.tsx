@@ -31,7 +31,7 @@ export const OtorgarMatricula = ({
       <h2>Dar acceso a un curso</h2>
       <p className="admin-help">
         Alta manual para becas, soporte o cohortes internas. La autorización del servicio sigue
-        exigiendo rol admin.
+        exigiendo rol docente.
       </p>
       <div className="admin-form-grid">
         <label className="admin-form-wide">

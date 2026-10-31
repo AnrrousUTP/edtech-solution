@@ -1,6 +1,6 @@
 name: edtech
 
-# Perfiles (doc 13 §6): base | pagos | contenido | full.
+# Perfiles (doc 13 §6): base | pagos | contenido | full; dynamodb para pruebas de persistencia.
 # Docker Compose no arranca servicios con profile en un `up` sin flags, así que
 # "levantar todo" es `docker compose --profile full up` (anotado en DECISIONS.md, A-04).
 services:
@@ -15,7 +15,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./tools/seed/00-schemas.sql:/docker-entrypoint-initdb.d/00-schemas.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d edtech"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -28,7 +28,7 @@ services:
     image: edtech-localstack-init:local
     profiles: ["base", "pagos", "contenido", "full"]
     environment:
-      SERVICES: events,sqs,s3,secretsmanager
+      SERVICES: events,sqs,s3,secretsmanager,ssm,dynamodb
       DEBUG: 0
     ports: ["${EDTECH_LOCALSTACK_PORT:-4566}:4566"]
     healthcheck:
@@ -42,6 +42,13 @@ services:
     build: ./tools/jwt-local
     profiles: ["base", "pagos", "contenido", "full"]
     ports: ["${EDTECH_JWT_PORT:-4599}:4599"]
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    profiles: ["dynamodb"]
+    command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
+    ports: ["${EDTECH_DYNAMODB_PORT:-8000}:8000"]
+    mem_limit: 1g
 
   identity-access:
     build: { context: ., dockerfile: services/identity-access/Dockerfile }
@@ -156,6 +163,8 @@ services:
     ports: ["${EDTECH_PAYMENTS_PORT:-3007}:3000"]
     mem_limit: 512m
     environment:
+      NODE_ENV: development
+      PAYPAL_LOCAL_MODE: "true"
       DATABASE_URL: postgres://svc_payments:local@postgres:5432/edtech
       AWS_ENDPOINT_URL: http://localstack:4566
       AWS_REGION: us-east-1
@@ -191,6 +200,7 @@ services:
       APP_URL: http://localhost:${EDTECH_WEB_PORT:-3000}
       JWT_LOCAL_URL: http://jwt-local:4599
       EDTECH_LOCAL_AUTH: "true"
+      EDTECH_AFFILIATES_ENABLED: ${EDTECH_AFFILIATES_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}

@@ -1,6 +1,5 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { accessToken } from '@/lib/sesion'
+import { exigirRol } from '@/lib/sesion'
 import { config } from '@/lib/config'
 import { ErrorConAccion } from '@/componentes/base'
 export default async function Layout({
@@ -16,7 +15,7 @@ export default async function Layout({
         accion={{ texto: 'Ver cursos', href: '/cursos' }}
       />
     )
-  if (!(await accessToken())) redirect('/login?destino=/afiliados')
+  await exigirRol('afiliado', '/afiliados')
   return (
     <div className="affiliate-shell">
       <div className="affiliate-heading">

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { catalogApi } from '@/api/catalog'
 import { ErrorApi } from '@/lib/api'
-import { esAdmin } from '@/lib/sesion'
+import { docenteHabilitado } from '@/lib/sesion'
 
 export const POST = async (peticion: Request): Promise<Response> => {
-  if (!(await esAdmin())) return NextResponse.json({ error: 'Requiere rol admin' }, { status: 403 })
+  if (!(await docenteHabilitado()))
+    return NextResponse.json({ error: 'Requiere rol docente con MFA configurado' }, { status: 403 })
   const cuerpo = (await peticion.json()) as {
     accion?: string
     id?: string

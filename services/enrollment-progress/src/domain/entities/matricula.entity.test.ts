@@ -61,7 +61,7 @@ describe('Matricula', () => {
     const m = Matricula.gratuita(UniqueId.nuevo(), UniqueId.nuevo())
     const t = tomo(T1, [L1, L2])
     m.completarLeccion(L1, t, AHORA)
-    expect(m.intentarCompletarTomo(t, true, 90)).toBe(false)
+    expect(m.intentarCompletarTomo(t, true, 90, AHORA)).toBe(false)
   })
 
   test('el tomo NO se completa con todas las lecciones si la evaluación no está aprobada', () => {
@@ -69,7 +69,7 @@ describe('Matricula', () => {
     const t = tomo(T1, [L1, L2])
     m.completarLeccion(L1, t, AHORA)
     m.completarLeccion(L2, t, AHORA)
-    expect(m.intentarCompletarTomo(t, false, 40)).toBe(false)
+    expect(m.intentarCompletarTomo(t, false, 40, AHORA)).toBe(false)
   })
 
   test('el tomo se completa con lecciones + evaluación, y solo una vez', () => {
@@ -79,8 +79,8 @@ describe('Matricula', () => {
     m.completarLeccion(L2, t, AHORA)
     m.pullEvents()
 
-    expect(m.intentarCompletarTomo(t, true, 85)).toBe(true)
-    expect(m.intentarCompletarTomo(t, true, 85)).toBe(false)
+    expect(m.intentarCompletarTomo(t, true, 85, AHORA)).toBe(true)
+    expect(m.intentarCompletarTomo(t, true, 85, AHORA)).toBe(false)
 
     const eventos = m.pullEvents()
     expect(eventos).toHaveLength(1)
@@ -92,7 +92,7 @@ describe('Matricula', () => {
     const m = Matricula.gratuita(UniqueId.nuevo(), cursoId)
     const t = tomo(T1, [L1])
     m.completarLeccion(L1, t, AHORA)
-    m.intentarCompletarTomo(t, true, 100)
+    m.intentarCompletarTomo(t, true, 100, AHORA)
     m.pullEvents()
 
     const curso = new CursoProyectado(cursoId.valor, 'CSS desde Cero', 'css', true, 19.9, 'E', [t])
@@ -111,7 +111,7 @@ describe('Matricula', () => {
     const t1 = tomo(T1, [L1], 1)
     const t2 = tomo(crypto.randomUUID(), [L2], 2)
     m.completarLeccion(L1, t1, AHORA)
-    m.intentarCompletarTomo(t1, true, 100)
+    m.intentarCompletarTomo(t1, true, 100, AHORA)
 
     const curso = new CursoProyectado(cursoId.valor, 'X', 'x', true, 0, 'B', [t1, t2])
     expect(m.intentarCompletarCurso(curso, AHORA)).toBe(false)

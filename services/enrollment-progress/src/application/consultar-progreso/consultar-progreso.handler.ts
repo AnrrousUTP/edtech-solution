@@ -2,6 +2,7 @@ import {
   Err,
   Ok,
   UniqueId,
+  type Reloj,
   type Query,
   type QueryHandler,
   type Result,
@@ -120,6 +121,7 @@ export class ProgresoCursoHandler implements QueryHandler<
   constructor(
     private readonly matriculas: MatriculaRepository,
     private readonly cursos: CursoProyeccionRepository,
+    private readonly reloj: Reloj,
   ) {}
 
   async execute(q: ProgresoCursoQuery): Promise<Result<ProgresoCursoResponse, EnrollmentError>> {
@@ -127,7 +129,8 @@ export class ProgresoCursoHandler implements QueryHandler<
       UniqueId.desde(q.usuarioId),
       UniqueId.desde(q.cursoId),
     )
-    if (!matricula) return Err(new SinMatriculaError(q.usuarioId, q.cursoId))
+    if (!matricula || !matricula.tieneAcceso(this.reloj.ahora()))
+      return Err(new SinMatriculaError(q.usuarioId, q.cursoId))
     const curso = await this.cursos.porId(q.cursoId)
     if (!curso) return Err(new CursoNoProyectadoError(q.cursoId))
 

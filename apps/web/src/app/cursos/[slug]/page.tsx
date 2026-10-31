@@ -37,7 +37,8 @@ const DetalleCurso = async ({
   if (!curso) notFound()
 
   const perfil = await perfilSesion()
-  const matriculas = perfil ? await enrollmentApi.misMatriculas().catch(() => []) : []
+  const esEstudiante = perfil?.rol === 'estudiante'
+  const matriculas = esEstudiante ? await enrollmentApi.misMatriculas().catch(() => []) : []
   const matricula = matriculas.find(m => m.cursoId === curso.id && m.estado === 'ACTIVA')
 
   const totalLecciones = curso.tomos.reduce((suma, t) => suma + t.lecciones.length, 0)
@@ -262,6 +263,24 @@ const DetalleCurso = async ({
                   Entrar para empezar
                   <ArrowRight aria-hidden="true" />
                 </a>
+              ) : !esEstudiante ? (
+                <Link
+                  href={
+                    perfil.rol === 'afiliado'
+                      ? '/afiliados'
+                      : perfil.rol === 'docente'
+                        ? '/docente'
+                        : '/admin'
+                  }
+                  className="boton-primario w-full"
+                >
+                  {perfil.rol === 'afiliado'
+                    ? 'Ir a mi programa'
+                    : perfil.rol === 'docente'
+                      ? 'Volver a mi espacio'
+                      : 'Volver al área docente'}
+                  <ArrowRight aria-hidden="true" />
+                </Link>
               ) : curso.precio === 0 ? (
                 <BotonMatricularGratis cursoId={curso.id} slug={curso.slug} />
               ) : (

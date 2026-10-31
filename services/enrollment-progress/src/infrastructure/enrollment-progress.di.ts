@@ -93,7 +93,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   const queries = new QueryBus()
   queries.register(new EvaluacionInicialHandler(intentos))
   queries.register(new MisMatriculasHandler(matriculas, proyeccion))
-  queries.register(new ProgresoCursoHandler(matriculas, proyeccion))
+  queries.register(new ProgresoCursoHandler(matriculas, proyeccion, reloj))
 
   const http = express()
   http.use(requestContextMiddleware)

@@ -3,19 +3,19 @@ if (process.env.NODE_ENV === 'production' || process.env.ENTORNO === 'prod') {
   console.error('Publicar el seed es solo para dev.')
   process.exit(1)
 }
-// Publica los 3 cursos del seed vía la API de admin (emite los eventos reales).
+// Publica los 3 cursos del seed vía la API docente (emite los eventos reales).
 // Local:  bun run tools/seed/publicar-cursos.ts               (usa jwt-local)
-// AWS:    BASE_URL=<alb> ADMIN_TOKEN=<access token> bun run tools/seed/publicar-cursos.ts
+// AWS:    BASE_URL=<alb> DOCENTE_TOKEN=<access token> bun run tools/seed/publicar-cursos.ts
 const det = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 const CURSOS = [det(101), det(102), det(103)]
 
 const base = process.env.BASE_URL ?? 'http://localhost:3002'
-let token = process.env.ADMIN_TOKEN
+let token = process.env.DOCENTE_TOKEN
 
 if (!token) {
   const r = await fetch('http://localhost:4599/token', {
     method: 'POST',
-    body: JSON.stringify({ groups: ['admin'] }),
+    body: JSON.stringify({ groups: ['docente'] }),
   })
   token = ((await r.json()) as { access_token: string }).access_token
 }

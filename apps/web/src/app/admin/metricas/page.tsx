@@ -2,15 +2,15 @@ import Link from 'next/link'
 import { catalogApi } from '@/api/catalog'
 import { paymentsApi } from '@/api/resto'
 import { ErrorConAccion, Vacio, precioTexto } from '@/componentes/base'
-import { esAdmin, mfaPendiente } from '@/lib/sesion'
+import { esDocente, mfaPendiente } from '@/lib/sesion'
 
 // Pantalla 14: métricas de compras confirmadas.
 const Metricas = async (): Promise<JSX.Element> => {
-  if (!(await esAdmin())) {
+  if (!(await esDocente())) {
     return (
       <ErrorConAccion
-        titulo="Necesitas permisos de administrador"
-        detalle="Las métricas de ingresos son solo para administradores."
+        titulo="Necesitas el rol docente"
+        detalle="Las métricas de ingresos son solo para docentes."
         accion={{ texto: 'Iniciar sesión', href: '/admin/login' }}
       />
     )
@@ -20,14 +20,14 @@ const Metricas = async (): Promise<JSX.Element> => {
     return (
       <ErrorConAccion
         titulo="Configura tu segundo factor para entrar"
-        detalle="El panel de administración exige verificación en dos pasos (doc 08 §6). Toma un minuto."
+        detalle="El panel docente exige verificación en dos pasos (doc 08 §6). Toma un minuto."
         accion={{ texto: 'Configurarlo ahora', href: '/configurar-mfa' }}
       />
     )
   }
 
   const [ordenes, cursos] = await Promise.all([
-    paymentsApi.ordenesAdmin().catch(() => []),
+    paymentsApi.ordenesDocente().catch(() => []),
     catalogApi.cursosAdmin().catch(() => []),
   ])
 
@@ -53,7 +53,7 @@ const Metricas = async (): Promise<JSX.Element> => {
     <div className="tech-admin-metrics">
       <nav className="text-sm text-slate-500">
         <Link href="/admin" className="transition-colors hover:text-marca-600">
-          Administración
+          Área docente
         </Link>
         <span aria-hidden="true"> / </span>
         <span className="text-slate-700">Métricas</span>

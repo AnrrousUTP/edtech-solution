@@ -26,6 +26,6 @@ paths:
   /api/affiliates/admin:
     get:
       {
-        summary: Lectura global exclusiva de administrador,
+        summary: Lectura global exclusiva del rol docente,
         responses: { '200': { description: Afiliados y comisiones } },
       }

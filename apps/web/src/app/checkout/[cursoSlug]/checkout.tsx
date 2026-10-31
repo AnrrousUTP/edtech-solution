@@ -1,24 +1,12 @@
 'use client'
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
-type Fase = 'inicial' | 'comprando' | 'esperando' | 'listo' | 'demorado' | 'error'
-const INTENTOS_MAXIMOS = 45
+type Fase = 'inicial' | 'comprando' | 'error'
 
-export const Checkout = ({
-  cursoId,
-  cursoSlug,
-}: {
-  cursoId: string
-  cursoSlug: string
-}): JSX.Element => {
-  const router = useRouter()
+export const Checkout = ({ cursoId }: { cursoId: string }): JSX.Element => {
   const [fase, setFase] = useState<Fase>('inicial')
   const [mensajeError, setMensajeError] = useState<string | null>(null)
-  const [intentos, setIntentos] = useState(0)
-  const [redirigiendo, setRedirigiendo] = useState(false)
 
   const comprar = async (): Promise<void> => {
     setFase('comprando')
@@ -28,7 +16,7 @@ export const Checkout = ({
       respuesta = await fetch('/api/checkout/crear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cursoId, cursoSlug }),
+        body: JSON.stringify({ cursoId }),
         cache: 'no-store',
       })
     } catch {
@@ -36,87 +24,26 @@ export const Checkout = ({
       setFase('error')
       return
     }
-    if (!respuesta.ok) {
-      const cuerpo = (await respuesta.json().catch(() => ({}))) as { error?: string }
-      setMensajeError(cuerpo.error ?? 'No se pudo completar la compra.')
+    const orden = (await respuesta.json().catch(() => ({}))) as {
+      error?: string
+      urlAprobacion?: string
+    }
+    if (!respuesta.ok || !orden.urlAprobacion) {
+      setMensajeError(orden.error ?? 'No se pudo iniciar el pago.')
       setFase('error')
       return
     }
-    setFase('esperando')
+    window.location.assign(orden.urlAprobacion)
   }
 
-  useEffect(() => {
-    if (fase !== 'esperando') return
-    if (intentos >= INTENTOS_MAXIMOS) {
-      setFase('demorado')
-      return
-    }
-    const temporizador = setTimeout(async () => {
-      try {
-        const respuesta = await fetch(`/api/checkout/estado?cursoId=${cursoId}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        })
-        if (!respuesta.ok) throw new Error('No se pudo consultar la matrícula')
-        const { activa } = (await respuesta.json()) as { activa: boolean }
-        if (activa) {
-          setFase('listo')
-          setRedirigiendo(true)
-          router.refresh()
-          router.replace(`/dashboard?curso=${encodeURIComponent(cursoSlug)}`)
-        } else {
-          setIntentos(n => n + 1)
-        }
-      } catch {
-        setIntentos(n => n + 1)
-      }
-    }, 1000)
-    return () => clearTimeout(temporizador)
-  }, [fase, intentos, cursoId, router])
-
-  if (fase === 'listo') {
-    return (
-      <div className="tarjeta aparece mt-6 border-exito-500/40 bg-exito-100/40 p-8 text-center">
-        <svg className="result-icon" viewBox="0 0 48 48" aria-hidden="true">
-          <circle cx="24" cy="24" r="18" />
-          <path d="m14 24 7 7 14-15" />
-        </svg>
-        <h2 className="mt-4 text-xl font-extrabold text-slate-900">¡Compra completada!</h2>
-        <p className="mt-2 text-slate-700">El curso ya está habilitado en tu cuenta.</p>
-        <Link
-          href={`/dashboard?curso=${encodeURIComponent(cursoSlug)}`}
-          className="boton-exito mt-6"
-        >
-          {redirigiendo ? 'Abriendo mi perfil…' : 'Ver mi perfil'}
-        </Link>
-      </div>
-    )
-  }
-
-  if (fase === 'esperando' || fase === 'comprando') {
+  if (fase === 'comprando') {
     return (
       <div className="tarjeta mt-6 p-8 text-center" aria-live="polite">
-        <p className="text-lg font-bold text-slate-900">
-          {fase === 'comprando' ? 'Procesando tu compra…' : 'Habilitando tu curso…'}
-        </p>
-        <p className="mt-2 text-sm text-slate-600">Enseguida tendrás acceso al contenido.</p>
+        <p className="text-lg font-bold text-slate-900">Conectando con PayPal…</p>
+        <p className="mt-2 text-sm text-slate-600">Te redirigiremos para autorizar el pago.</p>
         <div className="mx-auto mt-5 h-1.5 w-40 overflow-hidden rounded-lg bg-slate-200">
           <div className="h-full w-1/3 animate-pulse rounded-lg bg-marca-600" />
         </div>
-      </div>
-    )
-  }
-
-  if (fase === 'demorado') {
-    return (
-      <div className="tarjeta mt-6 border-acento-400/50 bg-acento-100/40 p-8 text-center">
-        <p className="text-lg font-bold text-slate-900">La compra se registró</p>
-        <p className="mt-2 text-sm text-slate-700">
-          Estamos habilitando el curso. Aparecerá en tu panel en cuanto termine.
-        </p>
-        <Link href="/dashboard" className="boton-primario mt-6">
-          Ir a mi panel
-        </Link>
       </div>
     )
   }
@@ -137,7 +64,7 @@ export const Checkout = ({
       )}
 
       <p className="mt-4 text-center text-xs text-slate-500">
-        Compra de demostración: se confirma al continuar; no se solicita información de pago.
+        El pago se procesa de forma segura en PayPal. El curso se habilita cuando se confirme.
       </p>
     </div>
   )

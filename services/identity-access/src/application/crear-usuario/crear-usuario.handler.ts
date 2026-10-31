@@ -8,7 +8,7 @@ import {
   type IEventPublisher,
   type Result,
 } from '@edtech/shared-kernel'
-import { Usuario } from '../../domain/entities/usuario.entity'
+import { Usuario, type RolDominio } from '../../domain/entities/usuario.entity'
 import { Email } from '../../domain/value-objects/email.vo'
 import type { UsuarioRepository } from '../../domain/ports-out/usuario.repository'
 import type { EmailInvalidoError } from '../../domain/module.errors'
@@ -18,6 +18,7 @@ export type CrearUsuarioCommand = Command & {
   readonly sub: string
   readonly email: string
   readonly nombreVisible: string
+  readonly rol?: RolDominio
 }
 
 export type CrearUsuarioResponse = { creado: boolean }
@@ -48,7 +49,7 @@ export class CrearUsuarioHandler implements CommandHandler<
     if (isErr(email)) return Err(email.error)
 
     const nombre = cmd.nombreVisible.trim() || email.value.valor.split('@')[0] || 'Estudiante'
-    const usuario = Usuario.crearDesdeCognito(id, email.value, nombre)
+    const usuario = Usuario.crearDesdeCognito(id, email.value, nombre, cmd.rol ?? 'ESTUDIANTE')
 
     const eventos = usuario.pullEvents()
     await this.usuarios.guardar(usuario, eventos)

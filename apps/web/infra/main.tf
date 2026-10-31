@@ -87,6 +87,7 @@ module "servicio" {
     EDTECH_AFFILIATES_ENABLED = "true"
     COGNITO_DOMINIO           = data.terraform_remote_state.cognito.outputs.hosted_ui_dominio
     COGNITO_CLIENT_ID         = data.terraform_remote_state.cognito.outputs.client_web_id
+    COGNITO_ISSUER            = data.terraform_remote_state.cognito.outputs.issuer
     COGNITO_REGION            = "us-east-1"
   }
 

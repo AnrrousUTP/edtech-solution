@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express'
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
+import { createRemoteJWKSet, jwtVerify } from 'jose'
 import { asignarIdentidad } from './request-context'
 
 // Validación del access token de Cognito (doc 08 §5). El mismo código valida
@@ -50,7 +50,13 @@ const noAutorizado = (res: Response, message: string): void => {
 declare global {
   namespace Express {
     interface Request {
-      auth?: { usuarioId: string; roles: string[]; email?: string; nombreVisible?: string }
+      auth?: {
+        usuarioId: string
+        roles: string[]
+        email?: string
+        nombreVisible?: string
+        mfaPendiente?: boolean
+      }
     }
   }
 }
@@ -72,7 +78,7 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
           return noAutorizado(res, 'client_id no reconocido')
         if (typeof payload.sub !== 'string') return noAutorizado(res, 'Token sin sub')
 
-        const roles = extraerGrupos(payload)
+        const roles = rolesAplicacionDeGrupos(payload['cognito:groups'])
         const email = typeof payload.email === 'string' ? payload.email : undefined
         const nombreVisible =
           typeof payload.name === 'string'
@@ -83,6 +89,7 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
         req.auth = {
           usuarioId: payload.sub,
           roles,
+          mfaPendiente: payload.mfa_pendiente === 'true' || payload.mfa_pendiente === true,
           ...(email ? { email } : {}),
           ...(nombreVisible ? { nombreVisible } : {}),
         }
@@ -93,18 +100,39 @@ export const requiereAuth = (config: AuthConfig): Middleware => {
   }
 }
 
-export const requiereRol = (rol: 'admin' | 'estudiante'): Middleware => {
+export const requiereRol = (rol: 'estudiante' | 'docente' | 'afiliado'): Middleware => {
   return (req, res, next) => {
     if (!req.auth) return noAutorizado(res, 'Falta el token')
-    if (!req.auth.roles.includes(rol)) {
+    if (req.auth.roles.length !== 1) {
+      res
+        .status(403)
+        .json({ error: { code: 'ROL_INVALIDO', message: 'La cuenta debe tener un solo rol' } })
+      return
+    }
+    if (req.auth.roles[0] !== rol) {
       res.status(403).json({ error: { code: 'ROL_INSUFICIENTE', message: `Requiere rol ${rol}` } })
+      return
+    }
+    if (rol === 'docente' && req.auth.mfaPendiente) {
+      res.status(403).json({
+        error: { code: 'MFA_REQUERIDO', message: 'Configura MFA antes de acceder al área docente' },
+      })
       return
     }
     next()
   }
 }
 
-const extraerGrupos = (payload: JWTPayload): string[] => {
-  const grupos = payload['cognito:groups']
-  return Array.isArray(grupos) ? grupos.filter((g): g is string => typeof g === 'string') : []
+export const rolesAplicacionDeGrupos = (grupos: unknown): string[] => {
+  if (!Array.isArray(grupos)) return []
+  const normalizados = new Set(
+    grupos
+      .filter((grupo): grupo is string => typeof grupo === 'string')
+      .map(grupo => {
+        const normalizado = grupo.toLowerCase()
+        return normalizado === 'admin' ? 'docente' : normalizado
+      }),
+  )
+  const roles = ['docente', 'afiliado', 'estudiante'].filter(grupo => normalizados.has(grupo))
+  return roles.length === 1 ? roles : []
 }

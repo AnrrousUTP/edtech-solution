@@ -47,5 +47,10 @@ export const crearEventBridgeClient = (config: {
 }): EventBridgeClient =>
   new EventBridgeClient({
     region: config.region,
-    ...(config.endpoint ? { endpoint: config.endpoint } : {}),
+    ...(config.endpoint
+      ? {
+          endpoint: config.endpoint,
+          credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+        }
+      : {}),
   })

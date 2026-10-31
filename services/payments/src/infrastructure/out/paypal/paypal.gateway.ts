@@ -14,6 +14,36 @@ export type CredencialesPaypal = {
   webhookId: string
   moneda: string
 }
+
+export const credencialesPaypalDesdeSecreto = (
+  secret: Record<string, string>,
+): CredencialesPaypal => {
+  const environment = (secret.PAYPAL_ENV ?? secret.env ?? '').trim().toLowerCase()
+  const clientId = (secret.PAYPAL_CLIENT_ID ?? secret.clientId ?? '').trim()
+  const clientSecret = (secret.PAYPAL_CLIENT_SECRET ?? secret.clientSecret ?? '').trim()
+  const webhookId = (secret.PAYPAL_WEBHOOK_ID ?? secret.webhookId ?? '').trim()
+  const currency = (secret.MONEDA_DEFAULT ?? secret.moneda ?? '').trim().toUpperCase()
+
+  if (
+    !['sandbox', 'live'].includes(environment) ||
+    !clientId ||
+    !clientSecret ||
+    !webhookId ||
+    !/^[A-Z]{3}$/.test(currency)
+  ) {
+    throw new Error(
+      'El secreto PayPal debe definir PAYPAL_ENV, client ID, client secret, webhook ID y una moneda ISO de tres letras',
+    )
+  }
+
+  return {
+    env: environment as CredencialesPaypal['env'],
+    clientId,
+    clientSecret,
+    webhookId,
+    moneda: currency,
+  }
+}
 // eslint-disable-next-line -- PayPal entrega un objeto JSON abierto según la operación
 type Json = Record<string, any>
 

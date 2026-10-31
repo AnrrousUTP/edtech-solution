@@ -74,7 +74,8 @@ export type VerificacionCertificado = z.infer<typeof verificacionCertificado>
 
 export const gamificationApi = {
   miPerfil: () => llamarOpcional('/api/gamification/mi-perfil', perfilGamificacion),
-  perfilesAdmin: () => llamar('/api/gamification/admin/perfiles', z.array(perfilGamificacionAdmin)),
+  perfilesDocente: () =>
+    llamar('/api/gamification/admin/perfiles', z.array(perfilGamificacionAdmin)),
   verificar: (codigo: string) =>
     llamarOpcional(
       `/api/gamification/certificados/${encodeURIComponent(codigo.trim().toUpperCase())}`,
@@ -168,23 +169,32 @@ export const ordenEstado = z.object({
 
 export type OrdenEstado = z.infer<typeof ordenEstado>
 
+const crearOrdenRespuesta = z.object({
+  ordenId: z.string(),
+  urlAprobacion: z.string().url(),
+  monto: z.number(),
+  moneda: z.string(),
+  reutilizada: z.boolean(),
+})
+
+const capturaRespuesta = z.object({
+  estado: z.string(),
+  capturaId: z.string().nullable(),
+  yaEstabaCapturada: z.boolean(),
+})
+
 export const paymentsApi = {
-  comprarDirecto: (cursoId: string, pruebaAtribucion?: string) =>
-    llamar(
-      '/api/payments/ordenes/compra-directa',
-      z.object({
-        ordenId: z.string(),
-        cursoId: z.string(),
-        estado: z.literal('CAPTURADA'),
-        monto: z.number(),
-        moneda: z.string(),
-      }),
-      {
-        metodo: 'POST',
-        cuerpo: { cursoId, ...(pruebaAtribucion ? { pruebaAtribucion } : {}) },
-      },
-    ),
+  crearOrden: (cursoId: string, pruebaAtribucion?: string) =>
+    llamar('/api/payments/ordenes', crearOrdenRespuesta, {
+      metodo: 'POST',
+      cuerpo: { cursoId, ...(pruebaAtribucion ? { pruebaAtribucion } : {}) },
+    }),
+  capturarPago: (ordenId: string) =>
+    llamar(`/api/payments/ordenes/${encodeURIComponent(ordenId)}/capturar`, capturaRespuesta, {
+      metodo: 'POST',
+      cuerpo: {},
+    }),
   misOrdenes: () => llamar('/api/payments/mis-ordenes', z.array(ordenEstado)),
-  ordenesAdmin: () => llamar('/api/payments/admin/ordenes', z.array(ordenEstado)),
+  ordenesDocente: () => llamar('/api/payments/admin/ordenes', z.array(ordenEstado)),
   estadoOrden: (ordenId: string) => llamarOpcional(`/api/payments/ordenes/${ordenId}`, ordenEstado),
 }

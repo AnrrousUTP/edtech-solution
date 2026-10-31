@@ -11,6 +11,7 @@ export type Config = {
   /** Token de la API interna de corrección (A-19). En AWS viene de Secrets Manager. */
   internoToken: string | undefined
   internoTokenSecretName: string | undefined
+  enrollmentFunctionName: string
 }
 
 export const cargarConfig = (): Config => {
@@ -30,5 +31,6 @@ export const cargarConfig = (): Config => {
     db: { url: env.DATABASE_URL, secretName: env.DB_SECRET_NAME },
     internoToken: env.INTERNO_TOKEN,
     internoTokenSecretName: env.INTERNO_TOKEN_SECRET_NAME,
+    enrollmentFunctionName: env.ENROLLMENT_FUNCTION_NAME ?? '',
   }
 }

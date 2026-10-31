@@ -9,7 +9,13 @@ import {
   solicitarResetCognito,
 } from '@/lib/cognito-auth'
 import { config, destinoInterno, hayCognito } from '@/lib/config'
-import { COOKIE_ACCESO, COOKIE_PERFIL, COOKIE_REFRESH, claimsDeToken } from '@/lib/sesion'
+import {
+  COOKIE_ACCESO,
+  COOKIE_PERFIL,
+  COOKIE_REFRESH,
+  claimsDeToken,
+  rolDeGrupos,
+} from '@/lib/sesion'
 
 export const runtime = 'nodejs'
 
@@ -53,6 +59,13 @@ const crearSesion = (
     return NextResponse.json({ error: 'Cognito no devolvió una sesión válida.' }, { status: 502 })
   const perfilAcceso = claimsDeToken(resultado.AccessToken) ?? {}
   const perfilId = resultado.IdToken ? (claimsDeToken(resultado.IdToken) ?? {}) : {}
+  const rol = rolDeGrupos(perfilAcceso['cognito:groups'])
+  if (!rol) {
+    return NextResponse.json(
+      { error: 'La cuenta debe tener exactamente un rol válido. Contacta al equipo de soporte.' },
+      { status: 403 },
+    )
+  }
   const seguridad = {
     httpOnly: true,
     secure: config.appUrl.startsWith('https://') || config.production,
@@ -80,11 +93,12 @@ const crearSesion = (
             perfilId.email ??
             'Estudiante',
         ),
-        roles: Array.isArray(perfilAcceso['cognito:groups']) ? perfilAcceso['cognito:groups'] : [],
+        rol,
+        roles: rol ? [rol] : [],
         mfaPendiente: String(perfilId.mfa_pendiente ?? '') === 'true',
       }),
     ),
-    { ...seguridad, httpOnly: false, maxAge: edad },
+    { ...seguridad, httpOnly: true, maxAge: edad },
   )
   return respuesta
 }
@@ -114,12 +128,23 @@ export const POST = async (peticion: Request): Promise<Response> => {
 
   try {
     if (cuerpo.accion === 'register') {
+      const rol = cuerpo.rol
+      if (!['estudiante', 'afiliado'].includes(String(rol)))
+        return NextResponse.json(
+          { error: 'El rol docente requiere aprovisionamiento del equipo.' },
+          { status: 400 },
+        )
       if (!valido(cuerpo.nombre, 1, 80) || !valido(cuerpo.password, 10, 256))
         return NextResponse.json(
           { error: 'Completa tu nombre y una contraseña de al menos 10 caracteres.' },
           { status: 400 },
         )
-      const resultado = await registrarEnCognito(cuerpo.nombre.trim(), email, cuerpo.password)
+      const resultado = await registrarEnCognito(
+        cuerpo.nombre.trim(),
+        email,
+        cuerpo.password,
+        rol as 'estudiante' | 'afiliado',
+      )
       return NextResponse.json({ ok: true, confirmado: resultado.UserConfirmed ?? false })
     }
     if (cuerpo.accion === 'confirm') {

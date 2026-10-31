@@ -40,9 +40,9 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
-  const admin = [auth, requiereRol('admin')]
+  const admin = [auth, requiereRol('docente')]
 
-  router.get('/mi-perfil', auth, async (req, res) => {
+  router.get('/mi-perfil', auth, requiereRol('estudiante'), async (req, res) => {
     responder(
       res,
       await queries.dispatch({ _tag: 'MiPerfil', usuarioId: req.auth?.usuarioId ?? '' }),

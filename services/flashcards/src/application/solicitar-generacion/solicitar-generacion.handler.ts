@@ -37,6 +37,7 @@ export class SolicitarGeneracionHandler implements CommandHandler<
         tomoId: cmd.tomoId,
         mazoId: existente.id.valor,
       })
+      if (existente.estado === 'GENERANDO') await this.cola.encolar(existente.id.valor)
       return Ok({ mazoId: existente.id.valor, desdeCache: true })
     }
 

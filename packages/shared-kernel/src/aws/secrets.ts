@@ -9,7 +9,12 @@ export const crearSecretsClient = (config: {
 }): SecretsManagerClient =>
   new SecretsManagerClient({
     region: config.region,
-    ...(config.endpoint ? { endpoint: config.endpoint } : {}),
+    ...(config.endpoint
+      ? {
+          endpoint: config.endpoint,
+          credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+        }
+      : {}),
   })
 
 /** Lee un secreto JSON de Secrets Manager, con caché en memoria de 5 minutos. */

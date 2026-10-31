@@ -4,6 +4,7 @@ import { afiliadosApi } from '@/api/afiliados'
 import { assistantSession } from '@/lib/assistant/auth'
 import { config } from '@/lib/config'
 import { crearUrlMqttFirmada } from '@/lib/iot/presigned-url'
+import { perfilSesion } from '@/lib/sesion'
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
 
 export const runtime = 'nodejs'
@@ -19,6 +20,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!config.iot.enabled || !config.iot.endpoint || !config.iot.sessionRoleArn) {
     return errorResponse('La conexión IoT todavía no está habilitada.', 503)
   }
+  const perfil = await perfilSesion()
+  if (!perfil) return errorResponse('Inicia sesión para conectar el terminal.', 401)
+  if (perfil.rol !== 'afiliado') return errorResponse('Esta función requiere rol afiliado.', 403)
   const session = await assistantSession()
   if (!session) return errorResponse('Inicia sesión para conectar el terminal.', 401)
   let body: unknown

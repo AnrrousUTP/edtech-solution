@@ -40,7 +40,12 @@ const cliente = (): { ClientId: string } => {
   return { ClientId: config.cognito.clientId }
 }
 
-export const registrarEnCognito = async (nombre: string, email: string, password: string) =>
+export const registrarEnCognito = async (
+  nombre: string,
+  email: string,
+  password: string,
+  rol: 'estudiante' | 'afiliado',
+) =>
   llamar<{ UserConfirmed?: boolean }>('SignUp', {
     ...cliente(),
     Username: email,
@@ -48,6 +53,7 @@ export const registrarEnCognito = async (nombre: string, email: string, password
     UserAttributes: [
       { Name: 'email', Value: email },
       { Name: 'custom:nombre_visible', Value: nombre },
+      { Name: 'custom:rol_aplicacion', Value: rol },
     ],
   })
 

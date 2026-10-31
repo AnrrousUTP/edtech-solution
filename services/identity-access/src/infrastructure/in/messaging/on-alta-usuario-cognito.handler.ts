@@ -10,6 +10,9 @@ export const onAltaUsuarioCognito = (sobre: SobreEvento): Command => {
     sub: String(p.sub),
     email: String(p.email),
     nombreVisible: String(p.nombreVisible ?? ''),
+    rol: ['ESTUDIANTE', 'DOCENTE', 'AFILIADO'].includes(String(p.rol))
+      ? (String(p.rol) as 'ESTUDIANTE' | 'DOCENTE' | 'AFILIADO')
+      : 'ESTUDIANTE',
   }
   return cmd
 }

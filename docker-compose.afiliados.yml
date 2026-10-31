@@ -40,7 +40,7 @@ services:
     profiles: ["afiliados-iot","full"]
     environment: {PGPASSWORD: local}
     volumes: ["./tools/seed/00-schemas.sql:/bootstrap.sql:ro"]
-    command: ["psql","-h","postgres","-U","postgres","-d","edtech","-v","ON_ERROR_STOP=1","-f","/bootstrap.sql"]
+    command: ["/bin/sh", "-ec", "until pg_isready -h postgres -U postgres -d edtech; do sleep 1; done; exec psql -h postgres -U postgres -d edtech -v ON_ERROR_STOP=1 -f /bootstrap.sql"]
     depends_on:
       postgres: {condition: service_healthy}
   referral-bootstrap:

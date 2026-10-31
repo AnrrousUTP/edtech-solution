@@ -18,12 +18,12 @@ const assert = (name: string, value: unknown) => {
   checks++
   console.log(`OK ${name}`)
 }
-const token = async (sub: string, admin = false) => {
+const token = async (sub: string, docente = false) => {
   const r = await fetch(`${JWT}/token`, {
     method: 'POST',
     body: JSON.stringify({
       sub,
-      groups: [admin ? 'admin' : 'estudiante'],
+      groups: [docente ? 'docente' : 'estudiante'],
       email: 'demo@edtech.test',
     }),
   })
@@ -56,7 +56,7 @@ const wait = async <T>(label: string, f: () => Promise<T>, ok: (v: T) => boolean
 const afiliadoId = crypto.randomUUID(),
   buyerId = crypto.randomUUID(),
   otherId = crypto.randomUUID()
-const [affToken, buyerToken, otherToken, adminToken] = await Promise.all([
+const [affToken, buyerToken, otherToken, docenteToken] = await Promise.all([
   token(afiliadoId),
   token(buyerId),
   token(otherId),
@@ -192,7 +192,7 @@ assert(
 )
 assert(
   'admin consulta las comisiones',
-  (await call('/api/affiliates/admin', adminToken)).status === 200,
+  (await call('/api/affiliates/admin', docenteToken)).status === 200,
 )
 assert(
   'identificadores enviados por cliente no crean afiliación para otro usuario',
@@ -272,8 +272,8 @@ assert(
 )
 assert(
   'admin asigna terminal de demo',
-  (await call('/api/iot/admin/asignacion', adminToken, 'PUT', { usuarioId: afiliadoId })).status ===
-    200,
+  (await call('/api/iot/admin/asignacion', docenteToken, 'PUT', { usuarioId: afiliadoId }))
+    .status === 200,
 )
 const terminal = await wait(
   'configuración MQTT',
@@ -341,7 +341,7 @@ await wait(
 )
 assert('terminal recibe y confirma aviso MQTT', true)
 const oldPreview = t.previewToken
-await call('/api/iot/admin/asignacion', adminToken, 'PUT', { usuarioId: afiliadoId })
+await call('/api/iot/admin/asignacion', docenteToken, 'PUT', { usuarioId: afiliadoId })
 assert(
   'reasignación revoca la vista previa',
   (await call(`/api/iot/vista/${t.id}?token=${oldPreview}`)).status === 404,
@@ -352,7 +352,7 @@ assert(
 )
 assert(
   'suspensión de afiliado',
-  (await call(`/api/affiliates/admin/${aff.id}`, adminToken, 'PUT', { activo: false })).status ===
+  (await call(`/api/affiliates/admin/${aff.id}`, docenteToken, 'PUT', { activo: false })).status ===
     200,
 )
 assert(

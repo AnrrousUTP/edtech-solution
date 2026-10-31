@@ -69,7 +69,8 @@ export class CompletarLeccionHandler implements CommandHandler<
       return Err(new LeccionBloqueadaError(cmd.leccionId))
     }
 
-    const r = matricula.completarLeccion(cmd.leccionId, tomo, this.reloj.ahora())
+    const ahora = this.reloj.ahora()
+    const r = matricula.completarLeccion(cmd.leccionId, tomo, ahora)
     if (isErr(r)) return Err(r.error)
 
     const evaluacion = await this.matriculas.evaluacionAprobada(usuarioId, tomo.id)
@@ -77,6 +78,7 @@ export class CompletarLeccionHandler implements CommandHandler<
       tomo,
       evaluacion.aprobada,
       evaluacion.puntaje,
+      ahora,
     )
 
     let cursoCompletado = false

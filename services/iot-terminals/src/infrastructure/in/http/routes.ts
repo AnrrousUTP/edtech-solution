@@ -11,6 +11,7 @@ export const crearRouter = (
   const r = Router()
   r.use(json({ limit: '8kb' }))
   const auth = requiereAuth({ issuer: cfg.issuer, clientId: cfg.clientId, jwksUri: cfg.jwksUri })
+  const afiliado = [auth, requiereRol('afiliado')]
   const wrap =
     (f: (req: Request) => Promise<unknown>) =>
     (req: Request, res: Response, next: NextFunction): void => {
@@ -21,12 +22,12 @@ export const crearRouter = (
   const repo = handler.repositorio
   r.get(
     '/me',
-    auth,
+    ...afiliado,
     wrap(req => repo.mio(req.auth!.usuarioId)),
   )
   r.post(
     '/solicitud',
-    auth,
+    ...afiliado,
     wrap(async req => {
       await repo.solicitar(req.auth!.usuarioId)
       return { solicitada: true }
@@ -34,7 +35,7 @@ export const crearRouter = (
   )
   r.put(
     '/me',
-    auth,
+    ...afiliado,
     wrap(req => {
       if (typeof req.body?.habilitado !== 'boolean' || !Number.isSafeInteger(req.body?.version))
         throw new TerminalError('DATOS_INVALIDOS', 'Indica el estado y la versión de configuración')
@@ -53,13 +54,13 @@ export const crearRouter = (
   r.get(
     '/admin',
     auth,
-    requiereRol('admin'),
+    requiereRol('docente'),
     wrap(() => repo.admin()),
   )
   r.put(
     '/admin/asignacion',
     auth,
-    requiereRol('admin'),
+    requiereRol('docente'),
     wrap(async req => {
       const user = req.body?.usuarioId
       if (user !== null && (typeof user !== 'string' || !/^[0-9a-f-]{36}$/i.test(user)))

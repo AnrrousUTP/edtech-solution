@@ -37,13 +37,19 @@ const createRuntime = async () => {
   }
 
   const region = cfg.region
-  const parameter = await new SSMClient({ region }).send(
+  const endpointOptions = cfg.awsEndpoint
+    ? {
+        endpoint: cfg.awsEndpoint,
+        credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+      }
+    : {}
+  const parameter = await new SSMClient({ region, ...endpointOptions }).send(
     new GetParameterCommand({ Name: parameterName, WithDecryption: true }),
   )
   const privateKey = parameter.Parameter?.Value
   if (!privateKey) throw new Error('El parámetro de firma de afiliados no tiene valor')
 
-  const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region }), {
+  const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region, ...endpointOptions }), {
     marshallOptions: { removeUndefinedValues: true },
   })
   const repo = new DynamoAfiliadosRepository(client, tableName)

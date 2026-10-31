@@ -29,11 +29,11 @@ El bootstrap también sincroniza por eventos los cursos de demo que ya estaban p
 - Terminales: http://localhost:3100/admin/terminales
 - Gateway: http://localhost:8180
 
-| Cuenta local        | Contraseña de demo | Uso           |
-| ------------------- | ------------------ | ------------- |
-| `ana@edtech.test`   | `AnaDemo123`       | Afiliada      |
-| `bruno@edtech.test` | `BrunoDemo123`     | Comprador     |
-| `admin@edtech.test` | `AdminLocal1`      | Administrador |
+| Cuenta local          | Contraseña de demo | Uso       |
+| --------------------- | ------------------ | --------- |
+| `ana@edtech.test`     | `AnaDemo123`       | Afiliada  |
+| `bruno@edtech.test`   | `BrunoDemo123`     | Comprador |
+| `docente@edtech.test` | `DocenteLocal1`    | Docente   |
 
 Estas cuentas existen solo en `jwt-local`, no en Cognito. Otras personas pueden registrarse en el proveedor local; su código de confirmación de desarrollo es `123456`. El proveedor local conserva las cuentas registradas en memoria; las cuentas de demo se recrean al iniciar. Los registros de afiliados/ingresos se conservan en Postgres.
 
@@ -43,7 +43,7 @@ Estas cuentas existen solo en `jwt-local`, no en Cognito. Otras personas pueden 
 2. Elegir Python Aplicado como destino, descargar o copiar el enlace.
 3. Abrirlo en otra sesión o ventana privada; iniciar sesión como Bruno y comprar el curso.
 4. Volver al panel de Ana: aparece USD 2 en Ingresos y la notificación. Las vistas se actualizan cada 10 s cuando la pestaña es visible.
-5. Ana solicita un terminal. El administrador lo asigna desde Terminales. Ana cambia su mensaje promocional y abre la pantalla mediante el enlace de vista previa.
+5. Ana solicita un terminal. El docente lo asigna desde Terminales. Ana cambia su mensaje promocional y abre la pantalla mediante el enlace de vista previa.
 6. Otra venta genera un aviso MQTT. El dispositivo lo confirma y la vista muestra «Nueva venta confirmada».
 
 Cada comprador solo puede comprar una vez el mismo curso mientras conserve una compra capturada; usar una nueva cuenta para repetir una venta. Volver a capturar una orden o recibir un evento repetido no genera otra comisión.

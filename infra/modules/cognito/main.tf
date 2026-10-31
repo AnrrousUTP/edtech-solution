@@ -1,8 +1,23 @@
 # User Pool, grupos, app clients y las 2 Lambdas (doc 08).
 variable "entorno" { type = string }
-variable "cola_identity_arn" { type = string }
-variable "cola_identity_url" { type = string }
-variable "kms_mensajeria_arn" { type = string }
+variable "cola_identity_arn" {
+  type = string
+  validation {
+    condition     = trimspace(var.cola_identity_arn) != ""
+    error_message = "Cognito requiere el ARN de la cola identity_events de lowcost."
+  }
+}
+variable "cola_identity_url" {
+  type = string
+  validation {
+    condition     = trimspace(var.cola_identity_url) != ""
+    error_message = "Cognito requiere la URL de la cola identity_events de lowcost."
+  }
+}
+variable "kms_mensajeria_arn" {
+  type    = string
+  default = ""
+}
 variable "ruta_lambdas" { type = string } # services/identity-access/lambdas
 variable "callback_urls" {
   type    = list(string)
@@ -92,14 +107,24 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 }
 
 resource "aws_iam_role_policy" "post_confirmation_sqs" {
-  name = "encolar-alta"
+  name = "encolar-alta-y-asignar-rol"
   role = aws_iam_role.lambda["post-confirmation"].id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      { Effect = "Allow", Action = ["sqs:SendMessage"], Resource = var.cola_identity_arn },
+    Statement = concat([
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = var.cola_identity_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cognito-idp:AdminAddUserToGroup"]
+        Resource = aws_cognito_user_pool.principal.arn
+      },
+      ], var.kms_mensajeria_arn == "" ? [] : [
       { Effect = "Allow", Action = ["kms:GenerateDataKey", "kms:Decrypt"], Resource = var.kms_mensajeria_arn },
-    ]
+    ])
   })
 }
 
@@ -111,7 +136,7 @@ resource "aws_iam_role_policy" "pre_token_cognito" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["cognito-idp:AdminGetUser"]
-      Resource = "arn:aws:cognito-idp:us-east-1:${data.aws_caller_identity.actual.account_id}:userpool/*"
+      Resource = aws_cognito_user_pool.principal.arn
     }]
   })
 }
@@ -119,7 +144,7 @@ resource "aws_iam_role_policy" "pre_token_cognito" {
 resource "aws_lambda_function" "post_confirmation" {
   function_name    = "edtech-${var.entorno}-cognito-post-confirmation"
   role             = aws_iam_role.lambda["post-confirmation"].arn
-  runtime          = "nodejs20.x"
+  runtime          = "nodejs22.x"
   handler          = "index.handler"
   filename         = data.archive_file.post_confirmation.output_path
   source_code_hash = data.archive_file.post_confirmation.output_base64sha256
@@ -132,7 +157,7 @@ resource "aws_lambda_function" "post_confirmation" {
 resource "aws_lambda_function" "pre_token" {
   function_name    = "edtech-${var.entorno}-cognito-pre-token"
   role             = aws_iam_role.lambda["pre-token"].arn
-  runtime          = "nodejs20.x"
+  runtime          = "nodejs22.x"
   handler          = "index.handler"
   filename         = data.archive_file.pre_token.output_path
   source_code_hash = data.archive_file.pre_token.output_base64sha256
@@ -141,7 +166,8 @@ resource "aws_lambda_function" "pre_token" {
 
 # ── User Pool ────────────────────────────────────────────────────────────────
 resource "aws_cognito_user_pool" "principal" {
-  name = "edtech-${var.entorno}-users"
+  name           = "edtech-${var.entorno}-users"
+  user_pool_tier = "ESSENTIALS"
 
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
@@ -171,9 +197,23 @@ resource "aws_cognito_user_pool" "principal" {
     }
   }
 
+  # El rol se elige al crear la cuenta y no puede cambiarse después.
+  schema {
+    name                = "rol_aplicacion"
+    attribute_data_type = "String"
+    mutable             = false
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 16
+    }
+  }
+
   lambda_config {
-    post_confirmation    = aws_lambda_function.post_confirmation.arn
-    pre_token_generation = aws_lambda_function.pre_token.arn
+    post_confirmation = aws_lambda_function.post_confirmation.arn
+    pre_token_generation_config {
+      lambda_arn     = aws_lambda_function.pre_token.arn
+      lambda_version = "V2_0"
+    }
   }
 
   mfa_configuration = "OPTIONAL"
@@ -198,16 +238,31 @@ resource "aws_lambda_permission" "cognito_pre_token" {
   source_arn    = aws_cognito_user_pool.principal.arn
 }
 
+resource "aws_cognito_user_group" "estudiante" {
+  name         = "estudiante"
+  user_pool_id = aws_cognito_user_pool.principal.id
+  precedence   = 10
+}
+
+# Se conserva temporalmente el grupo legado durante la transición. El trigger
+# pre-token lo normaliza como docente; sus miembros se moverán al grupo nuevo
+# antes de retirar este recurso en un siguiente apply.
 resource "aws_cognito_user_group" "admin" {
   name         = "admin"
   user_pool_id = aws_cognito_user_pool.principal.id
   precedence   = 1
 }
 
-resource "aws_cognito_user_group" "estudiante" {
-  name         = "estudiante"
+resource "aws_cognito_user_group" "docente" {
+  name         = "docente"
   user_pool_id = aws_cognito_user_pool.principal.id
-  precedence   = 10
+  precedence   = 1
+}
+
+resource "aws_cognito_user_group" "afiliado" {
+  name         = "afiliado"
+  user_pool_id = aws_cognito_user_pool.principal.id
+  precedence   = 7
 }
 
 resource "aws_cognito_user_pool_domain" "hosted_ui" {
@@ -226,7 +281,7 @@ resource "aws_cognito_user_pool_client" "web" {
   allowed_oauth_flows                  = ["code"]
   # `aws.cognito.signin.user.admin` habilita las APIs de AUTOSERVICIO del propio
   # usuario (alta de TOTP, cambio de contraseña). Sin él, la pantalla de MFA del
-  # admin (doc 08 §6) no puede existir: Cognito responde "Access Token does not
+  # docente (doc 08 §6) no puede existir: Cognito responde "Access Token does not
   # have required scopes". El alcance es el propio usuario y nada más, y el token
   # solo se usa desde Route Handlers del servidor (doc 08 §7) — A-57.
   allowed_oauth_scopes         = ["openid", "profile", "email", "aws.cognito.signin.user.admin"]
@@ -237,8 +292,8 @@ resource "aws_cognito_user_pool_client" "web" {
   # refresh pasa por el endpoint de token del Hosted UI, que es justo por donde
   # lo hace el Route Handler del servidor (doc 08 §7).
   explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH"]
-  read_attributes     = ["email", "email_verified", "custom:nombre_visible"]
-  write_attributes    = ["email", "custom:nombre_visible"]
+  read_attributes     = ["email", "email_verified", "custom:nombre_visible", "custom:rol_aplicacion"]
+  write_attributes    = ["email", "custom:nombre_visible", "custom:rol_aplicacion"]
 
   access_token_validity  = 60
   id_token_validity      = 60

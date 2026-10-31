@@ -32,11 +32,11 @@ relativo se conserva mejor.
 
 ### Colas internas (no reciben de EventBridge)
 
-| Cola | Productor | Consumidor | Para qué |
-|---|---|---|---|
-| `sqs-payments-webhooks` | controlador HTTP de payments | worker de payments | Responder a PayPal en <200 ms y procesar con reintentos (doc 09 §4) |
-| `sqs-gamification-certificados` | gamification | worker de gamification | Generar el PDF del certificado, que tarda segundos |
-| `sqs-flashcards-generacion` | poller de flashcards | worker de flashcards | Invocar a Bedrock, que tarda decenas de segundos (doc 10 §3) |
+| Cola                            | Productor                    | Consumidor             | Para qué                                                            |
+| ------------------------------- | ---------------------------- | ---------------------- | ------------------------------------------------------------------- |
+| `sqs-payments-webhooks`         | controlador HTTP de payments | worker de payments     | Responder a PayPal en <200 ms y procesar con reintentos (doc 09 §4) |
+| `sqs-gamification-certificados` | gamification                 | worker de gamification | Generar el PDF del certificado, que tarda segundos                  |
+| `sqs-flashcards-generacion`     | poller de flashcards         | worker de flashcards   | Invocar a Bedrock, que tarda decenas de segundos (doc 10 §3)        |
 
 ## 2. Catálogo de eventos
 
@@ -45,65 +45,65 @@ versión nueva es un evento nuevo, y las reglas de EventBridge apuntan a la vers
 
 ### 2.1 `identity-access-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `identity.usuario-registrado.v1` | `usuarioId, email, nombreVisible, rol` | notifications (bienvenida), gamification (crea perfil) |
-| `identity.nivel-actualizado.v1` | `usuarioId, nivelAnterior, nivelNuevo, origen` | — (auditoría) |
-| `identity.perfil-actualizado.v1` | `usuarioId, campos[]` | — |
+| Evento                           | Payload                                        | Consumidores                                           |
+| -------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| `identity.usuario-registrado.v1` | `usuarioId, email, nombreVisible, rol`         | notifications (bienvenida), gamification (crea perfil) |
+| `identity.nivel-actualizado.v1`  | `usuarioId, nivelAnterior, nivelNuevo, origen` | — (auditoría)                                          |
+| `identity.perfil-actualizado.v1` | `usuarioId, campos[]`                          | —                                                      |
 
 ### 2.2 `catalog-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `catalog.curso-publicado.v1` | `cursoId, slug, titulo, tecnologia, nivelMin, nivelMax, precio, moneda, versionPrecio, estructura[]` | enrollment (proyección), payments (proyección de precios) |
-| `catalog.curso-despublicado.v1` | `cursoId, motivo` | enrollment, payments |
-| `catalog.contenido-actualizado.v1` | `cursoId, tomoId, contenidoHash, lecciones[{id,titulo,bloquesS3Key}]` | flashcards (dispara generación), enrollment (refresca proyección) |
-| `catalog.precio-actualizado.v1` | `cursoId, montoAnterior, montoNuevo, moneda, versionPrecio` | payments |
+| Evento                             | Payload                                                                                              | Consumidores                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `catalog.curso-publicado.v1`       | `cursoId, slug, titulo, tecnologia, nivelMin, nivelMax, precio, moneda, versionPrecio, estructura[]` | enrollment (proyección), payments (proyección de precios)         |
+| `catalog.curso-despublicado.v1`    | `cursoId, motivo`                                                                                    | enrollment, payments                                              |
+| `catalog.contenido-actualizado.v1` | `cursoId, tomoId, contenidoHash, lecciones[{id,titulo,bloquesS3Key}]`                                | flashcards (dispara generación), enrollment (refresca proyección) |
+| `catalog.precio-actualizado.v1`    | `cursoId, montoAnterior, montoNuevo, moneda, versionPrecio`                                          | payments                                                          |
 
 `estructura[]` es el árbol tomo→lección que enrollment guarda en su proyección (doc 03 §6).
 Va **dentro del evento** a propósito: evita que enrollment tenga que llamar a catalog.
 
 ### 2.3 `enrollment-progress-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `enrollment.matricula-creada.v1` | `matriculaId, usuarioId, cursoId, origen, ordenId?` | notifications, gamification |
-| `enrollment.leccion-completada.v1` | `matriculaId, usuarioId, cursoId, tomoId, leccionId, completadaAt` | gamification (racha, puntos) |
-| `enrollment.tomo-completado.v1` | `matriculaId, usuarioId, cursoId, tomoId, puntaje` | gamification, flashcards (habilita el mazo de repaso) |
-| `enrollment.curso-completado.v1` | `matriculaId, usuarioId, cursoId, cursoTitulo, completadoAt` | gamification (insignia + certificado menor), identity (sube nivel), notifications |
-| `enrollment.carrera-completada.v1` | `usuarioId, carreraId, carreraTitulo` | gamification (certificado mayor), notifications |
-| `enrollment.evaluacion-aprobada.v1` | `usuarioId, intentoId, tomoId, puntaje, perfecto` | gamification (insignia `EVALUACION_PERFECTA`) |
-| `enrollment.evaluacion-reprobada.v1` | `usuarioId, intentoId, tomoId, puntaje` | — |
-| `enrollment.test-nivelacion-completado.v1` | `usuarioId, intentoId, nivelResultante, puntaje` | identity (fija el nivel con origen `TEST`) |
+| Evento                                     | Payload                                                            | Consumidores                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `enrollment.matricula-creada.v1`           | `matriculaId, usuarioId, cursoId, origen, ordenId?`                | notifications, gamification                                                       |
+| `enrollment.leccion-completada.v1`         | `matriculaId, usuarioId, cursoId, tomoId, leccionId, completadaAt` | gamification (racha, puntos)                                                      |
+| `enrollment.tomo-completado.v1`            | `matriculaId, usuarioId, cursoId, tomoId, puntaje`                 | gamification, flashcards (habilita el mazo de repaso)                             |
+| `enrollment.curso-completado.v1`           | `matriculaId, usuarioId, cursoId, cursoTitulo, completadoAt`       | gamification (insignia + certificado menor), identity (sube nivel), notifications |
+| `enrollment.carrera-completada.v1`         | `usuarioId, carreraId, carreraTitulo`                              | gamification (certificado mayor), notifications                                   |
+| `enrollment.evaluacion-aprobada.v1`        | `usuarioId, intentoId, tomoId, puntaje, perfecto`                  | gamification (insignia `EVALUACION_PERFECTA`)                                     |
+| `enrollment.evaluacion-reprobada.v1`       | `usuarioId, intentoId, tomoId, puntaje`                            | —                                                                                 |
+| `enrollment.test-nivelacion-completado.v1` | `usuarioId, intentoId, nivelResultante, puntaje`                   | identity (fija el nivel con origen `TEST`)                                        |
 
 `cursoTitulo` viaja dentro del evento para que gamification pueda emitir el certificado sin
 consultar a catalog. Es duplicación deliberada (doc 03 §10, opción 2).
 
 ### 2.4 `gamification-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `gamification.insignia-otorgada.v1` | `usuarioId, criterio, referenciaId, otorgadaAt` | notifications |
-| `gamification.certificado-emitido.v1` | `certificadoId, usuarioId, tipo, referenciaId, titulo, codigoVerificacion` | notifications |
-| `gamification.racha-extendida.v1` | `usuarioId, rachaActual` | notifications (solo en hitos: 7, 30, 100) |
-| `gamification.racha-rota.v1` | `usuarioId, rachaPerdida` | notifications |
+| Evento                                | Payload                                                                    | Consumidores                              |
+| ------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| `gamification.insignia-otorgada.v1`   | `usuarioId, criterio, referenciaId, otorgadaAt`                            | notifications                             |
+| `gamification.certificado-emitido.v1` | `certificadoId, usuarioId, tipo, referenciaId, titulo, codigoVerificacion` | notifications                             |
+| `gamification.racha-extendida.v1`     | `usuarioId, rachaActual`                                                   | notifications (solo en hitos: 7, 30, 100) |
+| `gamification.racha-rota.v1`          | `usuarioId, rachaPerdida`                                                  | notifications                             |
 
 ### 2.5 `flashcards-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `flashcards.mazo-generado.v1` | `mazoId, tomoId, cursoId, version, cantidadTarjetas, modeloUsado` | notifications (avisa al admin que hay revisión pendiente) |
-| `flashcards.mazo-publicado.v1` | `mazoId, tomoId, cursoId, version, cantidadPublicadas` | notifications |
-| `flashcards.generacion-fallida.v1` | `tomoId, motivo, intentos` | notifications (alerta al admin) |
+| Evento                             | Payload                                                           | Consumidores                                              |
+| ---------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| `flashcards.mazo-generado.v1`      | `mazoId, tomoId, cursoId, version, cantidadTarjetas, modeloUsado` | notifications (avisa al admin que hay revisión pendiente) |
+| `flashcards.mazo-publicado.v1`     | `mazoId, tomoId, cursoId, version, cantidadPublicadas`            | notifications                                             |
+| `flashcards.generacion-fallida.v1` | `tomoId, motivo, intentos`                                        | notifications (alerta al admin)                           |
 
 ### 2.6 `payments-service`
 
-| Evento | Payload | Consumidores |
-|---|---|---|
-| `payments.orden-creada.v1` | `ordenId, usuarioId, cursoId, monto, moneda` | — |
-| `payments.pago-confirmado.v1` | `ordenId, usuarioId, cursoId, monto, moneda, capturaId, confirmadoAt` | **enrollment** (habilita matrícula), notifications |
-| `payments.pago-fallido.v1` | `ordenId, usuarioId, cursoId, motivo` | notifications |
-| `payments.pago-reembolsado.v1` | `ordenId, usuarioId, cursoId, monto, reembolsoId` | **enrollment** (revoca matrícula), notifications |
+| Evento                         | Payload                                                               | Consumidores                                       |
+| ------------------------------ | --------------------------------------------------------------------- | -------------------------------------------------- |
+| `payments.orden-creada.v1`     | `ordenId, usuarioId, cursoId, monto, moneda`                          | —                                                  |
+| `payments.pago-confirmado.v1`  | `ordenId, usuarioId, cursoId, monto, moneda, capturaId, confirmadoAt` | **enrollment** (habilita matrícula), notifications |
+| `payments.pago-fallido.v1`     | `ordenId, usuarioId, cursoId, motivo`                                 | notifications                                      |
+| `payments.pago-reembolsado.v1` | `ordenId, usuarioId, cursoId, monto, reembolsoId`                     | **enrollment** (revoca matrícula), notifications   |
 
 ## 3. Sobre público de un evento
 
@@ -121,8 +121,13 @@ sean legibles.
     "occurredAt": "2026-08-26T14:03:11.412Z",
     "aggregateId": "9a20…",
     "correlationId": "req-7f2c…",
-    "payload": { "matriculaId": "9a20…", "usuarioId": "…", "cursoId": "…",
-                 "cursoTitulo": "CSS desde Cero", "completadoAt": "2026-08-26T14:03:11.400Z" }
+    "payload": {
+      "matriculaId": "9a20…",
+      "usuarioId": "…",
+      "cursoId": "…",
+      "cursoTitulo": "CSS desde Cero",
+      "completadoAt": "2026-08-26T14:03:11.400Z"
+    }
   }
 }
 ```
@@ -156,23 +161,27 @@ resource "aws_cloudwatch_event_target" "enrollment_desde_payments" {
 }
 ```
 
-> **Dos DLQ distintas y no son lo mismo.** La `dead_letter_config` del *target* captura
+> **Dos DLQ distintas y no son lo mismo.** La `dead_letter_config` del _target_ captura
 > eventos que EventBridge **no pudo entregar** a la cola (permisos, cola inexistente). La
-> `redrive_policy` de la *cola* captura mensajes que el **consumidor no pudo procesar**.
+> `redrive_policy` de la _cola_ captura mensajes que el **consumidor no pudo procesar**.
 > Confundirlas hace que un fallo quede invisible. Ambas existen, con nombres distintos.
+
+Cada cola destino y cada DLQ de entrega tiene una política SQS para `events.amazonaws.com`
+con `sqs:SendMessage`. La condición limita el envío al ARN de su regla (`aws:SourceArn`)
+y a la cuenta origen (`aws:SourceAccount`); la DLQ solo acepta fallos de su propia regla.
 
 Mapa completo de reglas:
 
-| Regla | Patrón (`detail-type`) | Destino |
-|---|---|---|
-| `enrollment-desde-payments` | `payments.pago-confirmado.v1`, `payments.pago-reembolsado.v1` | `sqs-enrollment` |
-| `enrollment-desde-catalog` | `catalog.curso-publicado.v1`, `catalog.curso-despublicado.v1`, `catalog.contenido-actualizado.v1` | `sqs-enrollment` |
-| `gamification-desde-enrollment` | `enrollment.leccion-completada.v1`, `enrollment.tomo-completado.v1`, `enrollment.curso-completado.v1`, `enrollment.carrera-completada.v1`, `enrollment.evaluacion-aprobada.v1` | `sqs-gamification` |
-| `gamification-desde-identity` | `identity.usuario-registrado.v1` | `sqs-gamification` |
-| `flashcards-desde-catalog` | `catalog.contenido-actualizado.v1` | `sqs-flashcards` |
-| `identity-desde-enrollment` | `enrollment.curso-completado.v1`, `enrollment.test-nivelacion-completado.v1` | `sqs-identity` |
-| `payments-desde-catalog` | `catalog.curso-publicado.v1`, `catalog.precio-actualizado.v1`, `catalog.curso-despublicado.v1` | `sqs-payments` |
-| `notificaciones` | prefijo `identity.`, `enrollment.`, `gamification.`, `payments.`, `flashcards.` (filtrado fino en el worker) | `sqs-notifications` |
+| Regla                           | Patrón (`detail-type`)                                                                                                                                                         | Destino             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| `enrollment-desde-payments`     | `payments.pago-confirmado.v1`, `payments.pago-reembolsado.v1`                                                                                                                  | `sqs-enrollment`    |
+| `enrollment-desde-catalog`      | `catalog.curso-publicado.v1`, `catalog.curso-despublicado.v1`, `catalog.contenido-actualizado.v1`                                                                              | `sqs-enrollment`    |
+| `gamification-desde-enrollment` | `enrollment.leccion-completada.v1`, `enrollment.tomo-completado.v1`, `enrollment.curso-completado.v1`, `enrollment.carrera-completada.v1`, `enrollment.evaluacion-aprobada.v1` | `sqs-gamification`  |
+| `gamification-desde-identity`   | `identity.usuario-registrado.v1`                                                                                                                                               | `sqs-gamification`  |
+| `flashcards-desde-catalog`      | `catalog.contenido-actualizado.v1`                                                                                                                                             | `sqs-flashcards`    |
+| `identity-desde-enrollment`     | `enrollment.curso-completado.v1`, `enrollment.test-nivelacion-completado.v1`                                                                                                   | `sqs-identity`      |
+| `payments-desde-catalog`        | `catalog.curso-publicado.v1`, `catalog.precio-actualizado.v1`, `catalog.curso-despublicado.v1`                                                                                 | `sqs-payments`      |
+| `notificaciones`                | prefijo `identity.`, `enrollment.`, `gamification.`, `payments.`, `flashcards.` (filtrado fino en el worker)                                                                   | `sqs-notifications` |
 
 ## 5. Configuración de colas
 
@@ -195,14 +204,14 @@ resource "aws_sqs_queue" "enrollment_dlq" {
 }
 ```
 
-| Parámetro | Valor | Por qué |
-|---|---|---|
-| `visibility_timeout` | 180 s (600 s en flashcards) | Debe superar con margen lo que tarda el handler. Corto → el mensaje se re-entrega mientras todavía se procesa y el efecto se duplica (lo salva la idempotencia, pero es trabajo tirado) |
-| `maxReceiveCount` | 5 | Suficiente para superar un fallo transitorio de BD; no tanto como para martillar un error permanente |
-| `message_retention` cola | 4 días | Ventana realista para arreglar y reprocesar |
-| `message_retention` DLQ | 14 días | Máximo de SQS. Un mensaje en DLQ es un incidente y merece tiempo |
-| Long polling | `wait_time_seconds = 20` en el receive | Menos llamadas vacías = menos costo y menos latencia |
-| Cifrado | KMS con clave propia | Los payloads llevan `usuarioId` y montos |
+| Parámetro                | Valor                                  | Por qué                                                                                                                                                                                 |
+| ------------------------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `visibility_timeout`     | 180 s (1,080 s en flashcards)          | Debe superar con margen lo que tarda el handler. Corto → el mensaje se re-entrega mientras todavía se procesa y el efecto se duplica (lo salva la idempotencia, pero es trabajo tirado) |
+| `maxReceiveCount`        | 5                                      | Suficiente para superar un fallo transitorio de BD; no tanto como para martillar un error permanente                                                                                    |
+| `message_retention` cola | 4 días                                 | Ventana realista para arreglar y reprocesar                                                                                                                                             |
+| `message_retention` DLQ  | 14 días                                | Máximo de SQS. Un mensaje en DLQ es un incidente y merece tiempo                                                                                                                        |
+| Long polling             | `wait_time_seconds = 20` en el receive | Menos llamadas vacías = menos costo y menos latencia                                                                                                                                    |
+| Cifrado                  | KMS con clave propia                   | Los payloads llevan `usuarioId` y montos                                                                                                                                                |
 
 **Alarma obligatoria (doc 07 §8):** `ApproximateNumberOfMessagesVisible > 0` en cualquier
 DLQ durante 5 minutos → alarma de CloudWatch. Una DLQ que se llena en silencio es la forma
@@ -210,30 +219,40 @@ más común de perder eventos sin enterarse.
 
 ## 6. Idempotencia en el consumidor
 
-Plantilla obligatoria. Se repite igual en los seis servicios.
+Plantilla de los consumidores que guardan `processed_events` en PostgreSQL.
 
 ```ts
 // infrastructure/in/messaging/sqs.poller.ts
 async function procesar(mensaje: SqsMessage) {
-  const sobre = parseSobre(mensaje.Body)          // valida el envelope; si no valida → DLQ directo
+  const sobre = parseSobre(mensaje.Body) // valida el envelope; si no valida → DLQ directo
 
   const nuevo = await db.transaction(async tx => {
-    const r = await tx.insert(processedEvents)
+    const r = await tx
+      .insert(processedEvents)
       .values({ eventId: sobre.eventId, eventType: sobre.eventType, resultado: 'OK' })
       .onConflictDoNothing()
       .returning({ id: processedEvents.eventId })
     return r.length > 0
   })
 
-  if (!nuevo) { log.info('evento ya procesado', { eventId: sobre.eventId }); return ACK }
+  if (!nuevo) {
+    log.info('evento ya procesado', { eventId: sobre.eventId })
+    return ACK
+  }
 
   const handler = HANDLERS[sobre.eventType]
-  if (!handler) { log.warn('evento sin handler', { eventType: sobre.eventType }); return ACK }
+  if (!handler) {
+    log.warn('evento sin handler', { eventType: sobre.eventType })
+    return ACK
+  }
 
-  const r = await handler(sobre)                  // traduce a Command y despacha por el bus
+  const r = await handler(sobre) // traduce a Command y despacha por el bus
   if (isOk(r)) return ACK
-  if (esErrorDeNegocio(r.error)) { log.error('evento inaplicable', r.error); return ACK }
-  return NACK                                     // infraestructura → reintento → DLQ
+  if (esErrorDeNegocio(r.error)) {
+    log.error('evento inaplicable', r.error)
+    return ACK
+  }
+  return NACK // infraestructura → reintento → DLQ
 }
 ```
 
@@ -251,11 +270,28 @@ Tres decisiones que hay que entender antes de copiarla:
 3. **Un error de negocio se hace ACK.** Si `PagoConfirmadoEvent` llega para un curso que ya
    no existe, reintentar cinco veces no lo va a arreglar. Se registra y se sigue.
 
+### Inbox de DynamoDB para el entorno lowcost
+
+Los consumidores de `identity-access`, `flashcards` y `gamification` usan un inbox en la
+misma tabla de dominio. El reclamo crea `status=PROCESSING`, un `leaseToken` y `leaseUntil`
+con escritura condicional. El efecto corre después; solo al terminar se marca `PROCESSED`.
+Ante error de infraestructura se libera el reclamo y se devuelve `NACK`. Si la Lambda cae,
+el lease vence y el reintento puede reclamar el evento. El TTL limpia marcadores procesados
+tras 30 días.
+
+Una copia recibida mientras el reclamo sigue activo se hace `ACK`; el mensaje original
+permanece en SQS. La visibilidad de la cola debe superar el lease y el timeout máximo de
+Lambda para que, tras una caída, el mensaje original reaparezca con el lease vencido.
+Configuración lowcost: identity y gamification usan lease 60 s, cola 180 s y Lambda 30 s;
+flashcards usa lease 240 s, cola 1,080 s y Lambda 180 s.
+Los jobs internos de generación de mazos y PDFs usan un `eventId` determinista por entidad,
+para que reencolarlos después de un reintento no vuelva a ejecutar un trabajo ya procesado.
+
 ## 7. Comunicación síncrona: cuándo sí
 
 **Regla:** por defecto, no. Y toda excepción se escribe en `DECISIONS.md` con su motivo.
 
-En Fase 1 hay **exactamente una**: el panel de admin de flashcards llama a
+En Fase 1 hay **exactamente una**: el panel docente de flashcards llama a
 `GET /api/catalog/cursos/:id` para mostrar el contexto del contenido junto a las tarjetas
 en revisión. Cumple las tres condiciones que hacen aceptable una llamada síncrona:
 

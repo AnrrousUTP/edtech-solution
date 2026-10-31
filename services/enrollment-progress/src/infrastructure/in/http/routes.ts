@@ -53,9 +53,10 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     ...(cfg.cognito.clientId ? { clientId: cfg.cognito.clientId } : {}),
     ...(cfg.cognito.jwksUri ? { jwksUri: cfg.cognito.jwksUri } : {}),
   })
+  const estudiante = [auth, requiereRol('estudiante')]
 
   // Matrícula gratuita (la de pago llega SOLO por evento, doc 02 §5.3)
-  router.post('/matriculas', auth, async (req, res) => {
+  router.post('/matriculas', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,
@@ -69,7 +70,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.post('/admin/matriculas', auth, requiereRol('admin'), async (req, res) => {
+  router.post('/admin/matriculas', auth, requiereRol('docente'), async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,
@@ -83,14 +84,14 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.get('/mis-matriculas', auth, async (req, res) => {
+  router.get('/mis-matriculas', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({ _tag: 'MisMatriculas', usuarioId: req.auth?.usuarioId ?? '' }),
     )
   })
 
-  router.get('/evaluacion-inicial/estado/:cursoId', auth, async (req, res) => {
+  router.get('/evaluacion-inicial/estado/:cursoId', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({
@@ -101,7 +102,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.get('/progreso/:cursoId', auth, async (req, res) => {
+  router.get('/progreso/:cursoId', ...estudiante, async (req, res) => {
     responder(
       res,
       await queries.dispatch({
@@ -112,7 +113,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.post('/lecciones/:leccionId/completar', auth, async (req, res) => {
+  router.post('/lecciones/:leccionId/completar', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,
@@ -125,7 +126,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.post('/intentos', auth, async (req, res) => {
+  router.post('/intentos', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,
@@ -141,7 +142,7 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
     )
   })
 
-  router.post('/intentos/:id/entregar', auth, async (req, res) => {
+  router.post('/intentos/:id/entregar', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
     responder(
       res,

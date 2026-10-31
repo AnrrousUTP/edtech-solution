@@ -126,5 +126,10 @@ export class SqsPoller {
 export const crearSqsClient = (config: { region: string; endpoint?: string }): SQSClient =>
   new SQSClient({
     region: config.region,
-    ...(config.endpoint ? { endpoint: config.endpoint } : {}),
+    ...(config.endpoint
+      ? {
+          endpoint: config.endpoint,
+          credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+        }
+      : {}),
   })

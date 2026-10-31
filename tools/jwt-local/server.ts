@@ -36,15 +36,15 @@ const passwordValido = (password: string): boolean =>
 const respuestaError = (mensaje: string, status = 400): Response =>
   Response.json({ error: mensaje }, { status })
 
-// Cuenta fija solo para revisar el panel admin local. En AWS la pertenencia al
-// grupo admin la gestiona Cognito y esta cuenta no existe.
-usuarios.set('admin@edtech.test', {
+// Cuenta fija solo para revisar el área docente local. En AWS su pertenencia al
+// grupo docente se aprovisiona por operación y esta cuenta no existe.
+usuarios.set('docente@edtech.test', {
   sub: '00000000-0000-4000-8000-000000000001',
-  email: 'admin@edtech.test',
-  nombre: 'Admin Local',
-  passwordHash: await passwordHash('AdminLocal1'),
+  email: 'docente@edtech.test',
+  nombre: 'Docente Local',
+  passwordHash: await passwordHash('DocenteLocal1'),
   confirmado: true,
-  grupos: ['admin'],
+  grupos: ['docente'],
 })
 
 // Cuentas de demostración exclusivamente locales; no existen en Cognito.
@@ -140,8 +140,11 @@ Bun.serve({
       const email = emailNormalizado(body.email)
       const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : ''
       const password = typeof body.password === 'string' ? body.password : ''
+      const rol = typeof body.rol === 'string' ? body.rol : 'estudiante'
       if (!email || !email.includes('@')) return respuestaError('Escribe un email válido')
       if (!nombre) return respuestaError('Escribe tu nombre')
+      if (!['estudiante', 'docente', 'afiliado'].includes(rol))
+        return respuestaError('Selecciona un rol válido para tu cuenta')
       if (!passwordValido(password)) {
         return respuestaError(
           'La contraseña necesita 10 caracteres, una mayúscula, una minúscula y un número',
@@ -154,7 +157,7 @@ Bun.serve({
         nombre,
         passwordHash: await passwordHash(password),
         confirmado: false,
-        grupos: ['estudiante'],
+        grupos: [rol],
       })
       return Response.json({
         ok: true,
@@ -217,7 +220,15 @@ Bun.serve({
       const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
       const ahora = Math.floor(Date.now() / 1000)
       const sub = typeof body.sub === 'string' ? body.sub : crypto.randomUUID()
-      const grupos = Array.isArray(body.groups) ? body.groups : ['estudiante']
+      const gruposRecibidos = Array.isArray(body.groups) ? body.groups : ['estudiante']
+      const rolesValidos = ['docente', 'afiliado', 'estudiante']
+      const grupos = [
+        ...new Set(
+          gruposRecibidos.filter(
+            (grupo): grupo is string => typeof grupo === 'string' && rolesValidos.includes(grupo),
+          ),
+        ),
+      ]
       const base = {
         sub,
         iss: ISSUER,

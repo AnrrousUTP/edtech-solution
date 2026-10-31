@@ -29,6 +29,7 @@ export type GestionarBancoCommand = Command & {
   readonly bancoId?: string
   readonly uso?: UsoBanco
   readonly tomoId?: string | null
+  readonly cursoId?: string | null
   readonly titulo?: string
   /** Si viene, reemplaza todas las preguntas del banco. */
   readonly preguntas?: PreguntaEntrada[]
@@ -55,10 +56,27 @@ export class GestionarBancoHandler implements CommandHandler<
       const creado = BancoPreguntas.crear({
         uso: cmd.uso ?? 'EVALUACION_TOMO',
         tomoId: cmd.tomoId ?? null,
+        cursoId: cmd.cursoId ?? null,
         titulo: cmd.titulo ?? '',
       })
       if (isErr(creado)) return Err(creado.error)
       banco = creado.value
+    }
+
+    if (
+      cmd.bancoId &&
+      (cmd.uso !== undefined ||
+        cmd.tomoId !== undefined ||
+        cmd.cursoId !== undefined ||
+        cmd.titulo !== undefined)
+    ) {
+      const actualizado = banco.actualizarConfiguracion({
+        uso: cmd.uso ?? banco.uso,
+        tomoId: cmd.tomoId === undefined ? banco.tomoId : cmd.tomoId,
+        cursoId: cmd.cursoId === undefined ? banco.cursoId : cmd.cursoId,
+        titulo: cmd.titulo ?? banco.titulo,
+      })
+      if (isErr(actualizado)) return Err(actualizado.error)
     }
 
     if (cmd.preguntas) {

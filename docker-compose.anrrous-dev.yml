@@ -3,4 +3,5 @@
 services:
   payments:
     environment:
-      PAYPAL_MODE: fake
+      NODE_ENV: development
+      PAYPAL_LOCAL_MODE: "true"

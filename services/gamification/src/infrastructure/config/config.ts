@@ -3,6 +3,8 @@ export type Config = {
   puerto: number
   region: string
   awsEndpoint: string | undefined
+  persistence: 'postgres' | 'dynamodb'
+  dynamoTable: string | undefined
   busName: string
   colaUrl: string | undefined
   colaCertificadosUrl: string | undefined
@@ -17,6 +19,8 @@ export const cargarConfig = (): Config => {
     puerto: Number(env.PORT ?? 3000),
     region: env.AWS_REGION ?? 'us-east-1',
     awsEndpoint: env.AWS_ENDPOINT_URL,
+    persistence: env.PERSISTENCE === 'dynamodb' ? 'dynamodb' : 'postgres',
+    dynamoTable: env.DYNAMODB_TABLE,
     busName: env.EVENT_BUS_NAME ?? 'edtech-domain-events',
     colaUrl: env.QUEUE_URL,
     colaCertificadosUrl: env.QUEUE_CERTIFICADOS_URL,

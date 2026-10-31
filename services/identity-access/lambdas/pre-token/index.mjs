@@ -1,7 +1,6 @@
-// Lambda pre-token-generation (doc 08 §6): si el usuario está en el grupo admin
-// y no tiene MFA configurado, el ID token sale con mfa_pendiente=true y el
-// frontend lo manda a configurar MFA antes del panel. Mitigación parcial
-// documentada: es un bloqueo de UI, no una barrera criptográfica.
+// Lambda pre-token-generation (doc 08 §6): si el usuario está en el grupo docente
+// y no tiene MFA configurado, los tokens ID y access llevan mfa_pendiente=true.
+// El frontend lo guía a configurar MFA y las APIs bloquean el access token.
 import {
   CognitoIdentityProviderClient,
   AdminGetUserCommand,
@@ -10,24 +9,51 @@ import {
 const cognito = new CognitoIdentityProviderClient({})
 
 export const handler = async (event) => {
-  const grupos = event.request?.groupConfiguration?.groupsToOverride ?? []
-  const claims = {}
+  const configuracion = event.request?.groupConfiguration ?? {}
+  const grupos = configuracion.groupsToOverride ?? []
+  const claimsId = {}
+  const claimsAccess = {}
+  const rolesValidos = new Set(['docente', 'afiliado', 'estudiante'])
+  const normalizarRol = (grupo) => {
+    if (typeof grupo !== 'string') return null
+    const normalizado = grupo.toLowerCase()
+    // Compatibilidad con el grupo legado: el rol de administración ahora es docente.
+    if (normalizado === 'admin') return 'docente'
+    return rolesValidos.has(normalizado) ? normalizado : null
+  }
+  const gruposRol = [...new Set(grupos.map(normalizarRol).filter(Boolean))]
+  const rol = gruposRol.length === 1 ? gruposRol[0] : null
+  let usuario = null
 
-  if (grupos.includes('admin')) {
+  if (rol === 'docente') {
     try {
-      const usuario = await cognito.send(
+      usuario = await cognito.send(
         new AdminGetUserCommand({ UserPoolId: event.userPoolId, Username: event.userName }),
       )
-      const tieneMfa = (usuario.UserMFASettingList ?? []).length > 0
-      if (!tieneMfa) claims.mfa_pendiente = 'true'
     } catch (err) {
-      console.error('pre-token: no se pudo consultar MFA', err)
+      console.error('pre-token: no se pudo consultar el perfil Cognito', err)
+    }
+  }
+
+  if (rol === 'docente') {
+    const tieneMfa = (usuario?.UserMFASettingList ?? []).length > 0
+    if (!tieneMfa) {
+      claimsId.mfa_pendiente = 'true'
+      claimsAccess.mfa_pendiente = 'true'
     }
   }
 
   event.response = {
-    claimsOverrideDetails: {
-      claimsToAddOrOverride: claims,
+    claimsAndScopeOverrideDetails: {
+      idTokenGeneration: { claimsToAddOrOverride: claimsId },
+      accessTokenGeneration: { claimsToAddOrOverride: claimsAccess },
+      // El token concede exactamente un rol de aplicación, aunque un grupo
+      // antiguo tenga una membresía duplicada en Cognito.
+      groupOverrideDetails: {
+        groupsToOverride: rol ? [rol] : [],
+        iamRolesToOverride: configuracion.iamRolesToOverride ?? [],
+        ...(configuracion.preferredRole ? { preferredRole: configuracion.preferredRole } : {}),
+      },
     },
   }
   return event

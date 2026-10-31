@@ -21,7 +21,7 @@ export default async function Page(): Promise<JSX.Element> {
           <h3>{data.solicitud ? 'Solicitud registrada' : 'Todavía no tienes un terminal'}</h3>
           <p>
             {data.solicitud
-              ? 'Un administrador asignará el terminal de demostración a tu cuenta.'
+              ? 'El equipo docente asignará el terminal de demostración a tu cuenta.'
               : 'Solicita el terminal de demostración después de activar tu afiliación.'}
           </p>
           {!data.solicitud && <Accion path="terminal/solicitud" texto="Solicitar terminal" />}

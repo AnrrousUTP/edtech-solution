@@ -39,6 +39,8 @@ paths:
       responses:
         '200': { description: Bloques y ejercicios (sin solucion_esperada — I-5) }
         '401': { description: Sin token }
+        '403': { description: Requiere rol estudiante y matrícula activa en el curso }
+        '503': { description: No disponible la validación de matrícula }
   /tomos/{id}/evaluacion:
     get:
       summary: Evaluación del tomo (autenticado, sin respuesta_correcta — I-5)

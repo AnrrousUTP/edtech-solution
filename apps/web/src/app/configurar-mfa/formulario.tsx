@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 type Secreto = { secreto: string; uri: string }
 
-// Pantalla de segundo factor del admin (doc 08 §6). Tiene estado y eventos, así
+// Pantalla de segundo factor del docente (doc 08 §6). Tiene estado y eventos, así
 // que es cliente; el access token se queda en el servidor — de acá solo sale el
 // código de 6 dígitos.
 export const FormularioMfa = (): JSX.Element => {
@@ -41,9 +41,13 @@ export const FormularioMfa = (): JSX.Element => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ accion: 'confirmar', codigo }),
     })
-    const cuerpo = (await r.json()) as { error?: string }
+    const cuerpo = (await r.json()) as { error?: string; requiereInicioSesion?: boolean }
     setOcupado(false)
     if (!r.ok) {
+      if (cuerpo.requiereInicioSesion) {
+        window.location.assign('/api/auth/login?destino=%2Fadmin')
+        return
+      }
       setError(cuerpo.error ?? 'El código no fue aceptado')
       return
     }
@@ -55,8 +59,8 @@ export const FormularioMfa = (): JSX.Element => {
     return (
       <div className="tarjeta max-w-xl p-6">
         <p className="text-sm text-slate-700">
-          El panel de administración exige un segundo factor. Vas a necesitar una app de
-          autenticación (Google Authenticator, 1Password, Authy o la que uses).
+          El panel docente exige un segundo factor. Vas a necesitar una app de autenticación (Google
+          Authenticator, 1Password, Authy o la que uses).
         </p>
         <button
           type="button"

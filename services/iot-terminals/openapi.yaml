@@ -18,7 +18,7 @@ paths:
   /api/iot/admin:
     get:
       {
-        summary: Inventario para administradores,
+        summary: Inventario global para el rol docente,
         responses: { '200': { description: Inventario } },
       }
   /api/iot/admin/asignacion:

@@ -44,9 +44,14 @@ export type EjercicioPublico = { id: string; enunciado: string; pistas: unknown[
 export type LeccionContenido = {
   id: string
   titulo: string
+  cursoId: string
   tomoId: string
   bloques: BloquePublico[]
   ejercicios: EjercicioPublico[]
+}
+
+export type LeccionContenidoAdmin = LeccionContenido & {
+  ejercicios: (EjercicioPublico & { solucionEsperada: unknown })[]
 }
 
 export type PreguntaPublica = {
@@ -77,6 +82,23 @@ export type RespuestasBanco = {
   preguntas: PreguntaConRespuesta[]
 }
 
+export type ContextoTomo = {
+  cursoId: string
+  cursoSlug: string
+  cursoTitulo: string
+  tomoId: string
+  tomoTitulo: string
+}
+
+export type BancoAdmin = {
+  bancoId: string
+  uso: string
+  tomoId: string | null
+  cursoId: string | null
+  titulo: string
+  preguntas: PreguntaConRespuesta[]
+}
+
 export type CarreraResumen = {
   id: string
   slug: string
@@ -92,8 +114,14 @@ export interface CatalogoLectura {
   cursoPorSlug(slug: string, incluirNoPublicados: boolean): Promise<CursoDetalle | null>
   cursoPorId(id: string, incluirNoPublicados: boolean): Promise<CursoDetalle | null>
   leccionContenido(leccionId: string): Promise<LeccionContenido | null>
+  leccionContenidoAdmin(leccionId: string): Promise<LeccionContenidoAdmin | null>
   evaluacionDeTomo(tomoId: string): Promise<EvaluacionPublica | null>
+  refuerzoDeTomo(tomoId: string): Promise<EvaluacionPublica | null>
+  evaluacionInicialDeCurso(cursoId: string): Promise<EvaluacionPublica | null>
   nivelacion(): Promise<EvaluacionPublica | null>
+  diagnosticoPrevio(): Promise<EvaluacionPublica | null>
+  contextoDeTomo(tomoId: string): Promise<ContextoTomo | null>
+  listarBancosAdmin(): Promise<BancoAdmin[]>
   /** SOLO para la API interna de corrección (A-19). */
   respuestasDeBanco(bancoId: string): Promise<RespuestasBanco | null>
   listarCarreras(incluirNoPublicadas: boolean): Promise<CarreraResumen[]>

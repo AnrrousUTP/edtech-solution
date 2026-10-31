@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import type { ContenidoFuente, ColaGeneracion } from '../../domain/ports-out/contenido-fuente.port'
@@ -23,15 +24,19 @@ export class SqsColaGeneracion implements ColaGeneracion {
     private readonly queueUrl: string,
   ) {}
   async encolar(mazoId: string): Promise<void> {
+    const hex = createHash('sha256').update(mazoId).digest('hex').slice(0, 32).split('')
+    hex[12] = '5'
+    hex[16] = ['8', '9', 'a', 'b'][Number.parseInt(hex[16] ?? '0', 16) & 3] ?? '8'
+    const eventId = `${hex.slice(0, 8).join('')}-${hex.slice(8, 12).join('')}-${hex.slice(12, 16).join('')}-${hex.slice(16, 20).join('')}-${hex.slice(20, 32).join('')}`
     await this.sqs.send(
       new SendMessageCommand({
         QueueUrl: this.queueUrl,
         MessageBody: JSON.stringify({
-          eventId: crypto.randomUUID(),
+          eventId,
           eventType: 'flashcards.generar-mazo.interno',
           occurredAt: new Date().toISOString(),
           aggregateId: mazoId,
-          correlationId: crypto.randomUUID(),
+          correlationId: eventId,
           payload: { mazoId },
         }),
       }),

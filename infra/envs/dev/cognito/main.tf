@@ -19,11 +19,11 @@ provider "aws" {
   }
 }
 
-data "terraform_remote_state" "messaging" {
+data "terraform_remote_state" "lowcost" {
   backend = "s3"
   config = {
     bucket = "edtech-tfstate-047600599757"
-    key    = "dev/messaging/terraform.tfstate"
+    key    = "lowcost/affiliate-iot/terraform.tfstate"
     region = "us-east-1"
   }
 }
@@ -39,22 +39,12 @@ data "terraform_remote_state" "edge" {
   }
 }
 
-data "terraform_remote_state" "security" {
-  backend = "s3"
-  config = {
-    bucket = "edtech-tfstate-047600599757"
-    key    = "dev/security/terraform.tfstate"
-    region = "us-east-1"
-  }
-}
-
 module "cognito" {
-  source             = "../../../modules/cognito"
-  entorno            = "dev"
-  cola_identity_arn  = data.terraform_remote_state.messaging.outputs.colas["identity"].arn
-  cola_identity_url  = data.terraform_remote_state.messaging.outputs.colas["identity"].url
-  kms_mensajeria_arn = data.terraform_remote_state.security.outputs.kms_mensajeria_arn
-  ruta_lambdas       = "${path.module}/../../../../services/identity-access/lambdas"
+  source            = "../../../modules/cognito"
+  entorno           = "dev"
+  cola_identity_arn = data.terraform_remote_state.lowcost.outputs.identity_events_queue_arn
+  cola_identity_url = data.terraform_remote_state.lowcost.outputs.identity_events_queue_url
+  ruta_lambdas      = "${path.module}/../../../../services/identity-access/lambdas"
 
   callback_urls = [
     "http://localhost:3000/api/auth/callback",

@@ -10,9 +10,18 @@ variable "content_bucket_name" {
 }
 
 variable "enabled_domains" {
-  description = "Dominios incluidos en la fase desplegable actual. Los demás quedan para una integración posterior."
+  description = "Dominios incluidos en la arquitectura de destino; no se aprovisionan mientras el entorno esté pausado."
   type        = set(string)
-  default     = ["catalog", "payments", "affiliates", "iot-terminals"]
+  default = [
+    "identity-access",
+    "catalog",
+    "enrollment-progress",
+    "gamification",
+    "flashcards",
+    "payments",
+    "affiliates",
+    "iot-terminals",
+  ]
   validation {
     condition = length(var.enabled_domains) > 0 && alltrue([for domain in var.enabled_domains : contains([
       "identity-access", "catalog", "enrollment-progress", "gamification", "flashcards",
@@ -42,8 +51,8 @@ variable "ready_api_domains" {
     condition = alltrue([for domain in var.ready_api_domains : contains([
       "identity-access", "catalog", "enrollment-progress", "gamification", "flashcards",
       "payments", "affiliates", "iot-terminals",
-    ], domain)]) && (!contains(var.ready_api_domains, "enrollment-progress") || contains(var.ready_api_domains, "catalog"))
-    error_message = "ready_api_domains contiene un dominio desconocido o enrollment-progress sin catalog."
+    ], domain)]) && (!contains(var.ready_api_domains, "enrollment-progress") || (contains(var.ready_api_domains, "catalog") && contains(var.ready_api_domains, "payments")))
+    error_message = "ready_api_domains contiene un dominio desconocido o enrollment-progress sin catalog y payments."
   }
 }
 
@@ -77,6 +86,16 @@ variable "referral_verification_parameter_name" {
   default     = "/edtech/lowcost/referral-verification-public-key"
 }
 
+variable "paypal_secret_name" {
+  description = "Nombre de Secrets Manager con las credenciales PayPal y el ID del webhook de lowcost."
+  type        = string
+  default     = "edtech/lowcost/paypal"
+  validation {
+    condition     = trimspace(var.paypal_secret_name) != "" && !strcontains(var.paypal_secret_name, "*")
+    error_message = "paypal_secret_name debe ser un nombre concreto de Secrets Manager."
+  }
+}
+
 variable "allowed_origins" {
   description = "Orígenes web HTTPS permitidos por API Gateway."
   type        = list(string)
@@ -101,20 +120,20 @@ variable "pause_public_services" {
   default     = true
 }
 
-variable "enable_workers" {
-  description = "Activa los consumidores SQS después de importar y validar los datos."
+variable "enable_event_consumers" {
+  description = "Activa los consumidores SQS por dominio después de validar sus flujos."
   type        = bool
   default     = false
 }
 
 variable "enable_outbox_publisher" {
-  description = "Activa solo el publicador DynamoDB Streams → EventBridge, sin desplegar el worker genérico de trabajos."
+  description = "Activa el publicador DynamoDB Streams → EventBridge, sin activar consumidores SQS."
   type        = bool
   default     = false
 }
 
-variable "worker_release_ready" {
-  description = "Confirma que el ZIP del worker pasó pruebas e incluye los consumidores SQS necesarios."
+variable "event_consumers_release_ready" {
+  description = "Confirma que los handlers Lambda y sus consumidores SQS pasaron validación local."
   type        = bool
   default     = false
 }

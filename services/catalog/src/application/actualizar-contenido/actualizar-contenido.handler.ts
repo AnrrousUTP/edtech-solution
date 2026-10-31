@@ -44,6 +44,7 @@ export type ActualizarContenidoCommand = Command & {
 
 export type ActualizarContenidoResponse = {
   tomos: { id: string; lecciones: string[] }[]
+  lecciones: number
 }
 
 /** Reemplaza la estructura completa de tomos/lecciones/bloques del curso.
@@ -132,6 +133,9 @@ export class ActualizarContenidoHandler implements CommandHandler<
     }
     await this.publisher.publish(curso.pullEvents())
 
-    return Ok({ tomos: tomos.map(t => ({ id: t.id, lecciones: t.lecciones.map(l => l.id) })) })
+    return Ok({
+      tomos: tomos.map(t => ({ id: t.id, lecciones: t.lecciones.map(l => l.id) })),
+      lecciones: tomos.reduce((total, tomo) => total + tomo.lecciones.length, 0),
+    })
   }
 }

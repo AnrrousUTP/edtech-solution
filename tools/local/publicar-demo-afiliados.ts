@@ -14,7 +14,7 @@ for (const url of [jwt, api, endpoint, database])
     throw new Error('Solo se publica la demo local')
 const auth = await fetch(`${jwt}/token`, {
   method: 'POST',
-  body: JSON.stringify({ groups: ['admin'] }),
+  body: JSON.stringify({ groups: ['docente'] }),
 })
 const { access_token } = (await auth.json()) as { access_token: string }
 for (const n of [101, 102, 103, 104]) {

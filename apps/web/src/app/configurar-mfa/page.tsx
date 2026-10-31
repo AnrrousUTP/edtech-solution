@@ -1,19 +1,19 @@
 import { redirect } from 'next/navigation'
 import { ErrorConAccion } from '@/componentes/base'
-import { esAdmin, mfaPendiente, perfilSesion } from '@/lib/sesion'
+import { esDocente, mfaPendiente, perfilSesion } from '@/lib/sesion'
 import { FormularioMfa } from './formulario'
 
-// Segundo factor obligatorio para el grupo `admin` (doc 08 §6). Cognito no
+// Segundo factor obligatorio para el grupo `docente` (doc 08 §6). Cognito no
 // permite exigir MFA por grupo de forma nativa: la Lambda pre_token_generation
 // marca el token con `mfa_pendiente` y esta pantalla es el bloqueo.
 const ConfigurarMfa = async (): Promise<JSX.Element> => {
   const perfil = await perfilSesion()
   if (perfil === null) redirect('/login?destino=/configurar-mfa')
 
-  if (!(await esAdmin())) {
+  if (!(await esDocente())) {
     return (
       <ErrorConAccion
-        titulo="Esta pantalla es para administradores"
+        titulo="Esta pantalla es para docentes"
         detalle="Tu cuenta no necesita un segundo factor para usar la plataforma."
         accion={{ texto: 'Ir a mis cursos', href: '/dashboard' }}
       />
@@ -34,8 +34,8 @@ const ConfigurarMfa = async (): Promise<JSX.Element> => {
     <div className="tech-mfa-page">
       <h1 className="text-3xl font-extrabold text-slate-900">Configura tu segundo factor</h1>
       <p className="mt-2 max-w-2xl text-slate-600">
-        Tu cuenta está en el grupo <code className="font-mono text-sm">admin</code>. Antes de entrar
-        al panel tenés que activar la verificación en dos pasos.
+        Tu sesión de docente todavía no tiene MFA. Activa la verificación en dos pasos antes de
+        entrar al panel.
       </p>
       <div className="mt-6">
         <FormularioMfa />

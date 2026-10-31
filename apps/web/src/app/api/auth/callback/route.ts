@@ -1,7 +1,13 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { config, destinoInterno } from '@/lib/config'
-import { COOKIE_ACCESO, COOKIE_PERFIL, COOKIE_REFRESH, claimsDeToken } from '@/lib/sesion'
+import {
+  COOKIE_ACCESO,
+  COOKIE_PERFIL,
+  COOKIE_REFRESH,
+  claimsDeToken,
+  rolDeGrupos,
+} from '@/lib/sesion'
 
 // Intercambia el código por tokens y los guarda en cookies httpOnly (doc 08 §7).
 // El navegador nunca ve el access token.
@@ -59,6 +65,13 @@ export const GET = async (peticion: Request): Promise<Response> => {
   const claimsAcceso = claimsDeToken(tokens.access_token) ?? {}
   const claimsId = tokens.id_token ? (claimsDeToken(tokens.id_token) ?? {}) : {}
   const grupos = claimsAcceso['cognito:groups']
+  const rol = rolDeGrupos(grupos)
+  if (!rol) {
+    const respuesta = NextResponse.redirect(new URL('/login?error=rol', config.appUrl))
+    for (const cookie of [COOKIE_ACCESO, COOKIE_REFRESH, COOKIE_PERFIL])
+      respuesta.cookies.delete(cookie)
+    return respuesta
+  }
   redireccion.cookies.set(
     COOKIE_PERFIL,
     encodeURIComponent(
@@ -71,13 +84,14 @@ export const GET = async (peticion: Request): Promise<Response> => {
             claimsId.email ??
             'Estudiante',
         ),
-        roles: Array.isArray(grupos) ? grupos : [],
-        // El claim viaja en el ID token, no en el de acceso: pre_token_generation
-        // solo puede tocar el primero (doc 08 §6).
+        rol,
+        roles: rol ? [rol] : [],
+        // Cognito devuelve el claim en ID y access token; el frontend usa el ID
+        // token para presentar el estado MFA y las APIs protegen con el access.
         mfaPendiente: String(claimsId.mfa_pendiente ?? '') === 'true',
       }),
     ),
-    { secure: true, sameSite: 'lax', path: '/', maxAge: tokens.expires_in },
+    { secure: true, httpOnly: true, sameSite: 'lax', path: '/', maxAge: tokens.expires_in },
   )
 
   for (const efimera of ['pkce_verificador', 'pkce_estado', 'pkce_destino']) {
