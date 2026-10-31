@@ -10758,3 +10758,217 @@
     padding: 18px;
   }
 }
+
+/* Docente: curso cards and editor layout */
+.admin-course-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-course-card-topline {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.admin-course-card-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-course-publish-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-course-edit-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-course-card h3 {
+  margin-top: 12px;
+}
+
+.admin-editor-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1240px;
+  margin-inline: auto;
+}
+
+.admin-week-editor {
+  grid-column: auto;
+}
+
+.admin-icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.admin-icon-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.admin-ai-generation-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-card);
+  background: var(--gs-surface);
+  box-shadow: var(--gs-shadow-sm);
+}
+
+.admin-ai-generation-panel strong {
+  color: var(--gs-ink-strong);
+  font-size: 16px;
+}
+
+.admin-ai-generation-panel p {
+  margin-top: 5px;
+  color: var(--gs-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-ai-question-preview {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-ai-question-heading h3 {
+  color: var(--gs-ink-strong);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.admin-ai-question-heading p {
+  margin-top: 4px;
+  color: var(--gs-muted);
+  font-size: 13px;
+}
+
+.admin-ai-question {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--gs-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.admin-ai-question > strong {
+  color: var(--gs-ink-strong);
+}
+
+.admin-ai-question ul {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-ai-question li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  color: var(--gs-body);
+  font-size: 14px;
+}
+
+.admin-ai-question li > span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--gs-surface-alt);
+  color: var(--gs-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-ai-question li.is-correct {
+  border-color: #a8dab5;
+  background: #f0f8f1;
+}
+
+.admin-ai-question li b {
+  margin-left: auto;
+  color: #137333;
+  font-size: 12px;
+}
+
+.admin-ai-empty-state {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--gs-surface-alt);
+  color: var(--gs-muted);
+  font-size: 14px;
+}
+
+.admin-bank-advanced {
+  padding-top: 14px;
+  border-top: 1px solid var(--gs-border);
+}
+
+.admin-bank-advanced > summary {
+  min-height: 44px;
+  color: var(--gs-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-bank-advanced .admin-json-label {
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .admin-course-grid,
+  .admin-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-course-card {
+    padding: 18px;
+  }
+
+  .admin-ai-generation-panel {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-course-card-heading {
+    flex-direction: column;
+  }
+
+  .admin-course-card-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

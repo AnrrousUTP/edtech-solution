@@ -81,7 +81,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }): Promise<
           </div>
         </footer>
 
-        <AssistantWidget />
+        <AssistantWidget rol={perfil?.rol ?? null} />
       </body>
     </html>
   )

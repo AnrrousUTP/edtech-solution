@@ -1,6 +1,7 @@
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
+import { z } from 'zod'
 import { config } from '@/lib/config'
-import { ASSISTANT_INSTRUCTIONS } from './prompt'
+import { instruccionesParaRol } from './prompt'
 
 export type AssistantMessage = {
   role: 'user' | 'assistant'
@@ -12,6 +13,8 @@ export type AssistantContext = {
   pageTitle?: string
   pageSummary?: string
 }
+
+export type RolAsistente = 'docente' | 'estudiante' | 'publico'
 
 export class AssistantProviderError extends Error {
   constructor(public readonly code: 'not-configured' | 'unavailable' | 'quota-exceeded') {
@@ -25,6 +28,7 @@ const modelId = config.assistant.bedrockModelId
 export const generateAssistantReply = async (
   messages: AssistantMessage[],
   context?: AssistantContext,
+  role: RolAsistente = 'publico',
 ): Promise<string> => {
   if (!config.assistant.enabled) {
     throw new AssistantProviderError('not-configured')
@@ -32,7 +36,7 @@ export const generateAssistantReply = async (
   const contextHint = [context?.pageTitle, context?.pathname].filter(Boolean).join(' · ')
   const contextSummary = context?.pageSummary?.trim()
   const system = [
-    ASSISTANT_INSTRUCTIONS,
+    instruccionesParaRol(role),
     contextHint ? `Pantalla actual: ${contextHint}` : '',
     contextSummary ? `Datos visibles de la pantalla: ${contextSummary}` : '',
   ]
@@ -57,6 +61,85 @@ export const generateAssistantReply = async (
       .trim()
     if (!text) throw new Error('Bedrock devolvió una respuesta vacía')
     return text
+  } catch {
+    throw new AssistantProviderError('unavailable')
+  }
+}
+
+const preguntaEvaluacionSchema = z.object({
+  tipo: z.literal('OPCION_UNICA'),
+  nivel: z.string().min(1).max(20),
+  enunciado: z.string().trim().min(8).max(500),
+  opciones: z
+    .array(z.object({ id: z.string().min(1).max(4), texto: z.string().trim().min(1).max(240) }))
+    .length(4),
+  respuestaCorrecta: z.string().min(1).max(4),
+  puntaje: z.number().int().min(1).max(10),
+})
+
+const evaluacionBorradorSchema = z.object({
+  preguntas: z.array(preguntaEvaluacionSchema).length(5),
+})
+
+export type PreguntaEvaluacionBorrador = z.infer<typeof preguntaEvaluacionSchema>
+
+export const generarPreguntasEvaluacion = async (input: {
+  uso: 'EVALUACION_INICIAL' | 'EVALUACION_TOMO'
+  curso: string
+  semana?: string
+  nivel: string
+  contenido: string
+}): Promise<PreguntaEvaluacionBorrador[]> => {
+  if (!config.assistant.enabled) throw new AssistantProviderError('not-configured')
+  if (!input.contenido.trim()) throw new AssistantProviderError('unavailable')
+
+  try {
+    const result = await client.send(
+      new ConverseCommand({
+        modelId,
+        system: [
+          {
+            text: 'Eres un diseñador de evaluaciones educativas. Responde solo JSON válido con esta forma: {"preguntas":[{"tipo":"OPCION_UNICA","nivel":"A","enunciado":"...","opciones":[{"id":"a","texto":"..."},{"id":"b","texto":"..."},{"id":"c","texto":"..."},{"id":"d","texto":"..."}],"respuestaCorrecta":"a","puntaje":1}]}. Crea exactamente 5 preguntas, con una sola respuesta correcta y distractores plausibles. Para EVALUACION_INICIAL mide conocimientos previos y fundamentos necesarios; para EVALUACION_TOMO mide comprensión y aplicación del contenido de esa semana. Usa solo los datos proporcionados, redacta en español claro y no incluyas explicaciones fuera del JSON.',
+          },
+        ],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                text: JSON.stringify({
+                  uso: input.uso,
+                  curso: input.curso,
+                  semana: input.semana,
+                  nivel: input.nivel,
+                  materialesYLecciones: input.contenido.slice(0, 12000),
+                }),
+              },
+            ],
+          },
+        ],
+        inferenceConfig: { maxTokens: 2200, temperature: 0.2, topP: 0.8 },
+      }),
+    )
+    const raw = result.output?.message?.content
+      ?.flatMap(block => ('text' in block && block.text ? [block.text] : []))
+      .join('\n')
+      .trim()
+    if (!raw) throw new Error('Respuesta vacía')
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    if (start < 0 || end <= start) throw new Error('La respuesta no contiene JSON')
+    const parsed = evaluacionBorradorSchema.safeParse(JSON.parse(raw.slice(start, end + 1)))
+    if (!parsed.success) throw new Error('La IA devolvió preguntas incompletas')
+    if (
+      parsed.data.preguntas.some(
+        pregunta =>
+          new Set(pregunta.opciones.map(opcion => opcion.id)).size !== 4 ||
+          !pregunta.opciones.some(opcion => opcion.id === pregunta.respuestaCorrecta),
+      )
+    )
+      throw new Error('La IA devolvió respuestas que no coinciden con las opciones')
+    return parsed.data.preguntas
   } catch {
     throw new AssistantProviderError('unavailable')
   }

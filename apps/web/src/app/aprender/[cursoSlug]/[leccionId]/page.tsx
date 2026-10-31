@@ -75,9 +75,27 @@ const Reproductor = async ({
   const hechasEnTomo = estadoTomo?.lecciones.filter(l => l.completada).length ?? 0
   const todasMenosEsta =
     (estadoTomo?.lecciones.length ?? 0) - (hechasEnTomo + (yaCompletada ? 0 : 1)) === 0
+  const contextoTutor = [
+    `Curso: ${curso.titulo}.`,
+    tomo ? `Semana: ${tomo.titulo}.` : '',
+    `Lección: ${leccion.titulo}.`,
+    'Contenido de estudio:',
+    ...leccion.bloques.map(bloque =>
+      Object.values(bloque.contenido)
+        .filter((valor): valor is string => typeof valor === 'string')
+        .join('\n'),
+    ),
+    'Ejercicios:',
+    ...leccion.ejercicios.map((ejercicio, indice) => `${indice + 1}. ${ejercicio.enunciado}`),
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   return (
     <div className="tech-lesson-page grid gap-8 lg:grid-cols-4">
+      <p className="sr-only" data-assistant-context>
+        {contextoTutor}
+      </p>
       <div className="lg:col-span-3">
         <nav className="text-sm text-slate-500">
           <Link href={`/aprender/${cursoSlug}`} className="transition-colors hover:text-marca-600">

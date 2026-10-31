@@ -15,30 +15,63 @@ type AssistantMessage = {
 type AssistantAction = {
   label: string
   href: string
-  icon: 'catalog' | 'profile' | 'login' | 'register'
+  icon: 'catalog' | 'profile' | 'login' | 'register' | 'teacher'
 }
 
-const INITIAL_MESSAGE: AssistantMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
+const SALUDOS: Record<'docente' | 'estudiante' | 'publico', string> = {
+  docente: 'Hola. Puedo consultar tus cursos y ayudarte a preparar materiales y evaluaciones.',
+  estudiante: 'Hola. Soy tu tutor de estudio. Puedo darte pistas y practicar contigo esta lección.',
+  publico:
     'Hola, soy tu guía de EdTech. ¿Buscas un curso, una ruta o ayuda con lo que estás aprendiendo?',
 }
 
-const QUICK_PROMPTS = [
-  '¿Qué curso me conviene para empezar?',
-  '¿Cómo funcionan las rutas?',
-  '¿Qué incluye un curso?',
-]
+const PREGUNTAS_RAPIDAS: Record<'docente' | 'estudiante' | 'publico', string[]> = {
+  docente: [
+    '¿Qué cursos tengo?',
+    '¿Cómo preparo una evaluación semanal?',
+    '¿Cómo generar flashcards desde un PDF?',
+  ],
+  estudiante: [
+    'Ayúdame con esta lección',
+    'Dame una pista para un ejercicio',
+    'Explícame este concepto con un ejemplo',
+  ],
+  publico: [
+    '¿Qué curso me conviene para empezar?',
+    '¿Cómo funcionan las rutas?',
+    '¿Qué incluye un curso?',
+  ],
+}
 
-const getAssistantActions = (content: string): AssistantAction[] => {
+const getAssistantActions = (
+  content: string,
+  role: 'docente' | 'estudiante' | 'publico',
+): AssistantAction[] => {
   const normalized = content.toLocaleLowerCase('es')
   const actions: AssistantAction[] = []
   const add = (action: AssistantAction): void => {
     if (!actions.some(current => current.href === action.href)) actions.push(action)
   }
 
-  if (/(catálogo|catalogo|curso|cursos|ruta|rutas|explorar)/.test(normalized)) {
+  if (role === 'docente' && /(evaluación|evaluacion|test|pregunta|banco)/.test(normalized)) {
+    add({ label: 'Gestionar evaluaciones', href: '/admin/bancos', icon: 'teacher' })
+  }
+  if (role === 'docente' && /(ruta|rutas)/.test(normalized)) {
+    add({ label: 'Gestionar rutas', href: '/admin/carreras', icon: 'teacher' })
+  }
+  if (role === 'docente' && /(curso|cursos|material|flashcard|lección|leccion)/.test(normalized)) {
+    add({ label: 'Ir al panel docente', href: '/admin', icon: 'teacher' })
+  }
+  if (
+    role === 'estudiante' &&
+    /(curso|cursos|ruta|rutas|lección|leccion|ejercicio)/.test(normalized)
+  ) {
+    add({ label: 'Ir a mi aprendizaje', href: '/dashboard', icon: 'profile' })
+  }
+  if (
+    role === 'publico' &&
+    /(catálogo|catalogo|curso|cursos|ruta|rutas|explorar)/.test(normalized)
+  ) {
     add({ label: 'Ver catálogo', href: '/cursos', icon: 'catalog' })
   }
   if (/(perfil|progreso|insignia|insignias|certificado|certificados)/.test(normalized)) {
@@ -66,6 +99,7 @@ const ActionIcon = ({ icon }: { icon: AssistantAction['icon'] }): JSX.Element =>
     register: (
       <path d="M12 4v16M4 12h16M7 5.5h10A1.5 1.5 0 0 1 18.5 7v10a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 17V7A1.5 1.5 0 0 1 7 5.5Z" />
     ),
+    teacher: <path d="M3 8.5h18v11H3v-11Zm4 0V5h10v3.5M8 13h8m-4-2v4" />,
   }
 
   return (
@@ -84,10 +118,18 @@ const getErrorMessage = async (response: Response, fallback: string): Promise<st
   }
 }
 
-const AssistantWidget = (): JSX.Element => {
+const AssistantWidget = ({ rol }: { rol?: string | null }): JSX.Element => {
+  const tipoAsistente =
+    rol?.toLowerCase() === 'docente'
+      ? 'docente'
+      : rol?.toLowerCase() === 'estudiante'
+        ? 'estudiante'
+        : 'publico'
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<AssistantMessage[]>([INITIAL_MESSAGE])
+  const [messages, setMessages] = useState<AssistantMessage[]>([
+    { id: 'welcome', role: 'assistant', content: SALUDOS[tipoAsistente] },
+  ])
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -97,6 +139,12 @@ const AssistantWidget = (): JSX.Element => {
   const chunksRef = useRef<Blob[]>([])
   const stopTimerRef = useRef<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    setMessages([{ id: 'welcome', role: 'assistant', content: SALUDOS[tipoAsistente] }])
+    setDraft('')
+    setError(null)
+  }, [tipoAsistente])
 
   useEffect(() => {
     if (!isOpen) return
@@ -273,11 +321,13 @@ const AssistantWidget = (): JSX.Element => {
           })),
           context: {
             pathname: window.location.pathname,
-            pageTitle: document.querySelector('h1')?.textContent?.trim() || document.title,
+            pageTitle:
+              document.querySelector('h1')?.textContent?.trim().slice(0, 160) || document.title,
             pageSummary:
               document
                 .querySelector<HTMLElement>('[data-assistant-context]')
-                ?.textContent?.trim() || undefined,
+                ?.textContent?.trim()
+                .slice(0, 1100) || undefined,
           },
         }),
       })
@@ -298,7 +348,7 @@ const AssistantWidget = (): JSX.Element => {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: assistantText,
-          actions: getAssistantActions(assistantText),
+          actions: getAssistantActions(assistantText, tipoAsistente),
         },
       ])
     } catch (sendError) {
@@ -343,8 +393,18 @@ const AssistantWidget = (): JSX.Element => {
         >
           <header className="assistant-header">
             <div>
-              <h2 id="assistant-title">Asistente EdTech</h2>
-              <p className="assistant-subtitle">Respuestas breves para avanzar</p>
+              <h2 id="assistant-title">
+                {tipoAsistente === 'estudiante'
+                  ? 'Tutor de estudio'
+                  : tipoAsistente === 'docente'
+                    ? 'Asistente docente'
+                    : 'Asistente EdTech'}
+              </h2>
+              <p className="assistant-subtitle">
+                {tipoAsistente === 'estudiante'
+                  ? 'Pistas para aprender paso a paso'
+                  : 'Respuestas breves para avanzar'}
+              </p>
             </div>
             <button
               type="button"
@@ -382,7 +442,7 @@ const AssistantWidget = (): JSX.Element => {
             ))}
             {messages.length === 1 && !isSending && (
               <div className="assistant-quick-prompts" aria-label="Preguntas sugeridas">
-                {QUICK_PROMPTS.map(prompt => (
+                {PREGUNTAS_RAPIDAS[tipoAsistente].map(prompt => (
                   <button
                     key={prompt}
                     type="button"
@@ -429,7 +489,13 @@ const AssistantWidget = (): JSX.Element => {
                 value={draft}
                 onChange={event => setDraft(event.target.value)}
                 onKeyDown={handleInputKeyDown}
-                placeholder="Pregúntame por los cursos o insignias"
+                placeholder={
+                  tipoAsistente === 'estudiante'
+                    ? 'Pregunta sobre esta lección o ejercicio'
+                    : tipoAsistente === 'docente'
+                      ? 'Pregunta por tus cursos o materiales'
+                      : 'Pregúntame por los cursos o insignias'
+                }
                 aria-label="Mensaje para el asistente"
                 rows={2}
                 maxLength={1000}
@@ -478,8 +544,16 @@ const AssistantWidget = (): JSX.Element => {
             </svg>
           </span>
           <span className="assistant-toggle-copy">
-            <strong>¿Necesitas ayuda?</strong>
-            <small>Asistente EdTech</small>
+            <strong>
+              {tipoAsistente === 'estudiante' ? '¿Practicamos?' : '¿Necesitas ayuda?'}
+            </strong>
+            <small>
+              {tipoAsistente === 'estudiante'
+                ? 'Tutor de estudio'
+                : tipoAsistente === 'docente'
+                  ? 'Asistente docente'
+                  : 'Asistente EdTech'}
+            </small>
           </span>
         </button>
       )}

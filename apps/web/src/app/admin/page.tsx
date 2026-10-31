@@ -108,7 +108,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900">Tus cursos</h2>
         </div>
-        <span className="text-sm text-slate-500">Cada tarjeta representa una ruta completa</span>
+        <span className="text-sm text-slate-500">Las rutas agrupan estos cursos</span>
       </div>
 
       <div className="admin-course-grid mt-4">
@@ -123,19 +123,30 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
           const listos = checks.filter(([, listo]) => listo).length
           return (
             <article key={curso.id} className="admin-course-card">
-              <div className="admin-course-card-topline">
-                <span className="admin-course-tech">{curso.tecnologia}</span>
-                <Etiqueta
-                  tono={
-                    curso.estado === 'PUBLICADO'
-                      ? 'exito'
-                      : curso.estado === 'BORRADOR'
-                        ? 'neutro'
-                        : 'alerta'
-                  }
-                >
-                  {curso.estado}
-                </Etiqueta>
+              <div className="admin-course-card-heading">
+                <div className="admin-course-card-topline">
+                  <span className="admin-course-tech">{curso.tecnologia}</span>
+                  <Etiqueta
+                    tono={
+                      curso.estado === 'PUBLICADO'
+                        ? 'exito'
+                        : curso.estado === 'BORRADOR'
+                          ? 'neutro'
+                          : 'alerta'
+                    }
+                  >
+                    {curso.estado}
+                  </Etiqueta>
+                </div>
+                <div className="admin-course-card-controls">
+                  <Link
+                    href={`/admin/cursos/${curso.id}`}
+                    className="boton-primario admin-course-edit-link"
+                  >
+                    Editar
+                  </Link>
+                  <AccionesCurso cursoId={curso.id} estado={curso.estado} />
+                </div>
               </div>
               <h3>{curso.titulo}</h3>
               <p className="admin-course-description">{curso.descripcion}</p>
@@ -160,17 +171,6 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
                     </span>
                   ))}
                 </div>
-              </div>
-              <div className="admin-course-actions">
-                <Link href={`/admin/cursos/${curso.id}`} className="boton-primario text-xs">
-                  Editar
-                </Link>
-              </div>
-              <div className="admin-course-footer">
-                <AccionesCurso
-                  cursoId={curso.id}
-                  estado={curso.estado}
-                />
               </div>
             </article>
           )

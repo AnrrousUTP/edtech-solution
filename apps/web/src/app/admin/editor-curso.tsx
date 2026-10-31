@@ -286,8 +286,6 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         <div className="admin-week-list">
           {semanas.map((semana, semanaIndex) => {
             const mazos = semana.id ? (mazosPorSemana.get(semana.id) ?? []) : []
-            const resumenes = semana.materiales.map(material => material.textoExtraido).filter((text): text is string => Boolean(text))
-            const promptRepaso = 'Prepara 5 flashcards breves para el repaso del curso ' + datos.titulo + ', semana ' + semana.titulo + '. Usa solo esta información extraída de los materiales: ' + resumenes.join('\n').slice(0, 1800)
             return (
               <details key={semana.id ?? semanaIndex} className="admin-week-accordion" open={semanaIndex === 0}>
                 <summary>
@@ -393,19 +391,15 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                   </section>
 
                   <section className="admin-week-section admin-week-review">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div><h3>Repaso y flashcards</h3><p className="admin-help">El PDF subido se resume y puede usarse como contexto para proponer tarjetas.</p></div>
-                      <button type="button" className="boton-secundario text-xs" disabled={!resumenes.length} onClick={() => window.dispatchEvent(new CustomEvent('edtech:assistant:prompt', { detail: { prompt: promptRepaso } }))}>
-                        Consultar repaso con IA
-                      </button>
-                    </div>
+                    <div><h3>Repaso y flashcards</h3><p className="admin-help">Al publicar, o guardar cambios en un curso publicado, la IA prepara el mazo con las lecciones y los PDF. Revisa el resultado aquí.</p></div>
                     {mazos.length > 0 && <div className="admin-route-flashcards-list">{mazos.map(mazo => <details key={mazo.mazoId}><summary>Versión {mazo.version} · {mazo.estado}</summary><RevisionMazo mazo={mazo} /></details>)}</div>}
+                    {mazos.length === 0 && <p className="admin-help">El mazo aparecerá después de publicar o actualizar el curso publicado.</p>}
                   </section>
 
                   <section className="admin-week-section">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div><h3>Evaluación semanal</h3><p className="admin-help">Configura preguntas de esta semana.</p></div>
-                      {curso && semana.id && <a className="boton-secundario text-xs" href={'/admin/bancos?curso=' + curso.id + '&tomo=' + semana.id}>Gestionar evaluación</a>}
+                      <div><h3>Evaluación semanal</h3><p className="admin-help">Genera un borrador con los PDF y las lecciones de esta semana. Revisa las respuestas antes de guardarlo.</p></div>
+                      {curso && semana.id && <a className="boton-secundario text-xs" href={'/admin/bancos?curso=' + curso.id + '&tomo=' + semana.id + '&uso=EVALUACION_TOMO'}>Preparar evaluación con IA</a>}
                     </div>
                   </section>
 
@@ -417,6 +411,14 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
           {semanas.length === 0 && <p className="admin-help">Agrega la primera semana del curso.</p>}
         </div>
       </section>
+
+      {curso && <section className="admin-ai-generation-panel admin-course-initial-assessment">
+        <div>
+          <strong>Test inicial del curso</strong>
+          <p>Prepara cinco preguntas desde los materiales y lecciones del curso. Revisa el borrador antes de guardarlo.</p>
+        </div>
+        <a className="boton-secundario" href={'/admin/bancos?curso=' + curso.id + '&uso=EVALUACION_INICIAL'}>Preparar test inicial</a>
+      </section>}
 
       {(error || estado) && <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">{error ?? estado}</p>}
       <div className="admin-editor-actions">

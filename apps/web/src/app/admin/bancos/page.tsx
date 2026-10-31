@@ -7,7 +7,7 @@ import { GestorBancos } from './gestor'
 export default async function BancosAdmin({
   searchParams,
 }: {
-  searchParams: Promise<{ curso?: string; tomo?: string }>
+  searchParams: Promise<{ curso?: string; tomo?: string; uso?: string }>
 }): Promise<JSX.Element> {
   if (!(await esDocente()))
     return (
@@ -33,9 +33,16 @@ export default async function BancosAdmin({
   const detalles = await Promise.all(
     cursos.map(curso => catalogApi.cursoAdmin(curso.id).catch(() => null)),
   )
-  const tomos = detalles
-    .flatMap(curso => curso?.tomos ?? [])
-    .map(tomo => ({ id: tomo.id, titulo: tomo.titulo }))
+  const tomos = detalles.flatMap(curso =>
+    curso
+      ? curso.tomos.map(tomo => ({
+          id: tomo.id,
+          titulo: tomo.titulo,
+          cursoId: curso.id,
+          cursoTitulo: curso.titulo,
+        }))
+      : [],
+  )
   const cursosDisponibles = cursos.map(curso => ({ id: curso.id, titulo: curso.titulo }))
   return (
     <div className="tech-admin-page">
@@ -45,15 +52,19 @@ export default async function BancosAdmin({
         </svg>
         Área docente
       </Link>
-      <h1 className="admin-title">Diseña el nivel de cada misión.</h1>
+      <h1 className="admin-title">Evaluaciones</h1>
       <p className="admin-lead">
-        Conocimiento previo, refuerzo y certificación viven en bancos versionables.
+        Genera preguntas desde los materiales y revisa las respuestas antes de guardarlas.
       </p>
       <GestorBancos
         bancos={bancos}
         tomos={tomos}
         cursos={cursosDisponibles}
-        seleccionInicial={{ cursoId: filtros.curso ?? '', tomoId: filtros.tomo ?? '' }}
+        seleccionInicial={{
+          cursoId: filtros.curso ?? '',
+          tomoId: filtros.tomo ?? '',
+          uso: filtros.uso,
+        }}
       />
     </div>
   )

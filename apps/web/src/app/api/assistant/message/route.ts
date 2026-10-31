@@ -32,19 +32,19 @@ const errorResponse = (message: string, status: number): NextResponse =>
 
 export async function POST(request: Request): Promise<NextResponse> {
   const token = await accessToken()
-  if (!token) return errorResponse('Inicia sesión para utilizar el asistente.', 401)
-
   let perfil: { rol?: string } | null = null
-  try {
-    const auth = await fetch(`${config.apiBase}/api/identity/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    })
-    if (!auth.ok) return errorResponse('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
-    const body = (await auth.json()) as { data?: { rol?: string } }
-    perfil = body.data ?? null
-  } catch {
-    return errorResponse('No pude validar tu sesión ahora.', 503)
+  if (token) {
+    try {
+      const auth = await fetch(`${config.apiBase}/api/identity/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      })
+      if (!auth.ok) return errorResponse('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
+      const body = (await auth.json()) as { data?: { rol?: string } }
+      perfil = body.data ?? null
+    } catch {
+      return errorResponse('No pude validar tu sesión ahora.', 503)
+    }
   }
 
   let body: unknown
@@ -78,9 +78,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     let datosCatalogo = ''
     if (pideCatalogo) {
       try {
-        const ruta = perfil?.rol?.toLowerCase() === 'docente' ? '/api/catalog/admin/cursos' : '/api/catalog/cursos'
+        const ruta =
+          perfil?.rol?.toLowerCase() === 'docente'
+            ? '/api/catalog/admin/cursos'
+            : '/api/catalog/cursos'
         const catalogo = await fetch(`${config.catalogApiBase}${ruta}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
           cache: 'no-store',
         })
         if (catalogo.ok) {
@@ -106,7 +109,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...parsed.data.context,
       pageSummary: [parsed.data.context?.pageSummary, datosCatalogo].filter(Boolean).join('\n'),
     }
-    const text = await generateAssistantReply(parsed.data.messages, contexto)
+    const rol = perfil?.rol?.toLowerCase()
+    const tipoAsistente =
+      rol === 'docente' ? 'docente' : rol === 'estudiante' ? 'estudiante' : 'publico'
+    const text = await generateAssistantReply(parsed.data.messages, contexto, tipoAsistente)
     return NextResponse.json({ text }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     if (error instanceof AssistantProviderError && error.code === 'not-configured') {
