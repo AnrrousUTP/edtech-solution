@@ -188,22 +188,33 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
   async reemplazarBloques(leccionId: UniqueId, bloques: Bloque[]): Promise<void> {
     const pk = `LESSON#${leccionId.valor}`
     const existentes = await this.queryPartition(pk, 'BLOCK#')
-    const nuevasClaves = bloques.map((block, index) => `BLOCK#${String(block.orden ?? index + 1).padStart(5, '0')}`)
+    // Normaliza una sola vez y usa el mismo orden para validar las claves y
+    // construir las escrituras; si solo la validación aplicaba el fallback,
+    // varios bloques sin orden intentaban escribir BLOCK#undefined.
+    const bloquesOrdenados = bloques.map((block, index) => ({
+      ...block,
+      orden: Number.isSafeInteger(block.orden) && block.orden > 0 ? block.orden : index + 1,
+    }))
+    const nuevasClaves = bloquesOrdenados.map(
+      block => `BLOCK#${String(block.orden).padStart(5, '0')}`,
+    )
     if (new Set(nuevasClaves).size !== nuevasClaves.length)
       throw new Error('La lección contiene bloques con orden duplicado')
     const clavesNuevas = new Set(nuevasClaves)
     const operations: Operations = [
-      ...existentes.filter(row => !clavesNuevas.has(String(row.SK))).map(row => ({
-        Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
-      })),
-      ...bloques.map((block, index) => ({
+      ...existentes
+        .filter(row => !clavesNuevas.has(String(row.SK)))
+        .map(row => ({
+          Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
+        })),
+      ...bloquesOrdenados.map(block => ({
         Put: {
           TableName: this.tableName,
           Item: {
             PK: pk,
             SK: `BLOCK#${String(block.orden).padStart(5, '0')}`,
             entity: 'LessonBlock',
-            orden: block.orden ?? index + 1,
+            orden: block.orden,
             tipo: block.tipo,
             contenido: block.contenido,
           },
@@ -226,14 +237,18 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
   async reemplazarEjercicios(leccionId: UniqueId, ejercicios: Ejercicio[]): Promise<void> {
     const pk = `LESSON#${leccionId.valor}`
     const existentes = await this.queryPartition(pk, 'EXERCISE#')
-    const nuevasClaves = ejercicios.map((exercise, index) => `EXERCISE#${String(exercise.id ?? index).padStart(5, '0')}`)
+    const nuevasClaves = ejercicios.map(
+      (exercise, index) => `EXERCISE#${String(exercise.id ?? index).padStart(5, '0')}`,
+    )
     if (new Set(nuevasClaves).size !== nuevasClaves.length)
       throw new Error('La lección contiene ejercicios con identificadores duplicados')
     const clavesNuevas = new Set(nuevasClaves)
     const operations: Operations = [
-      ...existentes.filter(row => !clavesNuevas.has(String(row.SK))).map(row => ({
-        Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
-      })),
+      ...existentes
+        .filter(row => !clavesNuevas.has(String(row.SK)))
+        .map(row => ({
+          Delete: { TableName: this.tableName, Key: { PK: pk, SK: row.SK } },
+        })),
       ...ejercicios.map((exercise, index) => ({
         Put: {
           TableName: this.tableName,
