@@ -236,7 +236,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   return (
     <form onSubmit={guardar} className="admin-editor-grid">
       <p className="sr-only" data-assistant-context>{contextoAsistente}</p>
-      <section className="tech-admin-card">
+      <section className="tech-admin-card admin-course-details">
         <h1>{curso ? 'Editar curso' : 'Nuevo curso'}</h1>
         <p className="admin-help">Define los datos que verán los estudiantes.</p>
         <div className="admin-form-grid">

@@ -10742,11 +10742,11 @@
 
 /* Docente: curso cards and editor layout */
 .admin-course-card-heading {
-  display: flex;
+  display: grid;
   width: 100%;
-  min-height: 44px;
-  align-items: flex-start;
-  justify-content: space-between;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 12px;
 }
 
@@ -10760,6 +10760,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
+  align-content: flex-start;
   gap: 8px;
 }
 
@@ -10770,6 +10771,8 @@
   justify-content: flex-end;
   gap: 8px;
   margin-left: auto;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .admin-course-card-controls > a,
@@ -10792,47 +10795,63 @@
 }
 
 .admin-course-card h3 {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .admin-editor-grid {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 24px;
   align-items: start;
-  max-width: 1240px;
+  max-width: 1480px;
   margin-inline: auto;
+}
+
+.admin-editor-grid > .admin-course-details {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-editor-grid > .admin-week-editor {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .admin-editor-grid > .tech-admin-card,
 .admin-editor-grid > .admin-ai-generation-panel,
-.admin-editor-grid > .admin-editor-actions {
+.admin-editor-grid > .admin-editor-actions,
+.admin-editor-grid > .admin-form-error,
+.admin-editor-grid > .admin-form-success {
   width: 100%;
 }
 
-.admin-week-editor {
-  grid-column: auto;
+.admin-editor-grid > .admin-ai-generation-panel,
+.admin-editor-grid > .admin-editor-actions,
+.admin-editor-grid > .admin-form-error,
+.admin-editor-grid > .admin-form-success {
+  grid-column: 1 / -1;
 }
 
-.admin-icon-button {
+.admin-course-card-controls .admin-icon-button {
   display: inline-grid;
-  min-width: 44px;
-  min-height: 44px;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  min-width: 48px;
+  min-height: 48px;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
   padding: 0;
-  border: 1px solid #c7d2e0;
+  border: 1px solid var(--gs-border-strong);
   border-radius: 11px;
-  background: #fff;
-  color: #1558d6;
+  background: var(--gs-surface);
+  color: var(--gs-primary);
   line-height: 0;
   place-items: center;
   cursor: pointer;
 }
 
-.admin-icon-button svg {
+.admin-course-card-controls .admin-icon-button svg {
   display: block;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -10840,16 +10859,21 @@
   stroke-width: 2;
 }
 
-.admin-icon-button svg path,
-.admin-icon-button svg circle {
+.admin-course-card-controls .admin-icon-button svg path,
+.admin-course-card-controls .admin-icon-button svg circle {
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
 }
 
-.admin-icon-button:hover:not(:disabled) {
-  border-color: #8ab4f8;
+.admin-course-card-controls .admin-icon-button:hover:not(:disabled) {
+  border-color: var(--gs-primary);
   background: #f5f8ff;
+}
+
+.admin-course-card-controls .admin-icon-button:focus-visible {
+  outline: 3px solid var(--gs-primary);
+  outline-offset: 2px;
 }
 
 .admin-course-publish-action > .boton-primario {
@@ -11002,13 +11026,39 @@
   }
 }
 
+@media (max-width: 960px) {
+  .admin-editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 900px;
+  }
+
+  .admin-editor-grid > .admin-course-details,
+  .admin-editor-grid > .admin-week-editor,
+  .admin-editor-grid > .admin-ai-generation-panel,
+  .admin-editor-grid > .admin-editor-actions,
+  .admin-editor-grid > .admin-form-error,
+  .admin-editor-grid > .admin-form-success {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 @media (max-width: 420px) {
   .admin-course-card-heading {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .admin-course-card-controls {
+    grid-column: 1;
+    grid-row: 2;
     width: 100%;
     justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .admin-course-card-controls .admin-icon-button {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
   }
 }
