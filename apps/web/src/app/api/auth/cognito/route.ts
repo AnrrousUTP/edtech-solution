@@ -73,6 +73,7 @@ const crearSesion = (
     path: '/',
   }
   const edad = Math.max(60, resultado.ExpiresIn ?? 3600)
+  const edadPerfil = resultado.RefreshToken ? 30 * 24 * 3600 : edad
   const respuesta = NextResponse.json({ ok: true, destino })
   respuesta.cookies.set(COOKIE_ACCESO, resultado.AccessToken, { ...seguridad, maxAge: edad })
   if (resultado.RefreshToken)
@@ -98,7 +99,7 @@ const crearSesion = (
         mfaPendiente: String(perfilId.mfa_pendiente ?? '') === 'true',
       }),
     ),
-    { ...seguridad, httpOnly: true, maxAge: edad },
+    { ...seguridad, httpOnly: true, maxAge: edadPerfil },
   )
   return respuesta
 }

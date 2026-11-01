@@ -91,7 +91,13 @@ export const GET = async (peticion: Request): Promise<Response> => {
         mfaPendiente: String(claimsId.mfa_pendiente ?? '') === 'true',
       }),
     ),
-    { secure: true, httpOnly: true, sameSite: 'lax', path: '/', maxAge: tokens.expires_in },
+    {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: tokens.refresh_token ? 30 * 24 * 3600 : tokens.expires_in,
+    },
   )
 
   for (const efimera of ['pkce_verificador', 'pkce_estado', 'pkce_destino']) {

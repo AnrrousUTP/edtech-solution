@@ -135,7 +135,7 @@ export const POST = async (peticion: Request): Promise<Response> => {
             mfaPendiente: false,
           }),
         ),
-        { ...seguridad, maxAge: edad },
+        { ...seguridad, maxAge: 30 * 24 * 60 * 60 },
       )
       return respuesta
     }
