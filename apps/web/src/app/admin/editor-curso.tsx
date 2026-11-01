@@ -164,7 +164,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   const [aviso, setAviso] = useState<string | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
-  const [subiendo, setSubiendo] = useState<string | null>(null)
+  const [subiendo, setSubiendo] = useState<string[]>([])
   const [enlaceAbierto, setEnlaceAbierto] = useState(false)
   const [errorEnlace, setErrorEnlace] = useState<string | null>(null)
   const [borradorEnlace, setBorradorEnlace] = useState({
@@ -198,6 +198,35 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   const cambiarSemana = (indice: number, cambios: Partial<Semana>): void => {
     setSemanas(actual =>
       actual.map((semana, i) => (i === indice ? { ...semana, ...cambios } : semana)),
+    )
+  }
+  const cantidadSubiendo = (llave: string): number =>
+    subiendo.filter(id => id.startsWith(`${llave}:`)).length
+  const agregarPdfSemana = (
+    semanaIndex: number,
+    enfoques: EnfoqueMaterial[],
+    resultado: { url: string; nombre: string; textoExtraido?: string },
+  ): void => {
+    setSemanas(actual =>
+      actual.map((semana, index) =>
+        index === semanaIndex
+          ? {
+              ...semana,
+              materiales: [
+                ...semana.materiales,
+                {
+                  orden: semana.materiales.length + 1,
+                  titulo: resultado.nombre,
+                  descripcion: null,
+                  tipo: 'PDF',
+                  url: resultado.url,
+                  enfoques,
+                  ...(resultado.textoExtraido ? { textoExtraido: resultado.textoExtraido } : {}),
+                },
+              ],
+            }
+          : semana,
+      ),
     )
   }
   const cambiarMaterial = (
@@ -307,11 +336,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       textoExtraido?: string
     }) => void,
     llave: string,
-  ): Promise<void> => {
-    setSubiendo(llave)
-    setError(null)
-    setAviso(null)
-    setEstado(null)
+  ): Promise<{ ok: boolean; advertencia?: string; error?: string }> => {
+    const uploadId = `${llave}:${crypto.randomUUID()}`
+    setSubiendo(actual => [...actual, uploadId])
     try {
       const body = new FormData()
       body.set('file', archivo)
@@ -332,13 +359,43 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         tipo: result.tipo ?? 'PDF',
         ...(result.textoExtraido ? { textoExtraido: result.textoExtraido } : {}),
       })
-      if (result.advertencia) setAviso(result.advertencia)
-      else setEstado('Archivo guardado y agregado a la semana.')
+      return { ok: true, ...(result.advertencia ? { advertencia: result.advertencia } : {}) }
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'No se pudo subir el archivo')
+      return {
+        ok: false,
+        error: uploadError instanceof Error ? uploadError.message : 'No se pudo subir el archivo',
+      }
     } finally {
-      setSubiendo(null)
+      setSubiendo(actual => actual.filter(id => id !== uploadId))
     }
+  }
+
+  const subirArchivos = async (
+    archivos: File[],
+    onUploaded: Parameters<typeof subirArchivo>[1],
+    llave: string,
+  ): Promise<void> => {
+    if (archivos.length === 0) return
+    setError(null)
+    setAviso(null)
+    setEstado(null)
+    const errores: string[] = []
+    const advertencias: string[] = []
+    let completados = 0
+    for (const archivo of archivos) {
+      const resultado = await subirArchivo(archivo, onUploaded, llave)
+      if (resultado.ok) completados += 1
+      else errores.push(`${archivo.name}: ${resultado.error}`)
+      if (resultado.advertencia) advertencias.push(`${archivo.name}: ${resultado.advertencia}`)
+    }
+    if (errores.length > 0) setError(errores.join(' '))
+    if (advertencias.length > 0) setAviso(advertencias.join(' '))
+    if (completados > 0)
+      setEstado(
+        archivos.length === 1
+          ? 'Archivo guardado y agregado a la semana.'
+          : `${completados} de ${archivos.length} archivos guardados y agregados.`,
+      )
   }
 
   const guardar = async (evento: React.FormEvent): Promise<void> => {
@@ -487,19 +544,19 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
-                disabled={subiendo !== null}
+                disabled={cantidadSubiendo('cover') > 0}
                 onChange={event => {
                   const file = event.target.files?.[0]
                   if (file)
-                    void subirArchivo(
-                      file,
+                    void subirArchivos(
+                      [file],
                       result => setDatos(actual => ({ ...actual, imagenUrl: result.url })),
                       'cover',
                     )
                   event.currentTarget.value = ''
                 }}
               />
-              {subiendo === 'cover' && <small>Subiendo imagen…</small>}
+              {cantidadSubiendo('cover') > 0 && <small>Subiendo imagen…</small>}
             </label>
             <label className="admin-form-wide">
               Descripción
@@ -762,37 +819,19 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                           </div>
                         </div>
                       </div>
-                      <label className={`admin-week-upload-dropzone ${subiendo === `semana-${semanaActiva}` ? 'is-uploading' : ''}`}>
+                      <label className={`admin-week-upload-dropzone ${cantidadSubiendo(`semana-${semanaActiva}`) > 0 ? 'is-uploading' : ''}`}>
                         <input
                           type="file"
                           accept="application/pdf,.pdf"
-                          disabled={subiendo !== null}
+                          multiple
                           onChange={event => {
-                            const file = event.target.files?.[0]
-                            if (file)
-                              void subirArchivo(
-                                file,
-                                result => {
-                                  const current = semanas[semanaActiva]
-                                  if (!current) return
-                                  cambiarSemana(semanaActiva, {
-                                    materiales: [
-                                      ...current.materiales,
-                                      {
-                                        orden: current.materiales.length + 1,
-                                        titulo: result.nombre,
-                                        descripcion: null,
-                                        tipo: 'PDF',
-                                        url: result.url,
-                                        enfoques: ['CONTENIDO_SEMANAL'],
-                                        ...(result.textoExtraido
-                                          ? { textoExtraido: result.textoExtraido }
-                                          : {}),
-                                      },
-                                    ],
-                                  })
-                                },
-                                `semana-${semanaActiva}`,
+                            const files = Array.from(event.currentTarget.files ?? [])
+                            const semanaIndex = semanaActiva
+                            if (files.length > 0)
+                              void subirArchivos(
+                                files,
+                                result => agregarPdfSemana(semanaIndex, ['CONTENIDO_SEMANAL'], result),
+                                `semana-${semanaIndex}`,
                               )
                             event.currentTarget.value = ''
                           }}
@@ -801,11 +840,11 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                           <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" /></svg>
                         </span>
                         <strong>
-                          {subiendo === `semana-${semanaActiva}`
+                          {cantidadSubiendo(`semana-${semanaActiva}`) > 0
                             ? 'Subiendo y analizando…'
-                            : 'Seleccionar archivo PDF'}
+                            : 'Seleccionar uno o varios PDF'}
                         </strong>
-                        <small>La extracción de texto se mostrará para que la revises.</small>
+                        <small>Se procesan en orden; la extracción de texto se mostrará para que la revises.</small>
                       </label>
                     </section>
                   </div>
@@ -1110,37 +1149,25 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                         <input
                           type="file"
                           accept="application/pdf,.pdf"
-                          disabled={subiendo !== null}
+                          multiple
                           onChange={event => {
-                            const file = event.target.files?.[0]
-                            if (file)
-                              void subirArchivo(
-                                file,
-                                result => {
-                                  const current = semanas[semanaActiva]
-                                  if (!current) return
-                                  cambiarSemana(semanaActiva, {
-                                    materiales: [
-                                      ...current.materiales,
-                                      {
-                                        orden: current.materiales.length + 1,
-                                        titulo: result.nombre,
-                                        descripcion: null,
-                                        tipo: 'PDF',
-                                        url: result.url,
-                                        enfoques: ['REPASO'],
-                                        ...(result.textoExtraido ? { textoExtraido: result.textoExtraido } : {}),
-                                      },
-                                    ],
-                                  })
-                                },
-                                `repaso-${semanaActiva}`,
+                            const files = Array.from(event.currentTarget.files ?? [])
+                            const semanaIndex = semanaActiva
+                            if (files.length > 0)
+                              void subirArchivos(
+                                files,
+                                result => agregarPdfSemana(semanaIndex, ['REPASO'], result),
+                                `repaso-${semanaIndex}`,
                               )
                             event.currentTarget.value = ''
                           }}
                         />
-                        <strong>Subir PDF para el repaso</strong>
-                        <small>El archivo quedará clasificado para el repaso de esta semana.</small>
+                        <strong>
+                          {cantidadSubiendo(`repaso-${semanaActiva}`) > 0
+                            ? 'Subiendo PDF para repaso…'
+                            : 'Subir uno o varios PDF para el repaso'}
+                        </strong>
+                        <small>Los archivos se procesan en orden y quedan clasificados para el repaso.</small>
                       </label>
                       {semanaActual.materiales.filter(material => material.tipo === 'PDF').length > 0 ? (
                         <div className="admin-review-source-list" aria-label="PDFs de la semana">
@@ -1263,7 +1290,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       )}
 
       <div className="admin-editor-actions">
-        <button disabled={ocupado || subiendo !== null} className="boton-primario" type="submit">
+        <button disabled={ocupado || subiendo.length > 0} className="boton-primario" type="submit">
           {ocupado ? 'Guardando…' : 'Guardar cambios'}
         </button>
       </div>
