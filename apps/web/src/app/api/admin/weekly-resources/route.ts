@@ -85,6 +85,27 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!profile || !course || !week)
       return NextResponse.json({ error: 'No encontré la semana seleccionada.' }, { status: 404 })
 
+    const pdfSinTexto = week.materiales.find(material => {
+      const seleccionado =
+        !material.enfoques?.length ||
+        material.enfoques.some(enfoque =>
+          ['CONOCIMIENTO_PREVIO', 'CONTENIDO_SEMANAL', 'REPASO'].includes(enfoque),
+        )
+      return (
+        seleccionado &&
+        material.tipo.toUpperCase() === 'PDF' &&
+        !material.textoExtraido?.trim() &&
+        !material.descripcion?.trim()
+      )
+    })
+    if (pdfSinTexto)
+      return NextResponse.json(
+        {
+          error: `El PDF “${pdfSinTexto.titulo}” está guardado, pero no tiene texto extraído para generar los recursos. Habilita Amazon Bedrock y vuelve a cargarlo para analizarlo.`,
+        },
+        { status: 422 },
+      )
+
     const materials = week.materiales
       .map(material => ({
         title: material.titulo,

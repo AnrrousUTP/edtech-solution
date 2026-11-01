@@ -36,12 +36,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const bytes = new Uint8Array(await file.arrayBuffer())
   const key = `course-media/${randomUUID()}.${extension}`
+  let stage: 'store-file' | 'summarize-pdf' = 'store-file'
   try {
-    let textoExtraido: string | undefined
-    if (file.type === 'application/pdf') {
-      await reserveAssistantChatQuota()
-      textoExtraido = await extraerResumenPdf(bytes, file.name)
-    }
     await s3.send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -52,24 +48,55 @@ export async function POST(request: Request): Promise<NextResponse> {
         ServerSideEncryption: 'AES256',
       }),
     )
+
+    let textoExtraido: string | undefined
+    let advertencia: string | undefined
+    if (file.type === 'application/pdf') {
+      stage = 'summarize-pdf'
+      try {
+        await reserveAssistantChatQuota()
+        textoExtraido = await extraerResumenPdf(bytes, file.name)
+      } catch (error) {
+        const code = error instanceof AssistantProviderError ? error.code : 'unavailable'
+        console.error(
+          JSON.stringify({
+            event: 'admin-pdf-summary-failed',
+            errorCode: code,
+            fileType: file.type,
+            fileSize: file.size,
+          }),
+        )
+        advertencia =
+          code === 'quota-exceeded'
+            ? 'El PDF quedó guardado, pero no se pudo extraer el texto porque se alcanzó el límite mensual de IA.'
+            : 'El PDF quedó guardado, pero no se pudo extraer el texto con IA. Revisa el acceso a Amazon Bedrock e inténtalo de nuevo más tarde.'
+      }
+    }
     return NextResponse.json({
       url: `/api/media/${key}`,
       nombre: file.name,
       tipo: file.type === 'application/pdf' ? 'PDF' : 'IMAGEN',
       ...(textoExtraido ? { textoExtraido } : {}),
+      ...(advertencia ? { advertencia } : {}),
     })
   } catch (error) {
-    if (error instanceof AssistantProviderError && error.code === 'quota-exceeded') {
-      return NextResponse.json(
-        { error: 'Se alcanzó el límite mensual de procesamiento con IA.' },
-        { status: 429 },
-      )
+    const details = error as {
+      name?: string
+      $metadata?: { httpStatusCode?: number; requestId?: string }
     }
-    if (error instanceof AssistantProviderError && error.code === 'not-configured') {
-      return NextResponse.json({ error: 'El procesamiento de PDF no está configurado.' }, { status: 503 })
-    }
+    console.error(
+      JSON.stringify({
+        event: 'admin-media-upload-failed',
+        stage,
+        errorName: details?.name ?? 'UnknownError',
+        httpStatusCode: details?.$metadata?.httpStatusCode,
+        requestId: details?.$metadata?.requestId,
+        fileType: file.type,
+        fileSize: file.size,
+      }),
+    )
     return NextResponse.json(
-      { error: 'No se pudo subir el archivo. Revisa el formato e inténtalo de nuevo.' },
+      { error: 'No se pudo almacenar el archivo en S3. Revisa el servicio de almacenamiento e inténtalo de nuevo.' },
       { status: 502 },
     )
   }

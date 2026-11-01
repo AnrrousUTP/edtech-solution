@@ -161,6 +161,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   })
   const [semanas, setSemanas] = useState<Semana[]>(contenido.map(normalizarSemana))
   const [error, setError] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [subiendo, setSubiendo] = useState<string | null>(null)
@@ -309,6 +310,8 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   ): Promise<void> => {
     setSubiendo(llave)
     setError(null)
+    setAviso(null)
+    setEstado(null)
     try {
       const body = new FormData()
       body.set('file', archivo)
@@ -318,6 +321,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         nombre?: string
         tipo?: string
         textoExtraido?: string
+        advertencia?: string
         error?: string
       }
       if (!response.ok || !result.url)
@@ -328,6 +332,8 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         tipo: result.tipo ?? 'PDF',
         ...(result.textoExtraido ? { textoExtraido: result.textoExtraido } : {}),
       })
+      if (result.advertencia) setAviso(result.advertencia)
+      else setEstado('Archivo guardado y agregado a la semana.')
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'No se pudo subir el archivo')
     } finally {
@@ -344,6 +350,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
     }
     setOcupado(true)
     setError(null)
+    setAviso(null)
     setEstado(null)
     try {
       let cursoId = curso?.id
@@ -428,9 +435,18 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         </div>
       </header>
 
-      {(error || estado) && (
-        <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">
-          {error ?? estado}
+      {(error || aviso || estado) && (
+        <p
+          className={
+            error
+              ? 'admin-form-error'
+              : aviso
+                ? 'admin-form-success admin-form-warning'
+                : 'admin-form-success'
+          }
+          role="status"
+        >
+          {error ?? aviso ?? estado}
         </p>
       )}
 

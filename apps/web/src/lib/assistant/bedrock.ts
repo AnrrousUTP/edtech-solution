@@ -25,6 +25,23 @@ export class AssistantProviderError extends Error {
 const client = new BedrockRuntimeClient({ region: config.cognito.region })
 const modelId = config.assistant.bedrockModelId
 
+const registrarFalloBedrock = (operation: string, error: unknown): void => {
+  const providerError = error as {
+    name?: string
+    $metadata?: { httpStatusCode?: number; requestId?: string }
+  }
+  console.error(
+    JSON.stringify({
+      event: 'bedrock-inference-failed',
+      operation,
+      modelId,
+      errorName: providerError?.name ?? 'UnknownError',
+      httpStatusCode: providerError?.$metadata?.httpStatusCode,
+      requestId: providerError?.$metadata?.requestId,
+    }),
+  )
+}
+
 export const generateAssistantReply = async (
   messages: AssistantMessage[],
   context?: AssistantContext,
@@ -61,7 +78,8 @@ export const generateAssistantReply = async (
       .trim()
     if (!text) throw new Error('Bedrock devolvió una respuesta vacía')
     return text
-  } catch {
+  } catch (error) {
+    registrarFalloBedrock('assistant-reply', error)
     throw new AssistantProviderError('unavailable')
   }
 }
@@ -144,7 +162,8 @@ export const generarPreguntasEvaluacion = async (input: {
     )
       throw new Error('La IA devolvió respuestas que no coinciden con las opciones')
     return parsed.data.preguntas
-  } catch {
+  } catch (error) {
+    registrarFalloBedrock('assessment-generation', error)
     throw new AssistantProviderError('unavailable')
   }
 }
@@ -180,7 +199,8 @@ export const extraerResumenPdf = async (bytes: Uint8Array, nombre: string): Prom
       .trim()
     if (!text) throw new Error('Bedrock devolvió un resumen vacío')
     return text
-  } catch {
+  } catch (error) {
+    registrarFalloBedrock('pdf-summary', error)
     throw new AssistantProviderError('unavailable')
   }
 }

@@ -9849,6 +9849,12 @@
     background: #e6f4ea;
     color: #137333;
   }
+
+  .admin-form-success.admin-form-warning {
+    border: 1px solid #f0d48c;
+    background: #fff6dc;
+    color: #795100;
+  }
 }
 
 @layer components {
