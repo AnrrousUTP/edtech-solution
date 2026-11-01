@@ -6,8 +6,10 @@ import type { CursoDetalle } from '@/api/catalog'
 import type { MazoAdmin } from '@/api/resto'
 import { RevisionMazo } from './revision-mazo'
 import { RecursosSemanales } from './RecursosSemanales'
+import { FlujoRecursosAnimado } from './FlujoRecursosAnimado'
 
 type EnfoqueMaterial = 'CONOCIMIENTO_PREVIO' | 'CONTENIDO_SEMANAL' | 'REPASO'
+type TipoEnlace = 'VIDEO' | 'ENLACE'
 
 type Material = {
   orden: number
@@ -50,6 +52,40 @@ const nuevaLeccion = (orden: number): Leccion => ({
   bloques: [{ orden: 1, tipo: 'TEXTO', contenido: { markdown: '' } }],
   ejercicios: [],
 })
+
+const videoEmbedUrl = (value: string): string | null => {
+  try {
+    const parsed = new URL(value)
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
+    const segmentos = parsed.pathname.split('/').filter(Boolean)
+    let videoId = ''
+    if (host === 'youtu.be') videoId = segmentos[0] ?? ''
+    else if (['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'].includes(host))
+      videoId = parsed.searchParams.get('v') ?? segmentos[segmentos.length - 1] ?? ''
+    if (/^[\w-]{11}$/.test(videoId) && ['youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'youtu.be'].includes(host))
+      return `https://www.youtube-nocookie.com/embed/${videoId}`
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+      const vimeoId = segmentos[segmentos.length - 1] ?? ''
+      if (/^\d+$/.test(vimeoId)) return `https://player.vimeo.com/video/${vimeoId}`
+    }
+    if (host === 'loom.com') {
+      const loomId = segmentos[segmentos.length - 1] ?? ''
+      if (/^[\w-]+$/.test(loomId)) return `https://www.loom.com/embed/${loomId}`
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+const urlExternaSegura = (value: string): string | null => {
+  try {
+    const parsed = new URL(value)
+    return ['https:', 'http:'].includes(parsed.protocol) ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
 
 const normalizarSemana = (value: unknown, index: number): Semana => {
   const item = (value ?? {}) as Record<string, unknown>
@@ -128,6 +164,14 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
   const [estado, setEstado] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [subiendo, setSubiendo] = useState<string | null>(null)
+  const [enlaceAbierto, setEnlaceAbierto] = useState(false)
+  const [errorEnlace, setErrorEnlace] = useState<string | null>(null)
+  const [borradorEnlace, setBorradorEnlace] = useState({
+    tipo: 'VIDEO' as TipoEnlace,
+    titulo: '',
+    url: '',
+    descripcion: '',
+  })
   const mazosPorSemana = new Map(mazosPorTomo.map(item => [item.tomoId, item.mazos]))
   const semanaActual = semanas[semanaActiva] ?? null
   const contextoAsistente = [
@@ -178,6 +222,45 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         i === leccionIndex ? { ...leccion, ...cambios } : leccion,
       ),
     })
+  }
+
+  const agregarEnlace = (): void => {
+    setErrorEnlace(null)
+    if (!semanaActual) return
+    if (!borradorEnlace.titulo.trim() || !borradorEnlace.url.trim()) {
+      setErrorEnlace('Completa el nombre y el enlace del material.')
+      return
+    }
+    let parsed: URL
+    try {
+      parsed = new URL(borradorEnlace.url.trim())
+    } catch {
+      setErrorEnlace('Escribe una dirección web válida que comience con https://')
+      return
+    }
+    if (!['https:', 'http:'].includes(parsed.protocol)) {
+      setErrorEnlace('El enlace debe usar https:// o http://')
+      return
+    }
+    if (borradorEnlace.tipo === 'VIDEO' && !videoEmbedUrl(parsed.toString())) {
+      setErrorEnlace('Usa un enlace de YouTube, Vimeo o Loom. Para otro sitio, selecciona «Enlace web».')
+      return
+    }
+    cambiarSemana(semanaActiva, {
+      materiales: [
+        ...semanaActual.materiales,
+        {
+          orden: semanaActual.materiales.length + 1,
+          titulo: borradorEnlace.titulo.trim(),
+          descripcion: borradorEnlace.descripcion.trim() || null,
+          tipo: borradorEnlace.tipo,
+          url: parsed.toString(),
+          enfoques: ['CONTENIDO_SEMANAL'],
+        },
+      ],
+    })
+    setBorradorEnlace({ tipo: 'VIDEO', titulo: '', url: '', descripcion: '' })
+    setEnlaceAbierto(false)
   }
 
   const semanasParaGuardar = (): Semana[] =>
@@ -659,7 +742,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                           </span>
                           <div>
                             <h3 id="week-upload-title">Agregar material</h3>
-                            <p>Sube un PDF. Después eliges para qué se usará.</p>
+                            <p>Sube un PDF o agrega un video/enlace. Después eliges para qué se usará.</p>
                           </div>
                         </div>
                       </div>
@@ -725,23 +808,12 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       <button
                         type="button"
                         className="boton-secundario"
-                        onClick={() =>
-                          cambiarSemana(semanaActiva, {
-                            materiales: [
-                              ...semanaActual.materiales,
-                              {
-                                orden: semanaActual.materiales.length + 1,
-                                titulo: '',
-                                descripcion: null,
-                                tipo: 'ENLACE',
-                                url: '',
-                                enfoques: ['CONTENIDO_SEMANAL'],
-                              },
-                            ],
-                          })
-                        }
+                        onClick={() => {
+                          setErrorEnlace(null)
+                          setEnlaceAbierto(true)
+                        }}
                       >
-                        Agregar enlace
+                        Agregar video o enlace
                       </button>
                     </div>
 
@@ -807,6 +879,52 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                 placeholder="https://…"
                               />
                             </label>
+                            {(material.tipo === 'VIDEO' || material.tipo === 'ENLACE') && (
+                              <label className="admin-material-url">
+                                Notas para incluir en los recursos con IA
+                                <textarea
+                                  rows={3}
+                                  value={material.descripcion ?? ''}
+                                  onChange={e =>
+                                    cambiarMaterial(semanaActiva, materialIndex, {
+                                      descripcion: e.target.value || null,
+                                    })
+                                  }
+                                  placeholder="Añade un resumen o transcripción; la IA no reproduce el video ni navega el sitio por sí sola."
+                                />
+                                <small>Estas notas se usarán al generar tests y flashcards a partir del enlace.</small>
+                              </label>
+                            )}
+                            {material.url && (
+                              <details className="admin-material-preview">
+                                <summary>Previsualizar material</summary>
+                                {material.tipo === 'PDF' && material.url.startsWith('/api/media/course-media/') ? (
+                                  <iframe
+                                    title={`Vista previa: ${material.titulo || 'documento PDF'}`}
+                                    src={material.url}
+                                    loading="lazy"
+                                  />
+                                ) : material.tipo === 'VIDEO' && videoEmbedUrl(material.url) ? (
+                                  <iframe
+                                    title={`Video: ${material.titulo || 'material de la semana'}`}
+                                    src={videoEmbedUrl(material.url) ?? undefined}
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    allowFullScreen
+                                  />
+                                ) : urlExternaSegura(material.url) ? (
+                                  <div className="admin-material-preview-link">
+                                    <span>Este material se abrirá en una pestaña nueva.</span>
+                                    <a href={urlExternaSegura(material.url) ?? undefined} target="_blank" rel="noopener noreferrer">
+                                      Abrir {material.titulo || 'material'}
+                                    </a>
+                                  </div>
+                                ) : (
+                                  <p className="admin-week-empty-inline">No se puede previsualizar esta dirección. Comprueba que sea un enlace web válido.</p>
+                                )}
+                              </details>
+                            )}
                             <fieldset className="admin-material-purposes">
                               <legend>Usar también para</legend>
                               {([
@@ -846,7 +964,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                         </span>
                         <div>
                           <strong>Aún no hay materiales en esta semana</strong>
-                          <p>Sube un PDF o agrega un enlace; luego marca si sirve para previo, contenido o repaso.</p>
+                          <p>Sube un PDF o agrega un video/enlace; luego marca si sirve para previo, contenido o repaso.</p>
                         </div>
                       </div>
                     )}
@@ -857,6 +975,8 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       courseId={curso.id}
                       tomoId={semanaActual.id}
                       weekTitle={semanaActual.titulo}
+                      objectives={semanaActual.objetivos}
+                      materials={semanaActual.materiales.map(({ titulo, tipo }) => ({ titulo, tipo }))}
                       onPrepare={() => guardarContenidoSemanal()}
                       onRequestFlashcards={() => guardarContenidoSemanal([semanaActual.id as string])}
                     />
@@ -1065,6 +1185,64 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
               </section>
             )}
           </div>
+        </div>
+      )}
+
+      {enlaceAbierto && (
+        <div className="admin-link-dialog-backdrop">
+          <section className="admin-link-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-link-dialog-title">
+            <div className="admin-link-dialog-heading">
+              <div>
+                <p className="admin-section-eyebrow">FUENTE EXTERNA · SEMANA {semanaActiva + 1}</p>
+                <h2 id="admin-link-dialog-title">Agregar video o enlace</h2>
+                <p>Los videos se pueden reproducir aquí. Para que la IA los use, añade notas o una transcripción.</p>
+              </div>
+              <button type="button" className="admin-icon-button" onClick={() => setEnlaceAbierto(false)} aria-label="Cerrar formulario">×</button>
+            </div>
+            <div className="admin-link-dialog-grid">
+              <label>
+                Tipo de material
+                <select
+                  value={borradorEnlace.tipo}
+                  onChange={event => setBorradorEnlace(current => ({ ...current, tipo: event.target.value as TipoEnlace }))}
+                >
+                  <option value="VIDEO">Video de YouTube, Vimeo o Loom</option>
+                  <option value="ENLACE">Enlace web</option>
+                </select>
+              </label>
+              <label>
+                Nombre del material
+                <input
+                  value={borradorEnlace.titulo}
+                  onChange={event => setBorradorEnlace(current => ({ ...current, titulo: event.target.value }))}
+                  placeholder="Ej. Introducción a las etiquetas HTML"
+                />
+              </label>
+              <label className="admin-link-dialog-wide">
+                URL del video o página
+                <input
+                  type="url"
+                  value={borradorEnlace.url}
+                  onChange={event => setBorradorEnlace(current => ({ ...current, url: event.target.value }))}
+                  placeholder={borradorEnlace.tipo === 'VIDEO' ? 'https://youtu.be/…' : 'https://…'}
+                />
+              </label>
+              <label className="admin-link-dialog-wide">
+                Resumen, apuntes o transcripción para la IA <span>(opcional)</span>
+                <textarea
+                  rows={4}
+                  value={borradorEnlace.descripcion}
+                  onChange={event => setBorradorEnlace(current => ({ ...current, descripcion: event.target.value }))}
+                  placeholder="Escribe ideas clave del material; se usarán para preparar los tests y flashcards."
+                />
+              </label>
+            </div>
+            {errorEnlace && <p className="admin-form-error" role="alert">{errorEnlace}</p>}
+            <div className="admin-link-dialog-actions">
+              <button type="button" className="boton-secundario" onClick={() => setEnlaceAbierto(false)}>Cancelar</button>
+              <button type="button" className="boton-primario" onClick={agregarEnlace}>Agregar a la semana</button>
+            </div>
+          </section>
         </div>
       )}
 
