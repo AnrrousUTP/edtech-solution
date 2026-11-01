@@ -246,13 +246,16 @@ export const RecursosSemanales = ({
     questions?: PreguntaEvaluacionBorrador[],
   ): JSX.Element | null =>
     questions ? (
-      <section className="admin-week-section" aria-label={title}>
-        <h4>{title}</h4>
-        <ol className="ml-5 list-decimal space-y-3">
+      <section className="weekly-output-question" aria-label={title}>
+        <div className="weekly-output-question-heading">
+          <h4>{title}</h4>
+          <span>Borrador</span>
+        </div>
+        <ol>
           {questions.map((question, index) => (
             <li key={`${title}-${index}`}>
               <strong>{question.enunciado}</strong>
-              <ul className="ml-5 mt-1 list-disc text-sm text-slate-600">
+              <ul>
                 {question.opciones.map(option => (
                   <li key={option.id}>
                     {option.texto}
@@ -275,58 +278,94 @@ export const RecursosSemanales = ({
         <div>
           <h3 id={`weekly-ai-${tomoId}`}>Automatización de recursos · {weekTitle}</h3>
           <p className="admin-help">
-            Make envía el trabajo; Bedrock crea borradores y tú decides qué publicar.
+            Reúne objetivos y materiales, envíalos a Make y deja que la IA prepare recursos para tu revisión.
           </p>
         </div>
-        <button
-          className="admin-text-button"
-          type="button"
-          onClick={() => {
-            if (showFlow) setFlowRun(value => value + 1)
-            else setShowFlow(true)
-          }}
-        >
-          {showFlow ? 'Reproducir otra vez' : 'Ver cómo funciona'}
-        </button>
+        <div className="weekly-flow-actions">
+          {!showFlow ? (
+            <button className="boton-secundario weekly-flow-toggle" type="button" onClick={() => setShowFlow(true)}>
+              Ver animación del flujo
+            </button>
+          ) : (
+            <>
+              <button
+                className="boton-secundario weekly-flow-toggle"
+                type="button"
+                onClick={() => setFlowRun(value => value + 1)}
+              >
+                Reproducir de nuevo
+              </button>
+              <button className="boton-secundario weekly-flow-toggle" type="button" onClick={() => setShowFlow(false)}>
+                Ocultar
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {showFlow && (
         <div
           className="weekly-flow-demo"
-          aria-label="Flujo de automatización; se reproduce al abrirlo"
+          aria-label="Flujo de automatización, del contenido semanal a los recursos para revisión"
         >
           <ol key={flowRun}>
             <li>
-              <span>01</span>
+              <span className="weekly-flow-step-number">01</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5zM8 9h8M8 12h8M8 15h5" /></svg></span>
               <strong>Objetivos</strong>
-              <small>El docente define qué debe aprender el grupo.</small>
+              <small>Defines qué debe aprender el grupo.</small>
             </li>
             <li>
-              <span>02</span>
+              <span className="weekly-flow-step-number">02</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" /></svg></span>
               <strong>Materiales</strong>
-              <small>Etiqueta cada fuente para previo, contenido o repaso.</small>
+              <small>Seleccionas fuentes para previo, contenido y repaso.</small>
             </li>
             <li>
-              <span>03</span>
+              <span className="weekly-flow-step-number">03</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 4v6m10-6v6M6 13h4m4 0h4M6 17h4m4 0h4" /></svg></span>
               <strong>Make</strong>
-              <small>Recibe el trabajo y envía una referencia segura al servidor.</small>
+              <small>Recibe la solicitud y coordina el proceso automatizado.</small>
             </li>
             <li>
-              <span>04</span>
+              <span className="weekly-flow-step-number">04</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.36-6.36-2.12 2.12M7.76 16.24l-2.12 2.12m12.72 0-2.12-2.12M7.76 7.76 5.64 5.64M10 14l4-4m-3.5 6h3" /></svg></span>
               <strong>IA analiza</strong>
-              <small>Bedrock extrae conceptos de las fuentes seleccionadas.</small>
+              <small>Lee documentos y extrae conceptos relacionados con tus objetivos.</small>
             </li>
             <li>
-              <span>05</span>
-              <strong>Tests en borrador</strong>
-              <small>Aparecen el test previo y el test de repaso para revisar.</small>
+              <span className="weekly-flow-step-number">05</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h1m3 0h4M8 12h1m3 0h4M8 16h1m3 0h4" /></svg></span>
+              <strong>Tests listos</strong>
+              <small>Quedan dos borradores: conocimiento previo y repaso.</small>
             </li>
             <li>
-              <span>06</span>
-              <strong>Aprobación y flashcards</strong>
-              <small>Tras aprobar los tests, se preparan tarjetas para revisión.</small>
+              <span className="weekly-flow-step-number">06</span>
+              <span className="weekly-flow-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 7 10-2 2 12-10 2zM5 9l-2 1 2 11 10-2M9 10l5-1m-5 5 5-1" /></svg></span>
+              <strong>Flashcards</strong>
+              <small>Después de aprobar, preparas tarjetas para revisar.</small>
             </li>
           </ol>
+        </div>
+      )}
+
+      {!job && !restoring && (
+        <div className="weekly-output-preview" aria-label="Recursos que se prepararán para esta semana">
+          <article className="weekly-output-preview-card weekly-output-preview-blue">
+            <div><span className="weekly-output-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h1m3 0h4M8 12h1m3 0h4M8 16h1m3 0h4" /></svg></span><span className="weekly-output-state">Pendiente de generar</span></div>
+            <h4>Test de conocimiento previo</h4>
+            <p>Diagnóstico inicial basado en los objetivos y materiales que marques para previo.</p>
+          </article>
+          <article className="weekly-output-preview-card weekly-output-preview-purple">
+            <div><span className="weekly-output-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h1m3 0h4M8 12h1m3 0h4M8 16h1m3 0h4" /></svg></span><span className="weekly-output-state">Pendiente de generar</span></div>
+            <h4>Test de repaso</h4>
+            <p>Preguntas de práctica creadas a partir del contenido semanal seleccionado.</p>
+          </article>
+          <article className="weekly-output-preview-card weekly-output-preview-green">
+            <div><span className="weekly-output-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 7 10-2 2 12-10 2zM5 9l-2 1 2 11 10-2M9 10l5-1m-5 5 5-1" /></svg></span><span className="weekly-output-state">Para revisión docente</span></div>
+            <h4>Flashcards</h4>
+            <p>Tarjetas para estudiar y repasar, disponibles después de aprobar los borradores.</p>
+          </article>
         </div>
       )}
 
