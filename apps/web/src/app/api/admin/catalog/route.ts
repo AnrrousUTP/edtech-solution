@@ -26,6 +26,9 @@ export const POST = async (peticion: Request): Promise<Response> => {
           cuerpo.id,
           Array.isArray(cuerpo.datos?.tomos) ? cuerpo.datos.tomos : [],
           cuerpo.datos?.generarFlashcards === true,
+          Array.isArray(cuerpo.datos?.tomosParaGenerarFlashcards)
+            ? (cuerpo.datos.tomosParaGenerarFlashcards as string[])
+            : undefined,
         ),
       )
     if (cuerpo.accion === 'crear-carrera') {

@@ -11,6 +11,7 @@ import {
 } from '@edtech/shared-kernel'
 import {
   CursoNoProyectadoError,
+  ConocimientoPrevioPendienteError,
   LeccionBloqueadaError,
   LeccionFueraDelCursoError,
   SinMatriculaError,
@@ -18,6 +19,7 @@ import {
 } from '../../domain/module.errors'
 import type { CarrerasPort } from '../../domain/ports-out/carreras.port'
 import type { CursoProyeccionRepository } from '../../domain/ports-out/curso-proyeccion.repository'
+import type { IntentoRepository } from '../../domain/ports-out/intento.repository'
 import type { MatriculaRepository } from '../../domain/ports-out/matricula.repository'
 import { intentarCascadaCurso } from '../cascada-progreso'
 
@@ -43,6 +45,7 @@ export class CompletarLeccionHandler implements CommandHandler<
 
   constructor(
     private readonly matriculas: MatriculaRepository,
+    private readonly intentos: IntentoRepository,
     private readonly cursos: CursoProyeccionRepository,
     private readonly carreras: CarrerasPort,
     private readonly publisher: IEventPublisher,
@@ -63,6 +66,12 @@ export class CompletarLeccionHandler implements CommandHandler<
 
     const tomo = curso.tomoDeLeccion(cmd.leccionId)
     if (!tomo) return Err(new LeccionFueraDelCursoError(cmd.leccionId))
+    const conocimientoPrevio = await this.intentos.ultimoConocimientoPrevioDe(
+      usuarioId,
+      cursoId,
+      tomo.id,
+    )
+    if (!conocimientoPrevio) return Err(new ConocimientoPrevioPendienteError())
     const lecciones = curso.tomos.flatMap(item => item.leccionIds)
     const indice = lecciones.indexOf(cmd.leccionId)
     if (indice > 0 && !matricula.leccionesCompletadas.has(lecciones[indice - 1]!)) {

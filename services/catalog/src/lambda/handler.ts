@@ -28,6 +28,7 @@ import {
 import {
   ListarBancosAdminHandler,
   ObtenerEvaluacionHandler,
+  ObtenerConocimientoPrevioHandler,
   ObtenerEvaluacionInicialHandler,
   ObtenerDiagnosticoHandler,
   ObtenerContextoTomoHandler,
@@ -111,6 +112,7 @@ const createRuntime = async (): Promise<Runtime> => {
   queries.register(new ObtenerLeccionHandler(store))
   queries.register(new ObtenerLeccionAdminHandler(store))
   queries.register(new ObtenerEvaluacionHandler(store))
+  queries.register(new ObtenerConocimientoPrevioHandler(store))
   queries.register(new ObtenerEvaluacionInicialHandler(store))
   queries.register(new ObtenerRefuerzoHandler(store))
   queries.register(new ObtenerNivelacionHandler(store))

@@ -3,11 +3,17 @@ import { FakeClock, UniqueId, validarContra } from '@edtech/shared-kernel'
 import { InMemoryEventPublisher } from '@edtech/shared-kernel/testing'
 import { CompletarLeccionHandler } from './completar-leccion.handler'
 import { Matricula } from '../../domain/entities/matricula.entity'
+import { IntentoEvaluacion } from '../../domain/entities/intento-evaluacion.entity'
 import {
   CursoProyectado,
   type TomoProyectado,
 } from '../../domain/value-objects/curso-proyectado.vo'
-import { FakeCarreras, InMemoryMatriculaRepository, InMemoryProyeccionRepository } from '../dobles'
+import {
+  FakeCarreras,
+  InMemoryIntentoRepository,
+  InMemoryMatriculaRepository,
+  InMemoryProyeccionRepository,
+} from '../dobles'
 
 const USUARIO = crypto.randomUUID()
 const CURSO = crypto.randomUUID()
@@ -15,6 +21,7 @@ const TOMO = crypto.randomUUID()
 const L1 = crypto.randomUUID()
 const L2 = crypto.randomUUID()
 const CARRERA = crypto.randomUUID()
+const BANCO = crypto.randomUUID()
 
 const tomo: TomoProyectado = {
   id: TOMO,
@@ -24,8 +31,11 @@ const tomo: TomoProyectado = {
   leccionIds: [L1, L2],
 }
 
-const montar = async (opciones: { carreras?: FakeCarreras } = {}) => {
+const montar = async (
+  opciones: { carreras?: FakeCarreras; conocimientoPrevioCompletado?: boolean } = {},
+) => {
   const matriculas = new InMemoryMatriculaRepository()
+  const intentos = new InMemoryIntentoRepository()
   const proyeccion = new InMemoryProyeccionRepository()
   const publisher = new InMemoryEventPublisher()
   const reloj = new FakeClock(new Date('2026-08-28T12:00:00Z'))
@@ -35,14 +45,33 @@ const montar = async (opciones: { carreras?: FakeCarreras } = {}) => {
   matricula.pullEvents()
   await matriculas.guardar(matricula)
 
+  if (opciones.conocimientoPrevioCompletado !== false) {
+    const intento = IntentoEvaluacion.iniciar({
+      usuarioId: UniqueId.desde(USUARIO),
+      tipo: 'CONOCIMIENTO_PREVIO_TOMO',
+      bancoId: UniqueId.desde(BANCO),
+      matriculaId: matricula.id,
+      tomoId: TOMO,
+      ahora: reloj.ahora(),
+    })
+    intento.entregar(
+      [{ preguntaId: 'previo', respuesta: 'sí' }],
+      [{ id: 'previo', respuestaCorrecta: 'no', puntaje: 1, nivel: null }],
+      0,
+      reloj.ahora(),
+    )
+    await intentos.guardar(intento)
+  }
+
   const handler = new CompletarLeccionHandler(
     matriculas,
+    intentos,
     proyeccion,
     opciones.carreras ?? new FakeCarreras(),
     publisher,
     reloj,
   )
-  return { matriculas, proyeccion, publisher, handler }
+  return { matriculas, intentos, proyeccion, publisher, handler }
 }
 
 describe('CompletarLeccionHandler', () => {
@@ -73,6 +102,18 @@ describe('CompletarLeccionHandler', () => {
     })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.code).toBe('SIN_MATRICULA')
+  })
+
+  test('no permite completar una lección sin registrar el test previo de su semana', async () => {
+    const { handler } = await montar({ conocimientoPrevioCompletado: false })
+    const r = await handler.execute({
+      _tag: 'CompletarLeccion',
+      usuarioId: USUARIO,
+      cursoId: CURSO,
+      leccionId: L1,
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.code).toBe('CONOCIMIENTO_PREVIO_PENDIENTE')
   })
 
   test('completar todas las lecciones con la evaluación aprobada cierra tomo y curso', async () => {

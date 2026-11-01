@@ -89,6 +89,21 @@ export class DrizzleIntentoRepository implements IntentoRepository {
     )
     return r.rows[0] ? intento(this.db, r.rows[0]) : null
   }
+  async ultimoConocimientoPrevioDe(
+    usuarioId: UniqueId,
+    cursoId: UniqueId,
+    tomoId: string,
+  ): Promise<IntentoEvaluacion | null> {
+    const r = await this.db.query(
+      `SELECT i.* FROM enrollment.intentos_evaluacion i
+       JOIN enrollment.matriculas m ON m.id = i.matricula_id
+       WHERE i.usuario_id = $1 AND m.curso_id = $2 AND i.tomo_id = $3
+       AND i.tipo = 'CONOCIMIENTO_PREVIO_TOMO' AND i.estado = 'ENTREGADO'
+       ORDER BY i.entregado_at DESC LIMIT 1`,
+      [usuarioId.valor, cursoId.valor, tomoId],
+    )
+    return r.rows[0] ? intento(this.db, r.rows[0]) : null
+  }
 }
 
 type EstructuraTomo = {

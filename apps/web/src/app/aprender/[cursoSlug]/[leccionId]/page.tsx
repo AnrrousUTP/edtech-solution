@@ -28,16 +28,22 @@ const Reproductor = async ({
     )
   }
 
-  const [evaluacionInicial, bancoInicial] = await Promise.all([
-    enrollmentApi.evaluacionInicial(curso.id),
-    catalogApi.evaluacionInicial(curso.id),
-  ])
-  if (!evaluacionInicial.completado && bancoInicial !== null) {
+  const tomoDeLeccion = curso.tomos.find(tomo => tomo.lecciones.some(leccion => leccion.id === leccionId))
+  const [estadoPrevio, bancoPrevio] = tomoDeLeccion
+    ? await Promise.all([
+        enrollmentApi.conocimientoPrevio(curso.id, tomoDeLeccion.id),
+        catalogApi.conocimientoPrevioDeTomo(tomoDeLeccion.id),
+      ])
+    : [{ completado: true }, null]
+  if (!estadoPrevio.completado && bancoPrevio !== null) {
     return (
       <ErrorConAccion
-        titulo="Completa el test inicial primero"
-        detalle="Responde el diagnóstico para abrir la primera misión y comenzar tu ruta con el nivel adecuado."
-        accion={{ texto: 'Ir al test inicial', href: `/aprender/${cursoSlug}/evaluacion-inicial` }}
+        titulo="Completa el test de conocimiento previo"
+        detalle="Registra lo que ya sabes para abrir los materiales de esta semana. No necesitas aprobarlo."
+        accion={{
+          texto: 'Ir al test previo',
+          href: `/aprender/${cursoSlug}/conocimiento-previo/${tomoDeLeccion?.id ?? ''}`,
+        }}
       />
     )
   }

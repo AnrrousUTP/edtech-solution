@@ -20,6 +20,7 @@ import {
 } from '../application/actualizar-proyeccion/actualizar-proyeccion.handler'
 import { CompletarLeccionHandler } from '../application/completar-leccion/completar-leccion.handler'
 import {
+  ConocimientoPrevioEstadoHandler,
   EvaluacionInicialHandler,
   MisMatriculasHandler,
   ProgresoCursoHandler,
@@ -73,7 +74,9 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   const bus = new CommandBus()
   bus.register(new CrearMatriculaHandler(matriculas, proyeccion, publisher))
   bus.register(new RevocarMatriculaHandler(matriculas))
-  bus.register(new CompletarLeccionHandler(matriculas, proyeccion, carreras, publisher, reloj))
+  bus.register(
+    new CompletarLeccionHandler(matriculas, intentos, proyeccion, carreras, publisher, reloj),
+  )
   bus.register(new IniciarIntentoHandler(intentos, matriculas, proyeccion, reloj))
   bus.register(
     new EntregarIntentoHandler(
@@ -92,6 +95,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
 
   const queries = new QueryBus()
   queries.register(new EvaluacionInicialHandler(intentos))
+  queries.register(new ConocimientoPrevioEstadoHandler(intentos, matriculas, proyeccion, reloj))
   queries.register(new MisMatriculasHandler(matriculas, proyeccion))
   queries.register(new ProgresoCursoHandler(matriculas, proyeccion, reloj))
 

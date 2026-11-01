@@ -11,6 +11,7 @@ CREATE TYPE "enrollment"."origen_matricula" AS ENUM('PAGO', 'ALTA_MANUAL', 'GRAT
 CREATE TYPE "enrollment"."tipo_evaluacion" AS ENUM('NIVELACION', 'TOMO', 'DIAGNOSTICO_PREVIO');--> statement-breakpoint
 ALTER TYPE "enrollment"."tipo_evaluacion" ADD VALUE IF NOT EXISTS 'REFUERZO';--> statement-breakpoint
 ALTER TYPE "enrollment"."tipo_evaluacion" ADD VALUE IF NOT EXISTS 'EVALUACION_INICIAL';--> statement-breakpoint
+ALTER TYPE "enrollment"."tipo_evaluacion" ADD VALUE IF NOT EXISTS 'CONOCIMIENTO_PREVIO_TOMO';--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "enrollment"."cursos_proyeccion" (
 	"curso_id" uuid PRIMARY KEY NOT NULL,
 	"titulo" text NOT NULL,

@@ -85,6 +85,24 @@ export class InMemoryIntentoRepository implements IntentoRepository {
         .sort((a, b) => b.iniciadoAt.getTime() - a.iniciadoAt.getTime())[0] ?? null
     )
   }
+  async ultimoConocimientoPrevioDe(
+    usuarioId: UniqueId,
+    cursoId: UniqueId,
+    tomoId: string,
+  ): Promise<IntentoEvaluacion | null> {
+    return (
+      [...this.guardados.values()]
+        .filter(
+          i =>
+            i.usuarioId.valor === usuarioId.valor &&
+            i.matriculaId !== null &&
+            i.tomoId === tomoId &&
+            i.tipo === 'CONOCIMIENTO_PREVIO_TOMO' &&
+            i.estado === 'ENTREGADO',
+        )
+        .sort((a, b) => b.iniciadoAt.getTime() - a.iniciadoAt.getTime())[0] ?? null
+    )
+  }
 }
 
 export class InMemoryProyeccionRepository implements CursoProyeccionRepository {

@@ -1,0 +1,1 @@
+ALTER TYPE "enrollment"."tipo_evaluacion" ADD VALUE IF NOT EXISTS 'CONOCIMIENTO_PREVIO_TOMO';

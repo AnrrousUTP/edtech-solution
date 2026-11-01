@@ -5,7 +5,12 @@ import { useState } from 'react'
 import type { BancoAdmin } from '@/api/catalog'
 
 type UsoBanco =
-  'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'NIVELACION' | 'EVALUACION_TOMO' | 'REFUERZO'
+  | 'DIAGNOSTICO_PREVIO'
+  | 'EVALUACION_INICIAL'
+  | 'NIVELACION'
+  | 'EVALUACION_TOMO'
+  | 'REFUERZO'
+  | 'CONOCIMIENTO_PREVIO_TOMO'
 
 type FormularioBanco = {
   uso: UsoBanco
@@ -28,21 +33,22 @@ const crearFormulario = (seleccion: {
 }): FormularioBanco => {
   const usosValidos: UsoBanco[] = [
     'DIAGNOSTICO_PREVIO',
-    'EVALUACION_INICIAL',
     'NIVELACION',
     'EVALUACION_TOMO',
     'REFUERZO',
+    'CONOCIMIENTO_PREVIO_TOMO',
   ]
   const uso = usosValidos.includes(seleccion.uso as UsoBanco)
     ? (seleccion.uso as UsoBanco)
     : seleccion.tomoId
       ? 'EVALUACION_TOMO'
-      : seleccion.cursoId
-        ? 'EVALUACION_INICIAL'
-        : 'DIAGNOSTICO_PREVIO'
+      : 'DIAGNOSTICO_PREVIO'
   return {
     uso,
-    tomoId: uso === 'EVALUACION_TOMO' || uso === 'REFUERZO' ? seleccion.tomoId : '',
+    tomoId:
+      uso === 'EVALUACION_TOMO' || uso === 'REFUERZO' || uso === 'CONOCIMIENTO_PREVIO_TOMO'
+        ? seleccion.tomoId
+        : '',
     cursoId:
       uso === 'EVALUACION_INICIAL' || uso === 'EVALUACION_TOMO' || uso === 'REFUERZO'
         ? seleccion.cursoId
@@ -102,7 +108,6 @@ export const GestorBancos = ({
   const preguntaVista = preguntasParaVista(form.preguntas)
   const tomoSeleccionado = tomos.find(tomo => tomo.id === form.tomoId)
   const puedeGenerar =
-    (form.uso === 'EVALUACION_INICIAL' && Boolean(form.cursoId)) ||
     (form.uso === 'EVALUACION_TOMO' && Boolean(form.tomoId && tomoSeleccionado))
 
   const nuevoBanco = (): void => {
@@ -124,7 +129,7 @@ export const GestorBancos = ({
   }
 
   const generar = async (): Promise<void> => {
-    const cursoId = form.uso === 'EVALUACION_INICIAL' ? form.cursoId : tomoSeleccionado?.cursoId
+    const cursoId = tomoSeleccionado?.cursoId
     if (!cursoId || !puedeGenerar) return
     setOcupado(true)
     setFeedback(null)
@@ -262,43 +267,26 @@ export const GestorBancos = ({
                 setForm(actualForm => ({
                   ...actualForm,
                   uso,
-                  tomoId: uso === 'EVALUACION_TOMO' || uso === 'REFUERZO' ? actualForm.tomoId : '',
-                  cursoId:
-                    uso === 'EVALUACION_INICIAL'
-                      ? actualForm.cursoId
-                      : uso === 'EVALUACION_TOMO' || uso === 'REFUERZO'
-                        ? tomoSeleccionado?.cursoId ?? ''
-                        : '',
+                  tomoId:
+                    uso === 'EVALUACION_TOMO' || uso === 'REFUERZO' || uso === 'CONOCIMIENTO_PREVIO_TOMO'
+                      ? actualForm.tomoId
+                      : '',
+                  cursoId: uso === 'EVALUACION_INICIAL' ? actualForm.cursoId : '',
                 }))
               }}
             >
               <option value="DIAGNOSTICO_PREVIO">Conocimiento previo general</option>
-              <option value="EVALUACION_INICIAL">Test inicial del curso</option>
+              {actual?.uso === 'EVALUACION_INICIAL' && (
+                <option value="EVALUACION_INICIAL" disabled>Test inicial histórico · solo lectura</option>
+              )}
+              <option value="CONOCIMIENTO_PREVIO_TOMO">Conocimiento previo semanal</option>
               <option value="REFUERZO">Repaso semanal</option>
               <option value="NIVELACION">Nivelación general</option>
               <option value="EVALUACION_TOMO">Evaluación semanal</option>
             </select>
           </label>
 
-          {form.uso === 'EVALUACION_INICIAL' && (
-            <label>
-              Curso
-              <select
-                required
-                value={form.cursoId}
-                onChange={evento => setForm({ ...form, cursoId: evento.target.value })}
-              >
-                <option value="">Selecciona un curso</option>
-                {cursos.map(curso => (
-                  <option key={curso.id} value={curso.id}>
-                    {curso.titulo}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {(form.uso === 'EVALUACION_TOMO' || form.uso === 'REFUERZO') && (
+          {(form.uso === 'EVALUACION_TOMO' || form.uso === 'REFUERZO' || form.uso === 'CONOCIMIENTO_PREVIO_TOMO') && (
             <label>
               Semana
               <select
@@ -324,7 +312,9 @@ export const GestorBancos = ({
           )}
         </div>
 
-        {(form.uso === 'EVALUACION_INICIAL' || form.uso === 'EVALUACION_TOMO') && (
+        {form.uso === 'EVALUACION_INICIAL' && actual ? (
+          <p className="admin-help">Banco histórico conservado para auditoría; no se publica desde el flujo semanal.</p>
+        ) : form.uso === 'EVALUACION_TOMO' && (
           <section className="admin-ai-generation-panel">
             <div>
               <strong>Generar preguntas con IA</strong>

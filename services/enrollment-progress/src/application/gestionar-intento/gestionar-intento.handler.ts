@@ -19,6 +19,7 @@ import {
   IntentoNoEncontradoError,
   MatriculaNoActivaError,
   MatriculaNoEncontradaError,
+  SemanaBloqueadaError,
   SinMatriculaError,
   TomoNoEncontradoError,
   type EnrollmentError,
@@ -75,8 +76,25 @@ export class IniciarIntentoHandler implements CommandHandler<
       if (!matricula.tieneAcceso(ahora)) return Err(new MatriculaNoActivaError(matricula.id.valor))
       const curso = await this.cursos.porId(cmd.cursoId)
       if (!curso) return Err(new CursoNoProyectadoError(cmd.cursoId))
-      if (cmd.tipo !== 'EVALUACION_INICIAL' && cmd.tomoId && !curso.tomoPorId(cmd.tomoId))
+      const tomo = cmd.tomoId ? curso.tomoPorId(cmd.tomoId) : null
+      if (cmd.tipo !== 'EVALUACION_INICIAL' && cmd.tomoId && !tomo)
         return Err(new TomoNoEncontradoError(cmd.tomoId))
+      if (tomo && cmd.tipo === 'REFUERZO') {
+        const leccionesSemanaCompletas =
+          tomo.leccionIds.length > 0 &&
+          tomo.leccionIds.every(leccionId => matricula.leccionesCompletadas.has(leccionId))
+        if (!leccionesSemanaCompletas) return Err(new SemanaBloqueadaError())
+      }
+      if (tomo && cmd.tipo === 'CONOCIMIENTO_PREVIO_TOMO') {
+        const tomosOrdenados = [...curso.tomos].sort((a, b) => a.orden - b.orden)
+        const indiceTomo = tomosOrdenados.findIndex(item => item.id === tomo.id)
+        const semanasAnterioresCompletas = tomosOrdenados
+          .slice(0, indiceTomo)
+          .every(semana =>
+            semana.leccionIds.every(leccionId => matricula.leccionesCompletadas.has(leccionId)),
+          )
+        if (!semanasAnterioresCompletas) return Err(new SemanaBloqueadaError())
+      }
       matriculaId = matricula.id
     }
 

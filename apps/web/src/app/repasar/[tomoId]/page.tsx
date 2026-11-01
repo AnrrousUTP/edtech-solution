@@ -1,7 +1,9 @@
+import { notFound } from 'next/navigation'
 import { flashcardsApi } from '@/api/resto'
 import { catalogApi } from '@/api/catalog'
 import { enrollmentApi } from '@/api/enrollment'
 import { ErrorConAccion, Vacio } from '@/componentes/base'
+import { semanaCompletada } from '@/lib/progreso-semanal'
 import { Mazo } from './mazo'
 
 // Pantalla 8: repaso con flashcards. Si el mazo está en revisión, el estudiante
@@ -22,6 +24,11 @@ const Repasar = async ({
       />
     )
   }
+  const curso = await catalogApi.curso(contexto.cursoSlug)
+  if (!curso || curso.id !== contexto.cursoId) notFound()
+  const tomo = curso.tomos.find(item => item.id === tomoId)
+  if (!tomo) notFound()
+
   const progreso = await enrollmentApi.progreso(contexto.cursoId)
   if (!progreso) {
     return (
@@ -32,6 +39,15 @@ const Repasar = async ({
       />
     )
   }
+  if (!semanaCompletada(tomo, progreso))
+    return (
+      <ErrorConAccion
+        titulo="Completa el contenido semanal primero"
+        detalle="Las flashcards se abren después de completar las lecciones de esta semana."
+        accion={{ texto: 'Volver al mapa', href: `/aprender/${contexto.cursoSlug}` }}
+      />
+    )
+
   const tarjetas = await flashcardsApi.tarjetasDeTomo(tomoId)
 
   if (!tarjetas || tarjetas.length === 0) {

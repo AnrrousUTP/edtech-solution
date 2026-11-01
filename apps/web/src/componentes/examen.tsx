@@ -37,7 +37,13 @@ export const Examen = ({
   titulo: string
   preguntas: PreguntaExamen[]
   bancoId: string
-  tipo: 'NIVELACION' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO' | 'TOMO'
+  tipo:
+    | 'NIVELACION'
+    | 'DIAGNOSTICO_PREVIO'
+    | 'EVALUACION_INICIAL'
+    | 'CONOCIMIENTO_PREVIO_TOMO'
+    | 'REFUERZO'
+    | 'TOMO'
   cursoId?: string
   tomoId?: string
   umbral: number
@@ -122,7 +128,7 @@ export const Examen = ({
           )}
         </svg>
         <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
-          {tipo === 'NIVELACION' || tipo === 'DIAGNOSTICO_PREVIO' || tipo === 'EVALUACION_INICIAL'
+          {tipo === 'NIVELACION' || tipo === 'DIAGNOSTICO_PREVIO' || tipo === 'EVALUACION_INICIAL' || tipo === 'CONOCIMIENTO_PREVIO_TOMO'
             ? 'Test completado'
             : resultado.aprobado
               ? '¡Evaluación aprobada!'
@@ -144,6 +150,11 @@ export const Examen = ({
         {tipo === 'EVALUACION_INICIAL' && (
           <p className="mt-4 text-slate-700">
             Evaluación inicial guardada. Ya puedes comenzar la primera misión de tu ruta.
+          </p>
+        )}
+        {tipo === 'CONOCIMIENTO_PREVIO_TOMO' && (
+          <p className="mt-4 text-slate-700">
+            Respuestas guardadas. Este test es diagnóstico: ya puedes abrir los materiales de la semana sin una nota mínima.
           </p>
         )}
         {tipo === 'REFUERZO' && (

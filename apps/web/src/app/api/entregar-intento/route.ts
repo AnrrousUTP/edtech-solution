@@ -6,7 +6,13 @@ import { ErrorApi } from '@/lib/api'
 // (corrección, puntaje, nivel) vive en el servidor (doc 11 §7.1).
 export const POST = async (peticion: Request): Promise<Response> => {
   const cuerpo = (await peticion.json()) as {
-    tipo: 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO'
+    tipo:
+      | 'NIVELACION'
+      | 'TOMO'
+      | 'DIAGNOSTICO_PREVIO'
+      | 'EVALUACION_INICIAL'
+      | 'REFUERZO'
+      | 'CONOCIMIENTO_PREVIO_TOMO'
     bancoId: string
     cursoId?: string
     tomoId?: string

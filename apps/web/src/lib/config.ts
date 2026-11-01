@@ -28,6 +28,8 @@ export const config = {
     controlTable: process.env.EDTECH_CONTROL_TABLE ?? '',
     audioBucket: process.env.EDTECH_AUDIO_BUCKET ?? '',
     mediaBucket: process.env.EDTECH_MEDIA_BUCKET ?? '',
+    makeWeeklyWebhookUrl: process.env.MAKE_WEEKLY_RESOURCES_WEBHOOK_URL ?? '',
+    weeklyJobSecret: process.env.EDTECH_WEEKLY_JOB_SECRET ?? '',
     production: process.env.NODE_ENV === 'production',
   },
   iot: {

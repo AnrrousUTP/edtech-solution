@@ -26,6 +26,9 @@ export const tipoEvaluacion = enrollment.enum('tipo_evaluacion', [
   'NIVELACION',
   'TOMO',
   'DIAGNOSTICO_PREVIO',
+  'EVALUACION_INICIAL',
+  'REFUERZO',
+  'CONOCIMIENTO_PREVIO_TOMO',
 ])
 
 export const matriculas = enrollment.table('matriculas', {

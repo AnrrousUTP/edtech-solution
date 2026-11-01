@@ -20,9 +20,12 @@ const USUARIO = crypto.randomUUID()
 const CURSO = crypto.randomUUID()
 const TOMO = crypto.randomUUID()
 const L1 = crypto.randomUUID()
+const TOMO2 = crypto.randomUUID()
+const L2 = crypto.randomUUID()
 const BANCO = crypto.randomUUID()
 
 const tomo: TomoProyectado = { id: TOMO, orden: 1, titulo: 'T1', umbral: 70, leccionIds: [L1] }
+const tomo2: TomoProyectado = { id: TOMO2, orden: 2, titulo: 'T2', umbral: 70, leccionIds: [L2] }
 
 const bancoTomo = {
   bancoId: BANCO,
@@ -33,7 +36,7 @@ const bancoTomo = {
   ],
 }
 
-const montar = async () => {
+const montar = async (completarLeccion = true) => {
   const intentos = new InMemoryIntentoRepository()
   const matriculas = new InMemoryMatriculaRepository()
   const proyeccion = new InMemoryProyeccionRepository()
@@ -42,7 +45,7 @@ const montar = async () => {
 
   proyeccion.sembrar(new CursoProyectado(CURSO, 'CSS', 'css', true, 19.9, 'E', [tomo]))
   const matricula = Matricula.gratuita(UniqueId.desde(USUARIO), UniqueId.desde(CURSO))
-  matricula.completarLeccion(L1, tomo, reloj.ahora())
+  if (completarLeccion) matricula.completarLeccion(L1, tomo, reloj.ahora())
   matricula.pullEvents()
   await matriculas.guardar(matricula)
 
@@ -90,6 +93,56 @@ describe('IniciarIntentoHandler', () => {
       bancoId: BANCO,
     })
     expect(r.ok).toBe(true)
+  })
+
+  test('el test previo de una semana espera a que terminen las semanas anteriores', async () => {
+    const { iniciar, proyeccion } = await montar(false)
+    proyeccion.sembrar(
+      new CursoProyectado(CURSO, 'CSS', 'css', true, 19.9, 'E', [tomo, tomo2]),
+    )
+    const r = await iniciar.execute({
+      _tag: 'IniciarIntento',
+      usuarioId: USUARIO,
+      tipo: 'CONOCIMIENTO_PREVIO_TOMO',
+      bancoId: BANCO,
+      cursoId: CURSO,
+      tomoId: TOMO2,
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.code).toBe('SEMANA_BLOQUEADA')
+  })
+
+  test('el test previo se permite al terminar las semanas anteriores', async () => {
+    const { iniciar, proyeccion } = await montar()
+    proyeccion.sembrar(
+      new CursoProyectado(CURSO, 'CSS', 'css', true, 19.9, 'E', [tomo, tomo2]),
+    )
+    const r = await iniciar.execute({
+      _tag: 'IniciarIntento',
+      usuarioId: USUARIO,
+      tipo: 'CONOCIMIENTO_PREVIO_TOMO',
+      bancoId: BANCO,
+      cursoId: CURSO,
+      tomoId: TOMO2,
+    })
+    expect(r.ok).toBe(true)
+  })
+
+  test('el repaso espera a que terminen las lecciones de su semana', async () => {
+    const { iniciar, proyeccion } = await montar()
+    proyeccion.sembrar(
+      new CursoProyectado(CURSO, 'CSS', 'css', true, 19.9, 'E', [tomo, tomo2]),
+    )
+    const r = await iniciar.execute({
+      _tag: 'IniciarIntento',
+      usuarioId: USUARIO,
+      tipo: 'REFUERZO',
+      bancoId: BANCO,
+      cursoId: CURSO,
+      tomoId: TOMO2,
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.code).toBe('SEMANA_BLOQUEADA')
   })
 })
 

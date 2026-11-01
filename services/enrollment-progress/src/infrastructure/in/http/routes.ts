@@ -24,6 +24,8 @@ const MAPA: Record<string, number> = {
   INTENTO_AJENO: 403,
   BANCO_NO_DISPONIBLE: 503,
   TOMO_NO_ENCONTRADO: 404,
+  SEMANA_BLOQUEADA: 409,
+  CONOCIMIENTO_PREVIO_PENDIENTE: 409,
   ID_INVALIDO: 400,
 }
 const codigoHttp = (code: string): number => MAPA[code] ?? 500
@@ -98,6 +100,18 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
         _tag: 'EvaluacionInicial',
         usuarioId: req.auth?.usuarioId ?? '',
         cursoId: req.params.cursoId ?? '',
+      }),
+    )
+  })
+
+  router.get('/conocimiento-previo/estado/:cursoId/:tomoId', ...estudiante, async (req, res) => {
+    responder(
+      res,
+      await queries.dispatch({
+        _tag: 'ConocimientoPrevioEstado',
+        usuarioId: req.auth?.usuarioId ?? '',
+        cursoId: req.params.cursoId ?? '',
+        tomoId: req.params.tomoId ?? '',
       }),
     )
   })

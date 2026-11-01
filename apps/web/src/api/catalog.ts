@@ -31,6 +31,7 @@ export const materialResumen = z.object({
   tipo: z.string(),
   url: z.string(),
   textoExtraido: z.string().optional(),
+  enfoques: z.array(z.enum(['CONOCIMIENTO_PREVIO', 'CONTENIDO_SEMANAL', 'REPASO'])).default([]),
 })
 
 export const tomoDetalle = z.object({
@@ -39,6 +40,7 @@ export const tomoDetalle = z.object({
   titulo: z.string(),
   descripcion: z.string().nullable(),
   umbral: z.number(),
+  objetivos: z.array(z.string()).default([]),
   materiales: z.array(materialResumen).default([]),
   lecciones: z.array(leccionResumen),
 })
@@ -156,6 +158,9 @@ export const catalogApi = {
   evaluacionDeTomo: (tomoId: string) =>
     llamarOpcional(`/api/catalog/tomos/${tomoId}/evaluacion`, evaluacionPublica),
 
+  conocimientoPrevioDeTomo: (tomoId: string) =>
+    llamarOpcional(`/api/catalog/tomos/${tomoId}/conocimiento-previo`, evaluacionPublica),
+
   refuerzoDeTomo: (tomoId: string) =>
     llamarOpcional(`/api/catalog/tomos/${tomoId}/refuerzo`, evaluacionPublica),
 
@@ -206,7 +211,12 @@ export const catalogApi = {
       cuerpo: datos,
     }),
 
-  actualizarContenido: (cursoId: string, tomos: unknown[], generarFlashcards = false) =>
+  actualizarContenido: (
+    cursoId: string,
+    tomos: unknown[],
+    generarFlashcards = false,
+    tomosParaGenerarFlashcards?: string[],
+  ) =>
     llamar(
       `/api/catalog/admin/cursos/${cursoId}/contenido`,
       z.object({
@@ -215,7 +225,7 @@ export const catalogApi = {
       }),
       {
         metodo: 'PUT',
-        cuerpo: { tomos, generarFlashcards },
+        cuerpo: { tomos, generarFlashcards, tomosParaGenerarFlashcards },
       },
     ),
 

@@ -380,7 +380,14 @@ export class DynamoEnrollmentStore {
                 GSI1PK: `USER#${intento.usuarioId.valor}#COURSE#${courseId}#INITIAL#OPEN`,
                 GSI1SK: `STARTED#${startedAt}#${intento.id.valor}`,
               }
-            : {
+            : intento.tipo === 'CONOCIMIENTO_PREVIO_TOMO' && courseId && intento.tomoId
+              ? {
+                  GSI1PK: `USER#${intento.usuarioId.valor}#COURSE#${courseId}#TOMO#${intento.tomoId}#PREVIO`,
+                  GSI1SK: deliveredAt
+                    ? `DELIVERED#${deliveredAt}#${intento.id.valor}`
+                    : `STARTED#${startedAt}#${intento.id.valor}`,
+                }
+              : {
                 GSI1PK: `USER#${intento.usuarioId.valor}#ATTEMPTS`,
                 GSI1SK: `STARTED#${startedAt}#${intento.id.valor}`,
               }
@@ -479,6 +486,20 @@ export class DynamoEnrollmentStore {
   ): Promise<IntentoEvaluacion | null> {
     const rows = await this.queryAll({
       partition: `USER#${usuarioId.valor}#COURSE#${cursoId.valor}#INITIAL`,
+      index: 'GSI1',
+      prefix: 'DELIVERED#',
+      descending: true,
+    })
+    return this.cargarIntento(rows[0] ?? null)
+  }
+
+  async ultimoConocimientoPrevioDe(
+    usuarioId: UniqueId,
+    cursoId: UniqueId,
+    tomoId: string,
+  ): Promise<IntentoEvaluacion | null> {
+    const rows = await this.queryAll({
+      partition: `USER#${usuarioId.valor}#COURSE#${cursoId.valor}#TOMO#${tomoId}#PREVIO`,
       index: 'GSI1',
       prefix: 'DELIVERED#',
       descending: true,
@@ -706,6 +727,9 @@ export class DynamoIntentoRepository implements IntentoRepository {
   }
   ultimoEvaluacionInicialDe(usuarioId: UniqueId, cursoId: UniqueId) {
     return this.store.ultimoEvaluacionInicialDe(usuarioId, cursoId)
+  }
+  ultimoConocimientoPrevioDe(usuarioId: UniqueId, cursoId: UniqueId, tomoId: string) {
+    return this.store.ultimoConocimientoPrevioDe(usuarioId, cursoId, tomoId)
   }
 }
 

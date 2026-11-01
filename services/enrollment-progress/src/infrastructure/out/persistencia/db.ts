@@ -1,6 +1,6 @@
 import pg from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import type { Config } from '../../config/config'
 
 export type Db = {
@@ -38,16 +38,21 @@ export const crearDb = (pool: pg.Pool): Db => {
   }
 }
 export const aplicarMigraciones = async (db: Db, carpeta: string): Promise<void> => {
-  const sql = await readFile(`${carpeta}/0000_init.sql`, 'utf8')
-  for (const sentencia of sql
-    .split('--> statement-breakpoint')
-    .map(s => s.trim())
-    .filter(Boolean)) {
-    try {
-      await db.query(sentencia)
-    } catch (error) {
-      const code = (error as { code?: string }).code
-      if (!['42710', '42P07', '42701'].includes(code ?? '')) throw error
+  const archivos = (await readdir(carpeta))
+    .filter(archivo => /^\d+_.+\.sql$/.test(archivo))
+    .sort((a, b) => a.localeCompare(b, 'en'))
+  for (const archivo of archivos) {
+    const sql = await readFile(`${carpeta}/${archivo}`, 'utf8')
+    for (const sentencia of sql
+      .split('--> statement-breakpoint')
+      .map(s => s.trim())
+      .filter(Boolean)) {
+      try {
+        await db.query(sentencia)
+      } catch (error) {
+        const code = (error as { code?: string }).code
+        if (!['42710', '42P07', '42701'].includes(code ?? '')) throw error
+      }
     }
   }
 }

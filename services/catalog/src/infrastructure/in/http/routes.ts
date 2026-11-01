@@ -159,6 +159,13 @@ export const crearRouter = (
     )
   })
 
+  router.get('/tomos/:id/conocimiento-previo', ...estudiante, async (req, res) => {
+    responder(
+      res,
+      await queries.dispatch({ _tag: 'ObtenerConocimientoPrevio', tomoId: req.params.id ?? '' }),
+    )
+  })
+
   router.get('/tomos/:id/refuerzo', ...estudiante, async (req, res) => {
     responder(res, await queries.dispatch({ _tag: 'ObtenerRefuerzo', tomoId: req.params.id ?? '' }))
   })
@@ -252,6 +259,9 @@ export const crearRouter = (
         cursoId: req.params.id ?? '',
         tomos: Array.isArray(b.tomos) ? b.tomos : [],
         generarFlashcards: b.generarFlashcards === true,
+        tomosParaGenerarFlashcards: Array.isArray(b.tomosParaGenerarFlashcards)
+          ? (b.tomosParaGenerarFlashcards as string[])
+          : undefined,
       }),
     )
   })

@@ -47,6 +47,12 @@ export const enrollmentApi = {
   evaluacionInicial: (cursoId: string) =>
     llamar(`/api/enrollment/evaluacion-inicial/estado/${cursoId}`, estadoEvaluacionInicial),
 
+  conocimientoPrevio: (cursoId: string, tomoId: string) =>
+    llamar(
+      `/api/enrollment/conocimiento-previo/estado/${cursoId}/${tomoId}`,
+      estadoEvaluacionInicial,
+    ),
+
   progreso: (cursoId: string) =>
     llamarOpcional(`/api/enrollment/progreso/${cursoId}`, progresoCurso),
 
@@ -75,7 +81,13 @@ export const enrollmentApi = {
     ),
 
   iniciarIntento: (datos: {
-    tipo: 'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO'
+    tipo:
+      | 'NIVELACION'
+      | 'TOMO'
+      | 'DIAGNOSTICO_PREVIO'
+      | 'EVALUACION_INICIAL'
+      | 'REFUERZO'
+      | 'CONOCIMIENTO_PREVIO_TOMO'
     bancoId: string
     cursoId?: string
     tomoId?: string

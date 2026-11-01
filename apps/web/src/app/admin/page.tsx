@@ -45,10 +45,16 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
   const estadoCurso = (cursoId: string) => {
     const detalle = detallePorCurso.get(cursoId)
     const semanas = detalle?.tomos ?? []
-    const bancosCurso = bancos.filter(banco => banco.cursoId === cursoId)
-    const testInicial = bancosCurso.some(
-      banco => banco.uso === 'EVALUACION_INICIAL' && banco.preguntas.length > 0,
-    )
+    const conocimientoPrevio =
+      semanas.length > 0 &&
+      semanas.every(semana =>
+        bancos.some(
+          banco =>
+            banco.tomoId === semana.id &&
+            banco.uso === 'CONOCIMIENTO_PREVIO_TOMO' &&
+            banco.preguntas.length > 0,
+        ),
+      )
     const contenido = semanas.length > 0 && semanas.every(semana => semana.lecciones.length > 0)
     const repasos =
       semanas.length > 0 &&
@@ -68,7 +74,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
             banco.preguntas.length > 0,
         ),
       )
-    return { detalle, semanas, testInicial, contenido, repasos, evaluaciones }
+    return { detalle, semanas, conocimientoPrevio, contenido, repasos, evaluaciones }
   }
 
   return (
@@ -115,7 +121,7 @@ const PanelAdmin = async (): Promise<JSX.Element> => {
         {cursos.map(curso => {
           const estado = estadoCurso(curso.id)
           const checks = [
-            ['Test inicial', estado.testInicial],
+            ['Conocimiento previo semanal', estado.conocimientoPrevio],
             ['Contenido', estado.contenido],
             ['Repaso', estado.repasos],
             ['Evaluación semanal', estado.evaluaciones],

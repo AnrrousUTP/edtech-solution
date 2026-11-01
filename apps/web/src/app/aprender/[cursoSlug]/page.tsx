@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { catalogApi } from '@/api/catalog'
-import { gamificationApi } from '@/api/resto'
+import { flashcardsApi, gamificationApi } from '@/api/resto'
 import { enrollmentApi } from '@/api/enrollment'
 import { BarraProgreso, ErrorConAccion } from '@/componentes/base'
 import { perfilSesion } from '@/lib/sesion'
@@ -159,14 +159,26 @@ const MapaCurso = async ({
       />
     )
   }
-  const [gamificacion, evaluacionInicial, bancoInicial] = await Promise.all([
+  const [gamificacion, pruebasPrevias] = await Promise.all([
     gamificationApi.miPerfil(),
-    enrollmentApi.evaluacionInicial(curso.id),
-    catalogApi.evaluacionInicial(curso.id),
+    Promise.all(
+      curso.tomos.map(async tomo => {
+        const [estado, banco, repaso, tarjetas] = await Promise.all([
+          enrollmentApi.conocimientoPrevio(curso.id, tomo.id),
+          catalogApi.conocimientoPrevioDeTomo(tomo.id),
+          catalogApi.refuerzoDeTomo(tomo.id).catch(() => null),
+          flashcardsApi.tarjetasDeTomo(tomo.id).catch(() => null),
+        ])
+        return {
+          tomoId: tomo.id,
+          bancoId: banco?.bancoId ?? null,
+          completado: estado.completado || banco === null,
+          repasoBancoId: repaso?.bancoId ?? null,
+          tieneFlashcards: Boolean(tarjetas?.length),
+        }
+      }),
+    ),
   ])
-  // Los cursos de muestra no incluyen banco de evaluación. Si el docente no
-  // configuró uno, no bloqueamos el acceso a sus lecciones.
-  const evaluacionInicialCompletada = evaluacionInicial.completado || bancoInicial === null
 
   const completadas = new Set(
     progreso.tomos.flatMap(t => t.lecciones.filter(l => l.completada).map(l => l.leccionId)),
@@ -179,13 +191,20 @@ const MapaCurso = async ({
   const totalPorcentaje =
     totalLecciones === 0 ? 0 : Math.round((completadas.size / totalLecciones) * 100)
   const cursoCompletado = totalTomos > 0 && tomosCompletados === totalTomos
-  const evaluacionInicialHref = `/aprender/${cursoSlug}/evaluacion-inicial`
   const diagnosticoHref = '/diagnostico'
+  const pruebaPorTomo = new Map(pruebasPrevias.map(prueba => [prueba.tomoId, prueba]))
+  const primeraPruebaPendiente = curso.tomos.find((tomo, index) => {
+    const prueba = pruebaPorTomo.get(tomo.id)
+    const semanasAnterioresCompletas = curso.tomos
+      .slice(0, index)
+      .every(semana => semana.lecciones.every(leccion => completadas.has(leccion.id)))
+    return Boolean(prueba?.bancoId && !prueba.completado && semanasAnterioresCompletas)
+  })
   const primeraPendiente = curso.tomos
     .flatMap(tomo => tomo.lecciones.map(leccion => ({ ...leccion, tomoId: tomo.id })))
     .find(leccion => !completadas.has(leccion.id))
-  const siguienteHref = !evaluacionInicialCompletada
-    ? evaluacionInicialHref
+  const siguienteHref = primeraPruebaPendiente
+    ? `/aprender/${cursoSlug}/conocimiento-previo/${primeraPruebaPendiente.id}`
     : primeraPendiente
       ? '/aprender/' + cursoSlug + '/' + primeraPendiente.id
       : '/aprender/' + cursoSlug
@@ -197,24 +216,31 @@ const MapaCurso = async ({
       'Hola, quisiera solicitar mi asesoría gratuita del curso ' + curso.titulo + '.',
     )
 
-  const nodosRuta: TechPathNode[] = [
-    {
-      key: 'evaluacion-inicial',
-      titulo: evaluacionInicialCompletada ? 'Test inicial superado' : 'Test inicial',
-      subtitulo: evaluacionInicialCompletada
-        ? 'Punto de partida definido'
-        : 'Descubre tu nivel antes de comenzar',
-      etiqueta: 'PUNTO DE PARTIDA',
-      estado: evaluacionInicialCompletada ? 'complete' : 'available',
-      tipo: 'test',
-      href: evaluacionInicialHref,
-    },
-    ...curso.tomos.flatMap((tomo): TechPathNode[] =>
-      tomo.lecciones.map(leccion => {
+  const nodosRuta: TechPathNode[] = curso.tomos.flatMap((tomo, tomoIndex): TechPathNode[] => {
+    const prueba = pruebaPorTomo.get(tomo.id)
+    const semanasAnterioresCompletas = curso.tomos
+      .slice(0, tomoIndex)
+      .every(semana => semana.lecciones.every(leccion => completadas.has(leccion.id)))
+    const previo: TechPathNode[] = prueba?.bancoId
+      ? [{
+          key: `conocimiento-previo-${tomo.id}`,
+          titulo: 'Test de conocimiento previo',
+          subtitulo: tomo.titulo,
+          etiqueta: 'ANTES DE ESTUDIAR',
+          estado: prueba.completado ? 'complete' : semanasAnterioresCompletas ? 'available' : 'locked',
+          tipo: 'test',
+          href: semanasAnterioresCompletas && !prueba.completado
+            ? `/aprender/${cursoSlug}/conocimiento-previo/${tomo.id}`
+            : undefined,
+          nivel: tomo.orden,
+        }]
+      : []
+    const lecciones: TechPathNode[] = tomo.lecciones.map(leccion => {
         const hecha = completadas.has(leccion.id)
         const indiceGlobal = ordenLecciones.indexOf(leccion.id)
+        const previoCompleto = prueba?.completado ?? true
         const disponible =
-          evaluacionInicialCompletada &&
+          previoCompleto &&
           (hecha || primerPendiente < 0 || indiceGlobal <= primerPendiente)
         return {
           key: leccion.id,
@@ -226,9 +252,33 @@ const MapaCurso = async ({
           href: disponible ? `/aprender/${cursoSlug}/${leccion.id}` : undefined,
           nivel: tomo.orden,
         }
-      }),
-    ),
-  ]
+      })
+    const semanaTerminada = tomo.lecciones.length > 0 && tomo.lecciones.every(leccion => completadas.has(leccion.id))
+    const recursos: TechPathNode[] = []
+    if (prueba?.tieneFlashcards && semanaTerminada)
+      recursos.push({
+        key: `flashcards-${tomo.id}`,
+        titulo: 'Flashcards de la semana',
+        subtitulo: 'Repasa conceptos clave',
+        etiqueta: 'TARJETAS',
+        estado: 'available',
+        tipo: 'review',
+        href: `/repasar/${tomo.id}`,
+        nivel: tomo.orden,
+      })
+    if (prueba?.repasoBancoId)
+      recursos.push({
+        key: `repaso-${tomo.id}`,
+        titulo: 'Test de repaso',
+        subtitulo: 'Comprueba lo aprendido',
+        etiqueta: 'REPASO SEMANAL',
+        estado: semanaTerminada ? 'available' : 'locked',
+        tipo: 'test',
+        href: semanaTerminada ? `/aprender/${cursoSlug}/refuerzo/${tomo.id}` : undefined,
+        nivel: tomo.orden,
+      })
+    return [...previo, ...lecciones, ...recursos]
+  })
 
   return (
     <div className="tech-learning-map">
@@ -287,23 +337,23 @@ const MapaCurso = async ({
             </span>
             <p>
               <strong>
-                {!evaluacionInicialCompletada
-                  ? 'Primero descubre tu punto de partida.'
+                {primeraPruebaPendiente
+                  ? 'Antes de estudiar, registra lo que ya sabes.'
                   : completadas.size === 0
                     ? 'Tu próxima aventura empieza aquí.'
                     : '¡Vas muy bien!'}
               </strong>
               <span>
-                {!evaluacionInicialCompletada
-                  ? 'Haz el test inicial para desbloquear la primera misión.'
+                {primeraPruebaPendiente
+                  ? 'Completa el test previo de esta semana para abrir sus materiales.'
                   : 'Completa cada misión para desbloquear el siguiente nivel.'}
               </span>
             </p>
           </div>
           <div className="learning-map-hero-actions">
             <Link href={siguienteHref} className="boton-primario">
-              {!evaluacionInicialCompletada
-                ? 'Empezar test inicial'
+              {primeraPruebaPendiente
+                ? 'Empezar conocimiento previo'
                 : cursoCompletado
                   ? 'Revisar mi camino'
                   : 'Continuar camino'}{' '}
@@ -373,15 +423,15 @@ const MapaCurso = async ({
           <div>
             <p className="course-map-kicker">TU SIGUIENTE MISIÓN</p>
             <h3>
-              {!evaluacionInicialCompletada
-                ? 'Primero calibra tu nivel'
+              {primeraPruebaPendiente
+                ? 'Completa el test de esta semana'
                 : completadas.size === 0
                   ? 'Tu primera misión está lista'
                   : 'Sigue construyendo tu perfil tech'}
             </h3>
             <p>
-              {!evaluacionInicialCompletada
-                ? 'Completa el test inicial para activar el camino.'
+              {primeraPruebaPendiente
+                ? 'Tus respuestas habilitan los materiales de esta semana.'
                 : 'Tus avances desbloquean nuevas habilidades, retos y repasos.'}
             </p>
           </div>

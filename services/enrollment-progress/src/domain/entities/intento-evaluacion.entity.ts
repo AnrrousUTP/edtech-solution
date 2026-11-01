@@ -11,7 +11,12 @@ import {
 } from '../services/correccion.service'
 
 export type TipoEvaluacion =
-  'NIVELACION' | 'TOMO' | 'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'REFUERZO'
+  | 'NIVELACION'
+  | 'TOMO'
+  | 'DIAGNOSTICO_PREVIO'
+  | 'EVALUACION_INICIAL'
+  | 'REFUERZO'
+  | 'CONOCIMIENTO_PREVIO_TOMO'
 export type EstadoIntento = 'EN_CURSO' | 'ENTREGADO'
 
 type Props = {
@@ -97,6 +102,11 @@ export class IntentoEvaluacion extends AggregateRoot {
           resultado.porcentaje,
         ),
       )
+      return Ok({ porcentaje: resultado.porcentaje, aprobado: true })
+    }
+
+    if (this.props.tipo === 'CONOCIMIENTO_PREVIO_TOMO') {
+      this.props.aprobado = true // Solo se exige completar el diagnóstico semanal.
       return Ok({ porcentaje: resultado.porcentaje, aprobado: true })
     }
 

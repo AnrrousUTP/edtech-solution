@@ -11,6 +11,7 @@ CREATE TYPE "catalog"."tipo_pregunta" AS ENUM('OPCION_UNICA', 'OPCION_MULTIPLE',
 CREATE TYPE "catalog"."uso_banco" AS ENUM('NIVELACION', 'EVALUACION_TOMO', 'DIAGNOSTICO_PREVIO');--> statement-breakpoint
 ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'REFUERZO';--> statement-breakpoint
 ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'EVALUACION_INICIAL';--> statement-breakpoint
+ALTER TYPE "catalog"."uso_banco" ADD VALUE IF NOT EXISTS 'CONOCIMIENTO_PREVIO_TOMO';--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "catalog"."bancos_pregunta" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"uso" "catalog"."uso_banco" NOT NULL,

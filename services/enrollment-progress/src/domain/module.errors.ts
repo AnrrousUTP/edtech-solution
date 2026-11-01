@@ -99,3 +99,17 @@ export class TomoNoEncontradoError extends EnrollmentError {
     super(`El tomo ${id} no existe en la proyección`)
   }
 }
+
+export class SemanaBloqueadaError extends EnrollmentError {
+  readonly code = 'SEMANA_BLOQUEADA'
+  constructor() {
+    super('Completa las lecciones requeridas antes de iniciar esta evaluación')
+  }
+}
+
+export class ConocimientoPrevioPendienteError extends EnrollmentError {
+  readonly code = 'CONOCIMIENTO_PREVIO_PENDIENTE'
+  constructor() {
+    super('Completa el test de conocimiento previo antes de abrir el contenido semanal')
+  }
+}

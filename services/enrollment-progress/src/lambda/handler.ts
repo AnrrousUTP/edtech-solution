@@ -19,6 +19,7 @@ import {
 } from '../application/crear-matricula/crear-matricula.handler'
 import { CompletarLeccionHandler } from '../application/completar-leccion/completar-leccion.handler'
 import {
+  ConocimientoPrevioEstadoHandler,
   EvaluacionInicialHandler,
   MisMatriculasHandler,
   ProgresoCursoHandler,
@@ -115,7 +116,9 @@ const createRuntime = async () => {
   const commands = new CommandBus()
   commands.register(new CrearMatriculaHandler(matriculas, proyeccion, publisher))
   commands.register(new RevocarMatriculaHandler(matriculas))
-  commands.register(new CompletarLeccionHandler(matriculas, proyeccion, catalog, publisher, reloj))
+  commands.register(
+    new CompletarLeccionHandler(matriculas, intentos, proyeccion, catalog, publisher, reloj),
+  )
   commands.register(new IniciarIntentoHandler(intentos, matriculas, proyeccion, reloj))
   commands.register(
     new EntregarIntentoHandler(
@@ -134,6 +137,7 @@ const createRuntime = async () => {
 
   const queries = new QueryBus()
   queries.register(new EvaluacionInicialHandler(intentos))
+  queries.register(new ConocimientoPrevioEstadoHandler(intentos, matriculas, proyeccion, reloj))
   queries.register(new MisMatriculasHandler(matriculas, proyeccion))
   queries.register(new ProgresoCursoHandler(matriculas, proyeccion, reloj))
 

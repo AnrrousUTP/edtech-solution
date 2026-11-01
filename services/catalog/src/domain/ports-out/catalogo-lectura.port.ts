@@ -25,6 +25,7 @@ export type MaterialResumen = {
   tipo: string
   url: string
   textoExtraido?: string
+  enfoques?: ('CONOCIMIENTO_PREVIO' | 'CONTENIDO_SEMANAL' | 'REPASO')[]
 }
 
 export type TomoDetalle = {
@@ -33,6 +34,7 @@ export type TomoDetalle = {
   titulo: string
   descripcion: string | null
   umbral: number
+  objetivos?: string[]
   materiales: MaterialResumen[]
   lecciones: LeccionResumen[]
 }
@@ -117,6 +119,7 @@ export interface CatalogoLectura {
   leccionContenido(leccionId: string): Promise<LeccionContenido | null>
   leccionContenidoAdmin(leccionId: string): Promise<LeccionContenidoAdmin | null>
   evaluacionDeTomo(tomoId: string): Promise<EvaluacionPublica | null>
+  conocimientoPrevioDeTomo(tomoId: string): Promise<EvaluacionPublica | null>
   refuerzoDeTomo(tomoId: string): Promise<EvaluacionPublica | null>
   evaluacionInicialDeCurso(cursoId: string): Promise<EvaluacionPublica | null>
   nivelacion(): Promise<EvaluacionPublica | null>

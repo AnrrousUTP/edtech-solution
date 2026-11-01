@@ -8,7 +8,7 @@ import { docenteHabilitado } from '@/lib/sesion'
 export const runtime = 'nodejs'
 
 const solicitudSchema = z.object({
-  uso: z.enum(['EVALUACION_INICIAL', 'EVALUACION_TOMO']),
+  uso: z.enum(['EVALUACION_TOMO']),
   cursoId: z.string().uuid(),
   tomoId: z.string().uuid().optional(),
 })
@@ -38,10 +38,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const curso = await catalogApi.cursoAdmin(solicitud.data.cursoId)
     if (!curso) return errorResponse('No encontré el curso seleccionado.', 404)
 
-    const tomos =
-      solicitud.data.uso === 'EVALUACION_TOMO'
-        ? curso.tomos.filter(tomo => tomo.id === solicitud.data.tomoId)
-        : curso.tomos
+    const tomos = curso.tomos.filter(tomo => tomo.id === solicitud.data.tomoId)
     if (tomos.length === 0) return errorResponse('La semana no pertenece al curso.', 400)
 
     const lecciones = tomos.flatMap(tomo => tomo.lecciones).slice(0, 8)
@@ -76,17 +73,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     const preguntas = await generarPreguntasEvaluacion({
       uso: solicitud.data.uso,
       curso: curso.titulo,
-      ...(solicitud.data.uso === 'EVALUACION_TOMO' ? { semana: tomo?.titulo } : {}),
+      semana: tomo?.titulo,
       nivel: `${curso.nivelMin}-${curso.nivelMax}`,
       contenido: fuentes.join('\n\n').slice(0, 12000),
     })
 
     return NextResponse.json(
       {
-        titulo:
-          solicitud.data.uso === 'EVALUACION_INICIAL'
-            ? `Test inicial · ${curso.titulo}`
-            : `Evaluación semanal · ${tomo?.titulo ?? curso.titulo}`,
+        titulo: `Evaluación semanal · ${tomo?.titulo ?? curso.titulo}`,
         preguntas,
       },
       { headers: { 'Cache-Control': 'no-store' } },

@@ -12,4 +12,9 @@ export interface IntentoRepository {
     usuarioId: UniqueId,
     cursoId: UniqueId,
   ): Promise<IntentoEvaluacion | null>
+  ultimoConocimientoPrevioDe(
+    usuarioId: UniqueId,
+    cursoId: UniqueId,
+    tomoId: string,
+  ): Promise<IntentoEvaluacion | null>
 }

@@ -34,6 +34,7 @@ export type TomoEntrada = {
   titulo: string
   descripcion?: string
   umbral?: number
+  objetivos?: string[]
   materiales?: Omit<MaterialInfo, 'id'>[]
   lecciones: LeccionEntrada[]
 }
@@ -43,6 +44,7 @@ export type ActualizarContenidoCommand = Command & {
   readonly cursoId: string
   readonly tomos: TomoEntrada[]
   readonly generarFlashcards?: boolean
+  readonly tomosParaGenerarFlashcards?: string[]
 }
 
 export type ActualizarContenidoResponse = {
@@ -102,10 +104,18 @@ export class ActualizarContenidoHandler implements CommandHandler<
         titulo: tomo.titulo,
         descripcion: tomo.descripcion ?? null,
         umbral,
+        objetivos: (tomo.objetivos ?? [])
+          .filter((value): value is string => typeof value === 'string')
+          .map(value => value.trim().slice(0, 300))
+          .filter(Boolean)
+          .slice(0, 12),
         materiales: (tomo.materiales ?? []).map((material, index) => ({
           ...material,
           id: UniqueId.nuevo().valor,
           orden: material.orden ?? index + 1,
+          enfoques: (material.enfoques ?? []).filter(value =>
+            ['CONOCIMIENTO_PREVIO', 'CONTENIDO_SEMANAL', 'REPASO'].includes(value),
+          ),
         })),
         lecciones,
       })
@@ -117,7 +127,10 @@ export class ActualizarContenidoHandler implements CommandHandler<
     // Los cursos publicados se regeneran al cambiar; en borradores solo se
     // ejecuta cuando el docente lo pide expresamente desde el editor.
     if (curso.estado === 'PUBLICADO' || cmd.generarFlashcards === true) {
-      for (const tomo of tomos) {
+      const tomosParaGenerar = cmd.tomosParaGenerarFlashcards !== undefined
+        ? tomos.filter(tomo => cmd.tomosParaGenerarFlashcards?.includes(tomo.id))
+        : tomos
+      for (const tomo of tomosParaGenerar) {
         const fuentes = await publicarFuentesFlashcards(
           tomo,
           this.contenidoStore,

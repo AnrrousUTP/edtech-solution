@@ -10,6 +10,7 @@ import {
 import {
   CursoNoProyectadoError,
   SinMatriculaError,
+  TomoNoEncontradoError,
   type EnrollmentError,
 } from '../../domain/module.errors'
 import type { CursoProyeccionRepository } from '../../domain/ports-out/curso-proyeccion.repository'
@@ -41,6 +42,44 @@ export class EvaluacionInicialHandler implements QueryHandler<
       UniqueId.desde(q.cursoId),
     )
     return Ok({ completado: intento !== null })
+  }
+}
+
+export type ConocimientoPrevioEstadoQuery = Query & {
+  readonly _tag: 'ConocimientoPrevioEstado'
+  readonly usuarioId: string
+  readonly cursoId: string
+  readonly tomoId: string
+}
+
+export class ConocimientoPrevioEstadoHandler implements QueryHandler<
+  ConocimientoPrevioEstadoQuery,
+  EvaluacionInicialResponse,
+  EnrollmentError
+> {
+  readonly handles = 'ConocimientoPrevioEstado' as const
+
+  constructor(
+    private readonly intentos: IntentoRepository,
+    private readonly matriculas: MatriculaRepository,
+    private readonly cursos: CursoProyeccionRepository,
+    private readonly reloj: Reloj,
+  ) {}
+
+  async execute(
+    q: ConocimientoPrevioEstadoQuery,
+  ): Promise<Result<EvaluacionInicialResponse, EnrollmentError>> {
+    const usuarioId = UniqueId.desde(q.usuarioId)
+    const cursoId = UniqueId.desde(q.cursoId)
+    const matricula = await this.matriculas.porUsuarioYCurso(usuarioId, cursoId)
+    if (!matricula || !matricula.tieneAcceso(this.reloj.ahora()))
+      return Err(new SinMatriculaError(q.usuarioId, q.cursoId))
+    const curso = await this.cursos.porId(q.cursoId)
+    if (!curso) return Err(new CursoNoProyectadoError(q.cursoId))
+    if (!curso.tomoPorId(q.tomoId))
+      return Err(new TomoNoEncontradoError(q.tomoId))
+    const intento = await this.intentos.ultimoConocimientoPrevioDe(usuarioId, cursoId, q.tomoId)
+    return Ok({ completado: intento?.estado === 'ENTREGADO' })
   }
 }
 

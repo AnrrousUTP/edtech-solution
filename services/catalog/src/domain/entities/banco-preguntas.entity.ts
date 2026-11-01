@@ -2,7 +2,12 @@ import { AggregateRoot, Err, Ok, type Result, UniqueId } from '@edtech/shared-ke
 import { BancoInvalidoError, type CatalogError } from '../module.errors'
 
 export type UsoBanco =
-  'NIVELACION' | 'EVALUACION_INICIAL' | 'EVALUACION_TOMO' | 'DIAGNOSTICO_PREVIO' | 'REFUERZO'
+  | 'NIVELACION'
+  | 'EVALUACION_INICIAL'
+  | 'EVALUACION_TOMO'
+  | 'DIAGNOSTICO_PREVIO'
+  | 'REFUERZO'
+  | 'CONOCIMIENTO_PREVIO_TOMO'
 export type TipoPregunta = 'OPCION_UNICA' | 'OPCION_MULTIPLE' | 'CODIGO' | 'VERDADERO_FALSO'
 
 export type Pregunta = {
@@ -35,11 +40,14 @@ export class BancoPreguntas extends AggregateRoot {
     cursoId?: string | null
     titulo: string
   }): Result<BancoPreguntas, CatalogError> {
-    const necesitaTomo = datos.uso === 'EVALUACION_TOMO' || datos.uso === 'REFUERZO'
+    const necesitaTomo =
+      datos.uso === 'EVALUACION_TOMO' ||
+      datos.uso === 'REFUERZO' ||
+      datos.uso === 'CONOCIMIENTO_PREVIO_TOMO'
     const necesitaCurso = datos.uso === 'EVALUACION_INICIAL'
     const cursoId = datos.cursoId ?? null
     if (necesitaTomo !== (datos.tomoId !== null))
-      return Err(new BancoInvalidoError('Solo los bancos de tomo y refuerzo necesitan un tomo'))
+      return Err(new BancoInvalidoError('Este banco debe estar asociado a una semana'))
     if (necesitaCurso !== (cursoId !== null) || (necesitaCurso && datos.tomoId !== null))
       return Err(new BancoInvalidoError('El test inicial necesita un curso y no un tomo'))
     return Ok(
@@ -92,10 +100,13 @@ export class BancoPreguntas extends AggregateRoot {
     cursoId: string | null
     titulo: string
   }): Result<void, CatalogError> {
-    const necesitaTomo = datos.uso === 'EVALUACION_TOMO' || datos.uso === 'REFUERZO'
+    const necesitaTomo =
+      datos.uso === 'EVALUACION_TOMO' ||
+      datos.uso === 'REFUERZO' ||
+      datos.uso === 'CONOCIMIENTO_PREVIO_TOMO'
     const necesitaCurso = datos.uso === 'EVALUACION_INICIAL'
     if (necesitaTomo !== (datos.tomoId !== null))
-      return Err(new BancoInvalidoError('Solo los bancos de tomo y refuerzo necesitan un tomo'))
+      return Err(new BancoInvalidoError('Este banco debe estar asociado a una semana'))
     if (necesitaCurso !== (datos.cursoId !== null) || (necesitaCurso && datos.tomoId !== null))
       return Err(new BancoInvalidoError('El test inicial necesita un curso y no un tomo'))
     this.props.uso = datos.uso

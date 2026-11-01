@@ -14,6 +14,8 @@
     "estructura": "bun run tools/check-structure.ts",
     "convenciones": "bun run tools/lint-convenciones.ts",
     "harness": "bun run arch && bun run estructura && bun run convenciones && bun test",
+    "weekly-rpa:harness": "bun run tools/weekly-rpa-harness.ts",
+    "weekly-rpa:preflight": "bun run tools/weekly-rpa-preflight.ts",
     "design:audit": "node tools/design-auditor.mjs",
     "db:migrate": "bun run tools/db-migrate.ts",
     "db:seed": "bun run tools/seed/index.ts",

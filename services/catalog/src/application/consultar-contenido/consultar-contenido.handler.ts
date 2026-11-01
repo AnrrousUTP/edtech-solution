@@ -74,6 +74,27 @@ export class ObtenerEvaluacionHandler implements QueryHandler<
   }
 }
 
+export type ObtenerConocimientoPrevioQuery = Query & {
+  readonly _tag: 'ObtenerConocimientoPrevio'
+  readonly tomoId: string
+}
+
+export class ObtenerConocimientoPrevioHandler implements QueryHandler<
+  ObtenerConocimientoPrevioQuery,
+  EvaluacionPublica,
+  CatalogError
+> {
+  readonly handles = 'ObtenerConocimientoPrevio' as const
+  constructor(private readonly lectura: CatalogoLectura) {}
+
+  async execute(q: ObtenerConocimientoPrevioQuery): Promise<Result<EvaluacionPublica, CatalogError>> {
+    const evaluacion = await this.lectura.conocimientoPrevioDeTomo(q.tomoId)
+    if (!evaluacion)
+      return Err(new BancoNoEncontradoError(`conocimiento previo del tomo ${q.tomoId}`))
+    return Ok(evaluacion)
+  }
+}
+
 export type ObtenerRefuerzoQuery = Query & {
   readonly _tag: 'ObtenerRefuerzo'
   readonly tomoId: string

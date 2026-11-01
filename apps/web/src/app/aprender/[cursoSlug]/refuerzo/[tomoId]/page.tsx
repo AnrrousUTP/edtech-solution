@@ -3,6 +3,7 @@ import { catalogApi } from '@/api/catalog'
 import { enrollmentApi } from '@/api/enrollment'
 import { ErrorConAccion, Vacio } from '@/componentes/base'
 import { Examen } from '@/componentes/examen'
+import { semanaCompletada } from '@/lib/progreso-semanal'
 
 export default async function Refuerzo({
   params,
@@ -24,6 +25,14 @@ export default async function Refuerzo({
       />
     )
   }
+  if (!semanaCompletada(tomo, progreso))
+    return (
+      <ErrorConAccion
+        titulo="Termina el contenido semanal primero"
+        detalle="El test de repaso se abre después de completar las lecciones de esta semana."
+        accion={{ texto: 'Volver al mapa', href: `/aprender/${cursoSlug}` }}
+      />
+    )
   const banco = await catalogApi.refuerzoDeTomo(tomoId)
   if (!banco || banco.preguntas.length === 0) {
     return (

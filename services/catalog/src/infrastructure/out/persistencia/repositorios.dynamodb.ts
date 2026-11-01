@@ -482,7 +482,7 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       .map(row => this.resumen(row))
   }
 
-  private async getCursoDetalle(row: Row): Promise<CursoDetalle> {
+  private async getCursoDetalle(row: Row, incluirTextoFuente: boolean): Promise<CursoDetalle> {
     const course = this.cursoDesde(row)
     return {
       ...this.resumen(row),
@@ -494,6 +494,7 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
           titulo: tomo.titulo,
           descripcion: tomo.descripcion,
           umbral: tomo.umbral,
+          objetivos: tomo.objetivos ?? [],
           materiales: (tomo.materiales ?? []).map(material => ({
             id: material.id,
             orden: material.orden,
@@ -501,7 +502,10 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
             descripcion: material.descripcion,
             tipo: material.tipo,
             url: material.url,
-            ...(material.textoExtraido ? { textoExtraido: material.textoExtraido } : {}),
+            ...(incluirTextoFuente && material.textoExtraido
+              ? { textoExtraido: material.textoExtraido.slice(0, 16000) }
+              : {}),
+            enfoques: material.enfoques ?? [],
           })),
           lecciones: tomo.lecciones.map(leccion => ({
             id: leccion.id,
@@ -517,13 +521,16 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
   async cursoPorSlug(slug: string, incluirNoPublicados: boolean): Promise<CursoDetalle | null> {
     const course = await this.porSlug(slug)
     if (!course || (!incluirNoPublicados && course.estado !== 'PUBLICADO')) return null
-    return this.getCursoDetalle((await this.get(courseKey(course.id.valor)))!)
+    return this.getCursoDetalle(
+      (await this.get(courseKey(course.id.valor)))!,
+      incluirNoPublicados,
+    )
   }
 
   async cursoPorId(id: string, incluirNoPublicados: boolean): Promise<CursoDetalle | null> {
     const row = await this.get(courseKey(id))
     if (!row || (!incluirNoPublicados && row.estado !== 'PUBLICADO')) return null
-    return this.getCursoDetalle(row)
+    return this.getCursoDetalle(row, incluirNoPublicados)
   }
 
   async leccionContenido(leccionId: string): Promise<LeccionContenido | null> {
@@ -593,6 +600,11 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
     return this.evaluacionPublica(bank, threshold)
   }
 
+  async conocimientoPrevioDeTomo(tomoId: string): Promise<EvaluacionPublica | null> {
+    const bank = await this.bancoPorUso('CONOCIMIENTO_PREVIO_TOMO', tomoId)
+    return bank ? this.evaluacionPublica(bank, 0) : null
+  }
+
   async nivelacion(): Promise<EvaluacionPublica | null> {
     const bank = await this.bancoPorUso('NIVELACION')
     return bank ? this.evaluacionPublica(bank, 60) : null
@@ -639,6 +651,7 @@ export class DynamoCatalogStore implements CatalogoLectura, ContenidoStore {
       'NIVELACION',
       'EVALUACION_TOMO',
       'REFUERZO',
+      'CONOCIMIENTO_PREVIO_TOMO',
     ]
     const rows = (
       await Promise.all(usos.map(uso => this.queryIndex('GSI1', `BANK_USE#${uso}`)))

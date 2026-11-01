@@ -34,6 +34,7 @@ export type MaterialInfo = {
   tipo: string
   url: string
   textoExtraido?: string
+  enfoques?: ('CONOCIMIENTO_PREVIO' | 'CONTENIDO_SEMANAL' | 'REPASO')[]
 }
 
 export type TomoInfo = {
@@ -42,6 +43,7 @@ export type TomoInfo = {
   titulo: string
   descripcion: string | null
   umbral: number
+  objetivos?: string[]
   materiales?: MaterialInfo[]
   lecciones: LeccionInfo[]
 }

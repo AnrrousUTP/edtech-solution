@@ -12,7 +12,7 @@ import {
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { createHash, randomUUID } from 'node:crypto'
 import express, { type Express, type Request, type Response } from 'express'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { Pool } from 'pg'
 import type { Config } from './config/config'
 import { ContenidoActualizadoEvent } from '../domain/events/contenido-actualizado.event'
@@ -58,7 +58,12 @@ const idOrSlug = (value: string): { field: 'id' | 'slug'; value: string } =>
   /^[0-9a-f-]{36}$/i.test(value) ? { field: 'id', value } : { field: 'slug', value }
 const body = (req: Request): Record<string, unknown> => (req.body ?? {}) as Record<string, unknown>
 type UsoBancoAdmin =
-  'DIAGNOSTICO_PREVIO' | 'EVALUACION_INICIAL' | 'NIVELACION' | 'EVALUACION_TOMO' | 'REFUERZO'
+  | 'DIAGNOSTICO_PREVIO'
+  | 'EVALUACION_INICIAL'
+  | 'NIVELACION'
+  | 'EVALUACION_TOMO'
+  | 'REFUERZO'
+  | 'CONOCIMIENTO_PREVIO_TOMO'
 
 const validarBancoAdmin = (
   uso: string,
@@ -73,11 +78,15 @@ const validarBancoAdmin = (
         'NIVELACION',
         'EVALUACION_TOMO',
         'REFUERZO',
+        'CONOCIMIENTO_PREVIO_TOMO',
       ] as string[]
     ).includes(uso)
   )
     return 'El uso del banco no es válido'
-  if ((uso === 'REFUERZO' || uso === 'EVALUACION_TOMO') && !tomoId)
+  if (
+    (uso === 'REFUERZO' || uso === 'EVALUACION_TOMO' || uso === 'CONOCIMIENTO_PREVIO_TOMO') &&
+    !tomoId
+  )
     return 'Los bancos de refuerzo y examen necesitan un tomo'
   if (uso === 'NIVELACION' && tomoId) return 'Los bancos de nivelación deben ser globales'
   if (uso === 'DIAGNOSTICO_PREVIO' && (tomoId || cursoId))
@@ -89,16 +98,21 @@ const validarBancoAdmin = (
 }
 
 const migrar = async (pool: Pool, carpeta: string): Promise<void> => {
-  const sql = await readFile(`${carpeta}/0000_init.sql`, 'utf8')
-  for (const sentencia of sql
-    .split('--> statement-breakpoint')
-    .map(s => s.trim())
-    .filter(Boolean)) {
-    try {
-      await pool.query(sentencia)
-    } catch (error) {
-      const code = (error as { code?: string }).code
-      if (code !== '42710' && code !== '42P07' && code !== '42701') throw error
+  const archivos = (await readdir(carpeta))
+    .filter(archivo => /^\d+_.+\.sql$/.test(archivo))
+    .sort((a, b) => a.localeCompare(b, 'en'))
+  for (const archivo of archivos) {
+    const sql = await readFile(`${carpeta}/${archivo}`, 'utf8')
+    for (const sentencia of sql
+      .split('--> statement-breakpoint')
+      .map(s => s.trim())
+      .filter(Boolean)) {
+      try {
+        await pool.query(sentencia)
+      } catch (error) {
+        const code = (error as { code?: string }).code
+        if (code !== '42710' && code !== '42P07' && code !== '42701') throw error
+      }
     }
   }
 }
@@ -124,13 +138,16 @@ const detalleCurso = async (db: Db, slugOId: string, todos: boolean): Promise<un
   const curso = r.rows[0] as CursoRow | undefined
   if (!curso) return null
   const tomosR = await db.query(
-    `SELECT id, orden, titulo, descripcion, umbral_aprobacion FROM catalog.tomos WHERE curso_id = $1 ORDER BY orden`,
+    `SELECT id, orden, titulo, descripcion, umbral_aprobacion, objetivos FROM catalog.tomos WHERE curso_id = $1 ORDER BY orden`,
     [curso.id],
   )
   const tomos = []
   for (const tomo of tomosR.rows) {
+    const columnasMaterial = todos
+      ? 'id, orden, titulo, descripcion, tipo, url, enfoques, texto_extraido AS "textoExtraido"'
+      : 'id, orden, titulo, descripcion, tipo, url, enfoques'
     const materiales = await db.query(
-      `SELECT id, orden, titulo, descripcion, tipo, url FROM catalog.materiales WHERE tomo_id = $1 ORDER BY orden`,
+      `SELECT ${columnasMaterial} FROM catalog.materiales WHERE tomo_id = $1 ORDER BY orden`,
       [tomo.id],
     )
     const lecciones = await db.query(
@@ -143,6 +160,7 @@ const detalleCurso = async (db: Db, slugOId: string, todos: boolean): Promise<un
       titulo: tomo.titulo,
       descripcion: tomo.descripcion,
       umbral: tomo.umbral_aprobacion,
+      objetivos: tomo.objetivos ?? [],
       materiales: materiales.rows,
       lecciones: lecciones.rows.map(l => ({
         id: l.id,
@@ -268,7 +286,7 @@ const contenido = async (db: Db, leccionId: string): Promise<unknown | null> => 
 const evaluacionPorUso = async (
   db: Db,
   tomoId: string,
-  uso: 'EVALUACION_TOMO' | 'REFUERZO',
+  uso: 'EVALUACION_TOMO' | 'REFUERZO' | 'CONOCIMIENTO_PREVIO_TOMO',
 ): Promise<unknown | null> => {
   const r = await db.query(
     `SELECT b.id, b.titulo, t.umbral_aprobacion AS umbral FROM catalog.bancos_pregunta b
@@ -294,6 +312,8 @@ const evaluacion = async (db: Db, tomoId: string): Promise<unknown | null> =>
   evaluacionPorUso(db, tomoId, 'EVALUACION_TOMO')
 const refuerzo = async (db: Db, tomoId: string): Promise<unknown | null> =>
   evaluacionPorUso(db, tomoId, 'REFUERZO')
+const conocimientoPrevio = async (db: Db, tomoId: string): Promise<unknown | null> =>
+  evaluacionPorUso(db, tomoId, 'CONOCIMIENTO_PREVIO_TOMO')
 
 const contextoTomo = async (db: Db, tomoId: string): Promise<unknown | null> => {
   const r = await db.query(
@@ -449,12 +469,26 @@ const contenidoEventos = async (
   s3: S3Client,
   bucket: string,
   cursoId: string,
+  tomosIncluidos?: string[] | null,
 ): Promise<ContenidoActualizadoEvent[]> => {
-  const tomos = await db.query(`SELECT id FROM catalog.tomos WHERE curso_id = $1 ORDER BY orden`, [
-    cursoId,
-  ])
+  const curso = await db.query(
+    `SELECT titulo, tecnologia, nivel_min, nivel_max FROM catalog.cursos WHERE id = $1`,
+    [cursoId],
+  )
+  const tomos = await db.query(
+    `SELECT id, titulo, objetivos FROM catalog.tomos WHERE curso_id = $1 ORDER BY orden`,
+    [cursoId],
+  )
   const eventos: ContenidoActualizadoEvent[] = []
   for (const tomo of tomos.rows) {
+    if (tomosIncluidos && !tomosIncluidos.includes(String(tomo.id))) continue
+    const contexto = {
+      cursoTitulo: String(curso.rows[0]?.titulo ?? 'Curso'),
+      cursoTecnologia: String(curso.rows[0]?.tecnologia ?? 'Tecnología'),
+      nivelMin: String(curso.rows[0]?.nivel_min ?? 'A').trim(),
+      nivelMax: String(curso.rows[0]?.nivel_max ?? 'A').trim(),
+      tomoTitulo: String(tomo.titulo),
+    }
     const lecciones = await db.query(
       `SELECT id, titulo, contenido_hash FROM catalog.lecciones WHERE tomo_id = $1 ORDER BY orden`,
       [tomo.id],
@@ -469,6 +503,7 @@ const contenidoEventos = async (
       const documento = JSON.stringify({
         leccionId: leccion.id,
         titulo: leccion.titulo,
+        contexto,
         bloques: bloques.rows,
       })
       const hash = createHash('sha256').update(documento).digest('hex')
@@ -484,6 +519,61 @@ const contenidoEventos = async (
       publicadas.push({ id: leccion.id, titulo: leccion.titulo, bloquesS3Key: key })
       hashes.push(String(leccion.contenido_hash))
     }
+
+    const objetivos = Array.isArray(tomo.objetivos)
+      ? (tomo.objetivos as unknown[]).filter((value): value is string => typeof value === 'string')
+      : []
+    const materialesR = await db.query(
+      `SELECT titulo, descripcion, texto_extraido, enfoques
+       FROM catalog.materiales WHERE tomo_id = $1 AND (texto_extraido IS NOT NULL OR descripcion IS NOT NULL)
+       ORDER BY orden`,
+      [tomo.id],
+    )
+    const materiales = materialesR.rows
+      .filter(material => {
+        const enfoques = Array.isArray(material.enfoques) ? material.enfoques : []
+        return (
+          enfoques.length === 0 ||
+          enfoques.includes('CONTENIDO_SEMANAL') ||
+          enfoques.includes('REPASO')
+        )
+      })
+      .map(material => ({
+        titulo: String(material.titulo),
+        texto:
+          typeof material.texto_extraido === 'string' && material.texto_extraido.trim()
+            ? material.texto_extraido.trim()
+            : typeof material.descripcion === 'string'
+              ? material.descripcion.trim()
+              : '',
+      }))
+      .filter(material => material.texto.length > 0)
+    if (materiales.length > 0) {
+      const texto = [
+        ...(objetivos.length ? [`Objetivos de aprendizaje:\n${objetivos.join('\n')}`] : []),
+        ...materiales.map(material => `## ${material.titulo}\n${material.texto}`),
+      ].join('\n\n').slice(0, 16000)
+      const materialId = randomUUID()
+      const documento = JSON.stringify({
+        tomoId: tomo.id,
+        titulo: `Materiales: ${tomo.titulo}`,
+        contexto,
+        texto,
+      })
+      const hash = createHash('sha256').update(documento).digest('hex')
+      const key = `catalog/lecciones/${materialId}/${hash}.json`
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: documento,
+          ContentType: 'application/json',
+        }),
+      )
+      publicadas.push({ id: materialId, titulo: `Materiales: ${tomo.titulo}`, bloquesS3Key: key })
+      hashes.push(hash)
+    }
+    hashes.push(createHash('sha256').update(JSON.stringify(objetivos)).digest('hex'))
     const contenidoHash = createHash('sha256').update(hashes.join('|')).digest('hex')
     eventos.push(new ContenidoActualizadoEvent(cursoId, String(tomo.id), contenidoHash, publicadas))
   }
@@ -642,6 +732,25 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
       next(e)
     }
   })
+  http.get(
+    '/api/catalog/tomos/:id/conocimiento-previo',
+    requiereAuth(authConfig),
+    async (req, res, next) => {
+      try {
+        const data = await conocimientoPrevio(db, req.params.id ?? '')
+        data
+          ? responder(res, data)
+          : res.status(404).json({
+              error: {
+                code: 'BANCO_NO_ENCONTRADO',
+                message: 'Test de conocimiento previo no configurado',
+              },
+            })
+      } catch (e) {
+        next(e)
+      }
+    },
+  )
   http.get('/api/catalog/tomos/:id/contexto', async (req, res, next) => {
     try {
       const data = await contextoTomo(db, req.params.id ?? '')
@@ -853,6 +962,9 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
           .status(404)
           .json({ error: { code: 'CURSO_NO_ENCONTRADO', message: 'Curso no encontrado' } })
       const tomos = Array.isArray(b.tomos) ? (b.tomos as Record<string, unknown>[]) : []
+      const tomosParaGenerarFlashcards = Array.isArray(b.tomosParaGenerarFlashcards)
+        ? b.tomosParaGenerarFlashcards.filter((value): value is string => typeof value === 'string')
+        : null
       const tomosIds: string[] = []
       const leccionesIds: string[] = []
       const tomosResultado: { id: string; lecciones: string[] }[] = []
@@ -860,10 +972,11 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
         const tomoId = typeof tomo.id === 'string' ? tomo.id : randomUUID()
         tomosIds.push(tomoId)
         await db.query(
-          `INSERT INTO catalog.tomos (id, curso_id, orden, titulo, descripcion, umbral_aprobacion)
-        VALUES ($1, $2, $3, $4, $5, $6)
+          `INSERT INTO catalog.tomos (id, curso_id, orden, titulo, descripcion, umbral_aprobacion, objetivos)
+        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
         ON CONFLICT (id) DO UPDATE SET orden = EXCLUDED.orden, titulo = EXCLUDED.titulo,
-        descripcion = EXCLUDED.descripcion, umbral_aprobacion = EXCLUDED.umbral_aprobacion, updated_at = now()`,
+        descripcion = EXCLUDED.descripcion, umbral_aprobacion = EXCLUDED.umbral_aprobacion,
+        objetivos = EXCLUDED.objetivos, updated_at = now()`,
           [
             tomoId,
             req.params.id,
@@ -871,6 +984,13 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
             String(tomo.titulo ?? 'Tomo'),
             typeof tomo.descripcion === 'string' ? tomo.descripcion : null,
             Number(tomo.umbral ?? 70),
+            JSON.stringify(
+              (Array.isArray(tomo.objetivos) ? tomo.objetivos : [])
+                .filter((value): value is string => typeof value === 'string')
+                .map(value => value.trim().slice(0, 300))
+                .filter(Boolean)
+                .slice(0, 12),
+            ),
           ],
         )
         const materiales = Array.isArray(tomo.materiales)
@@ -884,11 +1004,12 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
             ? String(material.tipo)
             : 'DOCUMENTO'
           await db.query(
-            `INSERT INTO catalog.materiales (id, tomo_id, orden, titulo, descripcion, tipo, url)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO catalog.materiales (id, tomo_id, orden, titulo, descripcion, tipo, url, enfoques, texto_extraido)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)
           ON CONFLICT (id) DO UPDATE SET tomo_id = EXCLUDED.tomo_id, orden = EXCLUDED.orden,
           titulo = EXCLUDED.titulo, descripcion = EXCLUDED.descripcion, tipo = EXCLUDED.tipo,
-          url = EXCLUDED.url, updated_at = now()`,
+          url = EXCLUDED.url, enfoques = EXCLUDED.enfoques, texto_extraido = EXCLUDED.texto_extraido,
+          updated_at = now()`,
             [
               materialId,
               tomoId,
@@ -897,6 +1018,17 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
               typeof material.descripcion === 'string' ? material.descripcion : null,
               tipo,
               String(material.url ?? ''),
+              JSON.stringify(
+                (Array.isArray(material.enfoques) ? material.enfoques : []).filter(
+                  value =>
+                    value === 'CONOCIMIENTO_PREVIO' ||
+                    value === 'CONTENIDO_SEMANAL' ||
+                    value === 'REPASO',
+                ),
+              ),
+              typeof material.textoExtraido === 'string'
+                ? material.textoExtraido.slice(0, 16000)
+                : null,
             ],
           )
         }
@@ -973,9 +1105,9 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
           `DELETE FROM catalog.lecciones WHERE tomo_id IN (SELECT id FROM catalog.tomos WHERE curso_id = $1) AND id <> ALL($2::uuid[])`,
           [req.params.id, leccionesIds],
         )
-      if (cursoActual.rows[0].estado === 'PUBLICADO')
+      if (cursoActual.rows[0].estado === 'PUBLICADO' || b.generarFlashcards === true)
         await publisher.publish(
-          await contenidoEventos(db, s3, cfg.bucketMedia, req.params.id ?? ''),
+          await contenidoEventos(db, s3, cfg.bucketMedia, req.params.id ?? '', tomosParaGenerarFlashcards),
         )
       return responder(res, { tomos: tomosResultado, lecciones: leccionesIds.length })
     } catch (e) {

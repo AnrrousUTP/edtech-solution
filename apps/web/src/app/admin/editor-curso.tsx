@@ -5,6 +5,9 @@ import { useState } from 'react'
 import type { CursoDetalle } from '@/api/catalog'
 import type { MazoAdmin } from '@/api/resto'
 import { RevisionMazo } from './revision-mazo'
+import { RecursosSemanales } from './RecursosSemanales'
+
+type EnfoqueMaterial = 'CONOCIMIENTO_PREVIO' | 'CONTENIDO_SEMANAL' | 'REPASO'
 
 type Material = {
   orden: number
@@ -13,6 +16,7 @@ type Material = {
   tipo: string
   url: string
   textoExtraido?: string
+  enfoques: EnfoqueMaterial[]
 }
 type Bloque = { orden: number; tipo: string; contenido: Record<string, unknown> }
 type Leccion = {
@@ -28,6 +32,7 @@ type Semana = {
   titulo: string
   descripcion: string
   umbral: number
+  objetivos: string[]
   materiales: Material[]
   lecciones: Leccion[]
 }
@@ -54,9 +59,20 @@ const normalizarSemana = (value: unknown, index: number): Semana => {
     titulo: typeof item.titulo === 'string' ? item.titulo : 'Semana ' + (index + 1),
     descripcion: typeof item.descripcion === 'string' ? item.descripcion : '',
     umbral: typeof item.umbral === 'number' ? item.umbral : 70,
+    objetivos: Array.isArray(item.objetivos)
+      ? item.objetivos.filter((value): value is string => typeof value === 'string')
+      : [],
     materiales: Array.isArray(item.materiales)
       ? item.materiales.map((material, materialIndex) => {
           const row = (material ?? {}) as Record<string, unknown>
+          const enfoques = Array.isArray(row.enfoques)
+            ? row.enfoques.filter(
+                (value): value is EnfoqueMaterial =>
+                  value === 'CONOCIMIENTO_PREVIO' ||
+                  value === 'CONTENIDO_SEMANAL' ||
+                  value === 'REPASO',
+              )
+            : []
           return {
             orden: materialIndex + 1,
             titulo: typeof row.titulo === 'string' ? row.titulo : '',
@@ -64,6 +80,7 @@ const normalizarSemana = (value: unknown, index: number): Semana => {
             tipo: typeof row.tipo === 'string' ? row.tipo : 'PDF',
             url: typeof row.url === 'string' ? row.url : '',
             ...(typeof row.textoExtraido === 'string' ? { textoExtraido: row.textoExtraido } : {}),
+            enfoques: enfoques.length > 0 ? enfoques : ['CONTENIDO_SEMANAL'],
           }
         })
       : [],
@@ -87,6 +104,7 @@ const semanaVacia = (orden: number): Semana => ({
   titulo: 'Semana ' + orden,
   descripcion: '',
   umbral: 70,
+  objetivos: [],
   materiales: [],
   lecciones: [nuevaLeccion(1)],
 })
@@ -157,6 +175,33 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
         i === leccionIndex ? { ...leccion, ...cambios } : leccion,
       ),
     })
+  }
+
+  const guardarContenidoSemanal = async (tomosParaGenerarFlashcards: string[] = []): Promise<void> => {
+    if (!curso) throw new Error('Guarda el curso antes de generar recursos semanales.')
+    const response = await fetch('/api/admin/catalog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'contenido',
+        id: curso.id,
+        datos: {
+          tomos: semanas,
+          generarFlashcards: tomosParaGenerarFlashcards.length > 0,
+          tomosParaGenerarFlashcards,
+        },
+      }),
+    })
+    const result = (await response.json().catch(() => ({}))) as {
+      error?: string
+      tomos?: { id: string; lecciones: string[] }[]
+    }
+    if (!response.ok) throw new Error(result.error ?? 'No se pudo guardar el contenido semanal.')
+    if (result.tomos?.length)
+      setSemanas(actual =>
+        actual.map((semana, index) => ({ ...semana, id: result.tomos?.[index]?.id ?? semana.id })),
+      )
+    if (tomosParaGenerarFlashcards.length > 0) router.refresh()
   }
 
   const subirArchivo = async (
@@ -425,6 +470,23 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                         onChange={e => cambiarSemana(semanaIndex, { descripcion: e.target.value })}
                       />
                     </label>
+                    <label className="admin-form-wide">
+                      Objetivos de aprendizaje (uno por línea)
+                      <textarea
+                        rows={3}
+                        value={semana.objetivos.join('\n')}
+                        onChange={e =>
+                          cambiarSemana(semanaIndex, {
+                            objetivos: e.target.value
+                              .split('\n')
+                              .map(value => value.trim())
+                              .filter(Boolean)
+                              .slice(0, 12),
+                          })
+                        }
+                        placeholder="Identifica los conceptos clave de la semana…"
+                      />
+                    </label>
                   </div>
 
                   <section className="admin-week-section">
@@ -443,6 +505,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                 descripcion: null,
                                 tipo: 'PDF',
                                 url: '',
+                                enfoques: ['CONTENIDO_SEMANAL'],
                               },
                             ],
                           })
@@ -491,6 +554,29 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                             placeholder="https://…"
                           />
                         </label>
+                        <fieldset className="admin-form-wide admin-material-purposes">
+                          <legend>Usar material para</legend>
+                          {([
+                            ['CONOCIMIENTO_PREVIO', 'Conocimiento previo'],
+                            ['CONTENIDO_SEMANAL', 'Contenido semanal'],
+                            ['REPASO', 'Repaso'],
+                          ] as const).map(([value, label]) => (
+                            <label key={value}>
+                              <input
+                                type="checkbox"
+                                checked={material.enfoques.includes(value)}
+                                onChange={event =>
+                                  cambiarMaterial(semanaIndex, materialIndex, {
+                                    enfoques: event.target.checked
+                                      ? [...new Set([...material.enfoques, value])]
+                                      : material.enfoques.filter(enfoque => enfoque !== value),
+                                  })
+                                }
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </fieldset>
                         <label className="admin-form-wide">
                           Subir PDF
                           <input
@@ -520,7 +606,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                         </label>
                         {material.textoExtraido && (
                           <p className="admin-material-extraction">
-                            <strong>Contenido extraído para el repaso</strong>
+                            <strong>Contenido extraído</strong>
                             <br />
                             {material.textoExtraido}
                           </p>
@@ -671,6 +757,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                         descripcion: null,
                                         tipo: 'PDF',
                                         url: result.url,
+                                        enfoques: ['CONTENIDO_SEMANAL', 'REPASO'],
                                         ...(result.textoExtraido
                                           ? { textoExtraido: result.textoExtraido }
                                           : {}),
@@ -745,31 +832,17 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     )}
                   </section>
 
-                  <section className="admin-week-section">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3>Evaluación semanal</h3>
-                        <p className="admin-help">
-                          Genera un borrador con los PDF y las lecciones de esta semana. Revisa las
-                          respuestas antes de guardarlo.
-                        </p>
-                      </div>
-                      {curso && semana.id && (
-                        <a
-                          className="boton-secundario text-xs"
-                          href={
-                            '/admin/bancos?curso=' +
-                            curso.id +
-                            '&tomo=' +
-                            semana.id +
-                            '&uso=EVALUACION_TOMO'
-                          }
-                        >
-                          Preparar evaluación con IA
-                        </a>
-                      )}
-                    </div>
-                  </section>
+                  {curso && semana.id ? (
+                    <RecursosSemanales
+                      courseId={curso.id}
+                      tomoId={semana.id}
+                      weekTitle={semana.titulo}
+                      onPrepare={() => guardarContenidoSemanal()}
+                      onRequestFlashcards={() => guardarContenidoSemanal([semana.id as string])}
+                    />
+                  ) : (
+                    <p className="admin-help">Guarda primero el curso y esta semana para iniciar Make.</p>
+                  )}
 
                   <button
                     type="button"
@@ -793,24 +866,6 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
           )}
         </div>
       </section>
-
-      {curso && (
-        <section className="admin-ai-generation-panel admin-course-initial-assessment">
-          <div>
-            <strong>Test inicial del curso</strong>
-            <p>
-              Prepara cinco preguntas desde los materiales y lecciones del curso. Revisa el borrador
-              antes de guardarlo.
-            </p>
-          </div>
-          <a
-            className="boton-secundario"
-            href={'/admin/bancos?curso=' + curso.id + '&uso=EVALUACION_INICIAL'}
-          >
-            Preparar test inicial
-          </a>
-        </section>
-      )}
 
       {(error || estado) && (
         <p className={error ? 'admin-form-error' : 'admin-form-success'} role="status">
