@@ -18,6 +18,22 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   r.use(json({ limit: '16kb' }))
   const auth = requiereAuth({ issuer: cfg.issuer, clientId: cfg.clientId, jwksUri: cfg.jwksUri })
   const afiliado = [auth, requiereRol('afiliado')]
+  const compradorOAfiliado = (req: Request, res: Response, next: NextFunction): void => {
+    const roles = req.auth?.roles ?? []
+    if (roles.length !== 1) {
+      res
+        .status(403)
+        .json({ error: { code: 'ROL_INVALIDO', message: 'La cuenta debe tener un solo rol' } })
+      return
+    }
+    if (roles[0] !== 'estudiante' && roles[0] !== 'afiliado') {
+      res.status(403).json({
+        error: { code: 'ROL_INSUFICIENTE', message: 'Requiere rol estudiante o afiliado' },
+      })
+      return
+    }
+    next()
+  }
   const wrap =
     (f: (req: Request) => Promise<unknown>) =>
     (req: Request, res: Response, next: NextFunction): void => {
@@ -57,7 +73,8 @@ export const crearRouter = (handler: AfiliacionHandler, cfg: Config): Router => 
   )
   r.post(
     '/atribucion',
-    ...afiliado,
+    auth,
+    compradorOAfiliado,
     wrap(req => handler.prueba(req.auth!.usuarioId, optionalId(req.body?.visitaId))),
   )
   r.get(
