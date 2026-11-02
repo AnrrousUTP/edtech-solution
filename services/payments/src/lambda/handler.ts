@@ -26,6 +26,7 @@ import {
   TodasLasOrdenesHandler,
 } from '../application/consultar-ordenes/consultar-ordenes.handler'
 import { CrearOrdenHandler } from '../application/crear-orden/crear-orden.handler'
+import { CrearCompraDirectaHandler } from '../application/crear-compra-directa/crear-compra-directa.handler'
 import { CapturarPagoHandler } from '../application/capturar-pago/capturar-pago.handler'
 import { ProcesarWebhookHandler } from '../application/procesar-webhook/procesar-webhook.handler'
 import { cargarConfig } from '../infrastructure/config/config'
@@ -134,6 +135,7 @@ const createRuntime = async () => {
   const publisher = { publish: async () => undefined }
   const reloj = new RelojSistema()
   const bus = new CommandBus()
+  bus.register(new CrearCompraDirectaHandler(orders, prices, publisher, reloj, verifier))
   bus.register(new CrearOrdenHandler(orders, prices, paypal, publisher, reloj, verifier))
   bus.register(new CapturarPagoHandler(orders, paypal, publisher, reloj))
   bus.register(new ProcesarWebhookHandler(orders, webhooks, publisher, reloj, () => bus))

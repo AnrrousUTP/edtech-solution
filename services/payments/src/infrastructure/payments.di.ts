@@ -25,6 +25,7 @@ import {
   TodasLasOrdenesHandler,
 } from '../application/consultar-ordenes/consultar-ordenes.handler'
 import { CapturarPagoHandler } from '../application/capturar-pago/capturar-pago.handler'
+import { CrearCompraDirectaHandler } from '../application/crear-compra-directa/crear-compra-directa.handler'
 import { CrearOrdenHandler } from '../application/crear-orden/crear-orden.handler'
 import { ProcesarWebhookHandler } from '../application/procesar-webhook/procesar-webhook.handler'
 import type { Config } from './config/config'
@@ -102,6 +103,7 @@ export const construirApp = async (cfg: Config, carpetaMigraciones: string): Pro
   )
 
   const bus = new CommandBus()
+  bus.register(new CrearCompraDirectaHandler(ordenes, precios, publisher, reloj, verifier))
   bus.register(new CrearOrdenHandler(ordenes, precios, paypal, publisher, reloj, verifier))
   bus.register(new CapturarPagoHandler(ordenes, paypal, publisher, reloj))
   bus.register(new ProcesarWebhookHandler(ordenes, webhooks, publisher, reloj, () => bus))

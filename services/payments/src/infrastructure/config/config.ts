@@ -10,6 +10,7 @@ export type Config = {
   paypalSecretName?: string
   queueWebhooksUrl?: string
   paypalLocalMode: boolean
+  paymentBypassEnabled: boolean
   dynamoTable: string | undefined
   urlBase: string
   cognito: { issuer: string; clientId: string | undefined; jwksUri: string | undefined }
@@ -29,6 +30,7 @@ export const cargarConfig = (): Config => {
     paypalSecretName: env.PAYPAL_SECRET_NAME ?? 'edtech/dev/paypal',
     queueWebhooksUrl: env.QUEUE_WEBHOOKS_URL,
     paypalLocalMode: env.NODE_ENV !== 'production' && env.PAYPAL_LOCAL_MODE !== 'false',
+    paymentBypassEnabled: env.PAYMENT_BYPASS_ENABLED === 'true',
     dynamoTable: env.DYNAMODB_TABLE,
     urlBase: env.URL_BASE ?? 'http://localhost:3000',
     cognito: {

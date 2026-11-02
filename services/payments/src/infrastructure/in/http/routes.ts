@@ -9,6 +9,7 @@ import {
 import { Router, json, type Request, type Response } from 'express'
 import type { Config } from '../../config/config'
 import type { CrearOrdenCommand } from '../../../application/crear-orden/crear-orden.handler'
+import type { CrearCompraDirectaCommand } from '../../../application/crear-compra-directa/crear-compra-directa.handler'
 
 const MAPA: Record<string, number> = {
   ORDEN_NO_ENCONTRADA: 404,
@@ -55,6 +56,30 @@ export const crearRouter = (bus: CommandBus, queries: QueryBus, cfg: Config): Ro
 
   router.post('/ordenes', ...estudiante, async (req, res) => {
     const b = cuerpo(req)
+    if (cfg.paymentBypassEnabled) {
+      const command: CrearCompraDirectaCommand = {
+        _tag: 'CrearCompraDirecta',
+        usuarioId: req.auth?.usuarioId ?? '',
+        cursoId: String(b.cursoId ?? ''),
+      }
+      const direct = await bus.dispatch(command)
+      if (!isOk(direct)) {
+        responder(res, direct, 201)
+        return
+      }
+      const retorno = new URL('/checkout/resultado', cfg.urlBase)
+      retorno.searchParams.set('ordenId', direct.value.ordenId)
+      res.status(201).json({
+        data: {
+          ordenId: direct.value.ordenId,
+          urlAprobacion: retorno.toString(),
+          monto: direct.value.monto,
+          moneda: direct.value.moneda,
+          reutilizada: false,
+        },
+      })
+      return
+    }
     const retorno = new URL('/checkout/resultado', cfg.urlBase).toString()
     const cancelacion = new URL('/cursos', cfg.urlBase).toString()
     const cmd: CrearOrdenCommand = {
