@@ -18,12 +18,12 @@ COPY apps/web/public ./public
 ENV NEXT_TELEMETRY_DISABLED=1 SALIDA_STANDALONE=1
 RUN bun run build
 
-FROM oven/bun:1-alpine
+FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-USER bun
+USER node
 EXPOSE 3000
-CMD ["bun", "run", "server.js"]
+CMD ["node", "server.js"]

@@ -7,6 +7,11 @@ import type { MazoAdmin } from '@/api/resto'
 import { RevisionMazo } from './revision-mazo'
 import { RecursosSemanales } from './RecursosSemanales'
 import { FlujoRecursosAnimado } from './FlujoRecursosAnimado'
+import {
+  MAX_MEDIA_UPLOAD_ERROR,
+  MAX_MEDIA_UPLOAD_LABEL,
+  mediaUploadSizeIsAllowed,
+} from '@/lib/media-upload'
 
 type EnfoqueMaterial = 'CONOCIMIENTO_PREVIO' | 'CONTENIDO_SEMANAL' | 'REPASO'
 type TipoEnlace = 'VIDEO' | 'ENLACE'
@@ -62,7 +67,10 @@ const videoEmbedUrl = (value: string): string | null => {
     if (host === 'youtu.be') videoId = segmentos[0] ?? ''
     else if (['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'].includes(host))
       videoId = parsed.searchParams.get('v') ?? segmentos[segmentos.length - 1] ?? ''
-    if (/^[\w-]{11}$/.test(videoId) && ['youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'youtu.be'].includes(host))
+    if (
+      /^[\w-]{11}$/.test(videoId) &&
+      ['youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'youtu.be'].includes(host)
+    )
       return `https://www.youtube-nocookie.com/embed/${videoId}`
     if (host === 'vimeo.com' || host === 'player.vimeo.com') {
       const vimeoId = segmentos[segmentos.length - 1] ?? ''
@@ -273,7 +281,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       return
     }
     if (borradorEnlace.tipo === 'VIDEO' && !videoEmbedUrl(parsed.toString())) {
-      setErrorEnlace('Usa un enlace de YouTube, Vimeo o Loom. Para otro sitio, selecciona «Enlace web».')
+      setErrorEnlace(
+        'Usa un enlace de YouTube, Vimeo o Loom. Para otro sitio, selecciona «Enlace web».',
+      )
       return
     }
     cambiarSemana(semanaActiva, {
@@ -300,7 +310,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
       objetivos: semana.objetivos.map(objetivo => objetivo.trim()).filter(Boolean),
     }))
 
-  const guardarContenidoSemanal = async (tomosParaGenerarFlashcards: string[] = []): Promise<void> => {
+  const guardarContenidoSemanal = async (
+    tomosParaGenerarFlashcards: string[] = [],
+  ): Promise<void> => {
     if (!curso) throw new Error('Guarda el curso antes de generar recursos semanales.')
     const response = await fetch('/api/admin/catalog', {
       method: 'POST',
@@ -340,6 +352,7 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
     const uploadId = `${llave}:${crypto.randomUUID()}`
     setSubiendo(actual => [...actual, uploadId])
     try {
+      if (!mediaUploadSizeIsAllowed(archivo.size)) throw new Error(MAX_MEDIA_UPLOAD_ERROR)
       const body = new FormData()
       body.set('file', archivo)
       const response = await fetch('/api/admin/media', { method: 'POST', body })
@@ -616,7 +629,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
               <div>
                 <p className="admin-section-eyebrow">PLAN DE ESTUDIO</p>
                 <h2>Semanas</h2>
-                <p>{semanas.length} {semanas.length === 1 ? 'semana' : 'semanas'} en el curso</p>
+                <p>
+                  {semanas.length} {semanas.length === 1 ? 'semana' : 'semanas'} en el curso
+                </p>
               </div>
               <button
                 type="button"
@@ -643,7 +658,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     aria-current={index === semanaActiva ? 'page' : undefined}
                     onClick={() => setSemanaActiva(index)}
                   >
-                    <span className="admin-week-nav-number">{String(index + 1).padStart(2, '0')}</span>
+                    <span className="admin-week-nav-number">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
                     <span className="admin-week-nav-copy">
                       <strong>{semana.titulo || `Semana ${index + 1}`}</strong>
                       <small>
@@ -700,7 +717,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     </div>
                     <div className="admin-week-canvas-actions">
                       <div className="admin-week-stat">
-                        <strong>{semanaActual.objetivos.filter(objetivo => objetivo.trim()).length}</strong>
+                        <strong>
+                          {semanaActual.objetivos.filter(objetivo => objetivo.trim()).length}
+                        </strong>
                         <span>objetivos</span>
                       </div>
                       <div className="admin-week-stat">
@@ -735,11 +754,16 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                   </label>
 
                   <div className="admin-week-setup-grid">
-                    <section className="admin-week-panel admin-week-objectives" aria-labelledby="week-objectives-title">
+                    <section
+                      className="admin-week-panel admin-week-objectives"
+                      aria-labelledby="week-objectives-title"
+                    >
                       <div className="admin-week-panel-heading">
                         <div className="admin-week-panel-title">
                           <span className="admin-week-icon admin-week-icon-blue" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M5 5.5h14v13H5zM8 9h8M8 12h8M8 15h5" /></svg>
+                            <svg viewBox="0 0 24 24">
+                              <path d="M5 5.5h14v13H5zM8 9h8M8 12h8M8 15h5" />
+                            </svg>
                           </span>
                           <div>
                             <h3 id="week-objectives-title">Objetivos de aprendizaje</h3>
@@ -786,13 +810,17 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                   })
                                 }
                               >
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6m4-6v6M8 7l1 13h6l1-13M9 7V4h6v3" /></svg>
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M5 7h14M10 11v6m4-6v6M8 7l1 13h6l1-13M9 7V4h6v3" />
+                                </svg>
                               </button>
                             </li>
                           ))}
                         </ol>
                       ) : (
-                        <p className="admin-week-empty-inline">Agrega objetivos para orientar los materiales y las preguntas.</p>
+                        <p className="admin-week-empty-inline">
+                          Agrega objetivos para orientar los materiales y las preguntas.
+                        </p>
                       )}
                       <button
                         type="button"
@@ -807,19 +835,32 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       </button>
                     </section>
 
-                    <section className="admin-week-panel admin-week-upload-panel" aria-labelledby="week-upload-title">
+                    <section
+                      className="admin-week-panel admin-week-upload-panel"
+                      aria-labelledby="week-upload-title"
+                    >
                       <div className="admin-week-panel-heading">
                         <div className="admin-week-panel-title">
-                          <span className="admin-week-icon admin-week-icon-purple" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" /></svg>
+                          <span
+                            className="admin-week-icon admin-week-icon-purple"
+                            aria-hidden="true"
+                          >
+                            <svg viewBox="0 0 24 24">
+                              <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" />
+                            </svg>
                           </span>
                           <div>
                             <h3 id="week-upload-title">Agregar material</h3>
-                            <p>Sube un PDF o agrega un video/enlace. Después eliges para qué se usará.</p>
+                            <p>
+                              Sube un PDF o agrega un video/enlace. Después eliges para qué se
+                              usará.
+                            </p>
                           </div>
                         </div>
                       </div>
-                      <label className={`admin-week-upload-dropzone ${cantidadSubiendo(`semana-${semanaActiva}`) > 0 ? 'is-uploading' : ''}`}>
+                      <label
+                        className={`admin-week-upload-dropzone ${cantidadSubiendo(`semana-${semanaActiva}`) > 0 ? 'is-uploading' : ''}`}
+                      >
                         <input
                           type="file"
                           accept="application/pdf,.pdf"
@@ -830,34 +871,48 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                             if (files.length > 0)
                               void subirArchivos(
                                 files,
-                                result => agregarPdfSemana(semanaIndex, ['CONTENIDO_SEMANAL'], result),
+                                result =>
+                                  agregarPdfSemana(semanaIndex, ['CONTENIDO_SEMANAL'], result),
                                 `semana-${semanaIndex}`,
                               )
                             event.currentTarget.value = ''
                           }}
                         />
                         <span className="admin-upload-icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" /></svg>
+                          <svg viewBox="0 0 24 24">
+                            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" />
+                          </svg>
                         </span>
                         <strong>
                           {cantidadSubiendo(`semana-${semanaActiva}`) > 0
                             ? 'Subiendo y analizando…'
                             : 'Seleccionar uno o varios PDF'}
                         </strong>
-                        <small>Se procesan en orden; la extracción de texto se mostrará para que la revises.</small>
+                        <small>
+                          Máximo {MAX_MEDIA_UPLOAD_LABEL} por archivo. Se procesan en orden; la
+                          extracción de texto se mostrará para que la revises.
+                        </small>
                       </label>
                     </section>
                   </div>
 
-                  <section className="admin-week-panel admin-week-materials-panel" aria-labelledby="week-materials-title">
+                  <section
+                    className="admin-week-panel admin-week-materials-panel"
+                    aria-labelledby="week-materials-title"
+                  >
                     <div className="admin-week-panel-heading">
                       <div className="admin-week-panel-title">
                         <span className="admin-week-icon admin-week-icon-teal" aria-hidden="true">
-                          <svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" /></svg>
+                          <svg viewBox="0 0 24 24">
+                            <path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" />
+                          </svg>
                         </span>
                         <div>
                           <h3 id="week-materials-title">Materiales de la semana</h3>
-                          <p>Clasifica cada fuente. Una misma fuente puede usarse en más de una etapa.</p>
+                          <p>
+                            Clasifica cada fuente. Una misma fuente puede usarse en más de una
+                            etapa.
+                          </p>
                         </div>
                       </div>
                       <button
@@ -875,10 +930,15 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     {semanaActual.materiales.length > 0 ? (
                       <div className="admin-material-card-list">
                         {semanaActual.materiales.map((material, materialIndex) => (
-                          <article key={`${material.url}-${materialIndex}`} className="admin-material-card">
+                          <article
+                            key={`${material.url}-${materialIndex}`}
+                            className="admin-material-card"
+                          >
                             <div className="admin-material-card-heading">
                               <span className="admin-material-file-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" /></svg>
+                                <svg viewBox="0 0 24 24">
+                                  <path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" />
+                                </svg>
                               </span>
                               <label className="admin-material-name">
                                 Nombre del material
@@ -898,7 +958,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                 <select
                                   value={material.tipo}
                                   onChange={e =>
-                                    cambiarMaterial(semanaActiva, materialIndex, { tipo: e.target.value })
+                                    cambiarMaterial(semanaActiva, materialIndex, {
+                                      tipo: e.target.value,
+                                    })
                                   }
                                 >
                                   <option>PDF</option>
@@ -919,7 +981,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                   })
                                 }
                               >
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6m4-6v6M8 7l1 13h6l1-13M9 7V4h6v3" /></svg>
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M5 7h14M10 11v6m4-6v6M8 7l1 13h6l1-13M9 7V4h6v3" />
+                                </svg>
                               </button>
                             </div>
                             <label className="admin-material-url">
@@ -929,7 +993,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                 type="url"
                                 value={material.url}
                                 onChange={e =>
-                                  cambiarMaterial(semanaActiva, materialIndex, { url: e.target.value })
+                                  cambiarMaterial(semanaActiva, materialIndex, {
+                                    url: e.target.value,
+                                  })
                                 }
                                 placeholder="https://…"
                               />
@@ -947,13 +1013,17 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                   }
                                   placeholder="Añade un resumen o transcripción; la IA no reproduce el video ni navega el sitio por sí sola."
                                 />
-                                <small>Estas notas se usarán al generar tests y flashcards a partir del enlace.</small>
+                                <small>
+                                  Estas notas se usarán al generar tests y flashcards a partir del
+                                  enlace.
+                                </small>
                               </label>
                             )}
                             {material.url && (
                               <details className="admin-material-preview">
                                 <summary>Previsualizar material</summary>
-                                {material.tipo === 'PDF' && material.url.startsWith('/api/media/course-media/') ? (
+                                {material.tipo === 'PDF' &&
+                                material.url.startsWith('/api/media/course-media/') ? (
                                   <iframe
                                     title={`Vista previa: ${material.titulo || 'documento PDF'}`}
                                     src={material.url}
@@ -971,23 +1041,35 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                 ) : urlExternaSegura(material.url) ? (
                                   <div className="admin-material-preview-link">
                                     <span>Este material se abrirá en una pestaña nueva.</span>
-                                    <a href={urlExternaSegura(material.url) ?? undefined} target="_blank" rel="noopener noreferrer">
+                                    <a
+                                      href={urlExternaSegura(material.url) ?? undefined}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
                                       Abrir {material.titulo || 'material'}
                                     </a>
                                   </div>
                                 ) : (
-                                  <p className="admin-week-empty-inline">No se puede previsualizar esta dirección. Comprueba que sea un enlace web válido.</p>
+                                  <p className="admin-week-empty-inline">
+                                    No se puede previsualizar esta dirección. Comprueba que sea un
+                                    enlace web válido.
+                                  </p>
                                 )}
                               </details>
                             )}
                             <fieldset className="admin-material-purposes">
                               <legend>Usar también para</legend>
-                              {([
-                                ['CONOCIMIENTO_PREVIO', 'Conocimiento previo'],
-                                ['CONTENIDO_SEMANAL', 'Contenido semanal'],
-                                ['REPASO', 'Repaso'],
-                              ] as const).map(([value, label]) => (
-                                <label key={value} className={`admin-purpose-chip purpose-${value.toLowerCase()}`}>
+                              {(
+                                [
+                                  ['CONOCIMIENTO_PREVIO', 'Conocimiento previo'],
+                                  ['CONTENIDO_SEMANAL', 'Contenido semanal'],
+                                  ['REPASO', 'Repaso'],
+                                ] as const
+                              ).map(([value, label]) => (
+                                <label
+                                  key={value}
+                                  className={`admin-purpose-chip purpose-${value.toLowerCase()}`}
+                                >
                                   <input
                                     type="checkbox"
                                     checked={material.enfoques.includes(value)}
@@ -1015,11 +1097,16 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     ) : (
                       <div className="admin-week-empty-materials">
                         <span className="admin-empty-document" aria-hidden="true">
-                          <svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" /></svg>
+                          <svg viewBox="0 0 24 24">
+                            <path d="M6 3.5h8l4 4V20H6zM14 3.5V8h4M9 12h6M9 15.5h6" />
+                          </svg>
                         </span>
                         <div>
                           <strong>Aún no hay materiales en esta semana</strong>
-                          <p>Sube un PDF o agrega un video/enlace; luego marca si sirve para previo, contenido o repaso.</p>
+                          <p>
+                            Sube un PDF o agrega un video/enlace; luego marca si sirve para previo,
+                            contenido o repaso.
+                          </p>
                         </div>
                       </div>
                     )}
@@ -1031,16 +1118,24 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       tomoId={semanaActual.id}
                       weekTitle={semanaActual.titulo}
                       objectives={semanaActual.objetivos}
-                      materials={semanaActual.materiales.map(({ titulo, tipo }) => ({ titulo, tipo }))}
+                      materials={semanaActual.materiales.map(({ titulo, tipo }) => ({
+                        titulo,
+                        tipo,
+                      }))}
                       onPrepare={() => guardarContenidoSemanal()}
-                      onRequestFlashcards={() => guardarContenidoSemanal([semanaActual.id as string])}
+                      onRequestFlashcards={() =>
+                        guardarContenidoSemanal([semanaActual.id as string])
+                      }
                     />
                   ) : (
                     <section className="admin-week-next-step">
                       <div>
                         <p className="admin-section-eyebrow">SIGUIENTE PASO</p>
                         <h3>Guarda el curso para activar Make + IA</h3>
-                        <p>Después podrás generar el test de conocimiento previo, el test de repaso y las flashcards de esta semana.</p>
+                        <p>
+                          Después podrás generar el test de conocimiento previo, el test de repaso y
+                          las flashcards de esta semana.
+                        </p>
                       </div>
                     </section>
                   )}
@@ -1048,7 +1143,10 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                   <details className="admin-week-collapsible">
                     <summary>
                       <span>Lecciones de esta semana</span>
-                      <small>{semanaActual.lecciones.length} {semanaActual.lecciones.length === 1 ? 'lección' : 'lecciones'}</small>
+                      <small>
+                        {semanaActual.lecciones.length}{' '}
+                        {semanaActual.lecciones.length === 1 ? 'lección' : 'lecciones'}
+                      </small>
                     </summary>
                     <div className="admin-week-collapsible-content">
                       <div className="admin-week-panel-heading">
@@ -1074,16 +1172,24 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                       {semanaActual.lecciones.map((leccion, leccionIndex) => {
                         const texto = leccion.bloques.find(bloque => bloque.tipo === 'TEXTO')
                         const markdown =
-                          typeof texto?.contenido.markdown === 'string' ? texto.contenido.markdown : ''
+                          typeof texto?.contenido.markdown === 'string'
+                            ? texto.contenido.markdown
+                            : ''
                         return (
                           <details key={leccionIndex} className="admin-lesson-accordion">
-                            <summary>Lección {leccionIndex + 1}: {leccion.titulo || 'Sin título'}</summary>
+                            <summary>
+                              Lección {leccionIndex + 1}: {leccion.titulo || 'Sin título'}
+                            </summary>
                             <div className="admin-form-grid">
                               <label>
                                 Nombre de la lección
                                 <input
                                   value={leccion.titulo}
-                                  onChange={e => cambiarLeccion(semanaActiva, leccionIndex, { titulo: e.target.value })}
+                                  onChange={e =>
+                                    cambiarLeccion(semanaActiva, leccionIndex, {
+                                      titulo: e.target.value,
+                                    })
+                                  }
                                   required
                                 />
                               </label>
@@ -1093,7 +1199,11 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                   type="number"
                                   min="1"
                                   value={leccion.duracionMin}
-                                  onChange={e => cambiarLeccion(semanaActiva, leccionIndex, { duracionMin: Number(e.target.value) })}
+                                  onChange={e =>
+                                    cambiarLeccion(semanaActiva, leccionIndex, {
+                                      duracionMin: Number(e.target.value),
+                                    })
+                                  }
                                 />
                               </label>
                               <label className="admin-form-wide">
@@ -1103,7 +1213,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                                   value={markdown}
                                   onChange={e => {
                                     const bloques = [...leccion.bloques]
-                                    const index = bloques.findIndex(bloque => bloque.tipo === 'TEXTO')
+                                    const index = bloques.findIndex(
+                                      bloque => bloque.tipo === 'TEXTO',
+                                    )
                                     const bloque = {
                                       orden: index < 0 ? bloques.length + 1 : bloques[index]!.orden,
                                       tipo: 'TEXTO',
@@ -1143,7 +1255,8 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                     </summary>
                     <div className="admin-week-collapsible-content">
                       <p className="admin-help">
-                        Puedes agregar un PDF adicional para el repaso. La generación de flashcards también usa los materiales marcados para repaso.
+                        Puedes agregar un PDF adicional para el repaso. La generación de flashcards
+                        también usa los materiales marcados para repaso.
                       </p>
                       <label className="admin-week-upload-dropzone admin-week-review-upload">
                         <input
@@ -1167,41 +1280,60 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                             ? 'Subiendo PDF para repaso…'
                             : 'Subir uno o varios PDF para el repaso'}
                         </strong>
-                        <small>Los archivos se procesan en orden y quedan clasificados para el repaso.</small>
+                        <small>
+                          Máximo {MAX_MEDIA_UPLOAD_LABEL} por archivo. Se procesan en orden y quedan
+                          clasificados para el repaso.
+                        </small>
                       </label>
-                      {semanaActual.materiales.filter(material => material.tipo === 'PDF').length > 0 ? (
+                      {semanaActual.materiales.filter(material => material.tipo === 'PDF').length >
+                      0 ? (
                         <div className="admin-review-source-list" aria-label="PDFs de la semana">
                           {semanaActual.materiales
                             .filter(material => material.tipo === 'PDF')
                             .map((material, index) => (
-                              <article key={material.url || material.titulo || index} className="admin-review-source-item">
+                              <article
+                                key={material.url || material.titulo || index}
+                                className="admin-review-source-item"
+                              >
                                 <div className="admin-review-source-heading">
                                   <strong>{material.titulo || 'PDF de la semana'}</strong>
-                                  {material.url && <a href={material.url} target="_blank" rel="noreferrer">Abrir PDF</a>}
+                                  {material.url && (
+                                    <a href={material.url} target="_blank" rel="noreferrer">
+                                      Abrir PDF
+                                    </a>
+                                  )}
                                 </div>
                                 {material.textoExtraido ? (
                                   <details>
                                     <summary>Ver texto extraído</summary>
                                     <p>{material.textoExtraido}</p>
                                   </details>
-                                ) : <small>El PDF aún no tiene texto extraído.</small>}
+                                ) : (
+                                  <small>El PDF aún no tiene texto extraído.</small>
+                                )}
                               </article>
                             ))}
                         </div>
                       ) : (
-                        <p className="admin-week-empty-inline">Todavía no hay PDFs para el repaso.</p>
+                        <p className="admin-week-empty-inline">
+                          Todavía no hay PDFs para el repaso.
+                        </p>
                       )}
                       {(mazosPorSemana.get(semanaActual.id ?? '') ?? []).length > 0 ? (
                         <div className="admin-route-flashcards-list">
                           {(mazosPorSemana.get(semanaActual.id ?? '') ?? []).map(mazo => (
                             <details key={mazo.mazoId}>
-                              <summary>Versión {mazo.version} · {mazo.estado}</summary>
+                              <summary>
+                                Versión {mazo.version} · {mazo.estado}
+                              </summary>
                               <RevisionMazo mazo={mazo} />
                             </details>
                           ))}
                         </div>
                       ) : (
-                        <p className="admin-week-empty-inline">Las flashcards aparecerán aquí después de aprobar los borradores.</p>
+                        <p className="admin-week-empty-inline">
+                          Las flashcards aparecerán aquí después de aprobar los borradores.
+                        </p>
                       )}
                     </div>
                   </details>
@@ -1210,7 +1342,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
             ) : (
               <section className="admin-week-empty-state">
                 <span className="admin-week-empty-state-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" /></svg>
+                  <svg viewBox="0 0 24 24">
+                    <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+                  </svg>
                 </span>
                 <p className="admin-section-eyebrow">CONTENIDO SEMANAL</p>
                 <h2>Empieza por crear una semana</h2>
@@ -1233,21 +1367,41 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
 
       {enlaceAbierto && (
         <div className="admin-link-dialog-backdrop">
-          <section className="admin-link-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-link-dialog-title">
+          <section
+            className="admin-link-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-link-dialog-title"
+          >
             <div className="admin-link-dialog-heading">
               <div>
                 <p className="admin-section-eyebrow">FUENTE EXTERNA · SEMANA {semanaActiva + 1}</p>
                 <h2 id="admin-link-dialog-title">Agregar video o enlace</h2>
-                <p>Los videos se pueden reproducir aquí. Para que la IA los use, añade notas o una transcripción.</p>
+                <p>
+                  Los videos se pueden reproducir aquí. Para que la IA los use, añade notas o una
+                  transcripción.
+                </p>
               </div>
-              <button type="button" className="admin-icon-button" onClick={() => setEnlaceAbierto(false)} aria-label="Cerrar formulario">×</button>
+              <button
+                type="button"
+                className="admin-icon-button"
+                onClick={() => setEnlaceAbierto(false)}
+                aria-label="Cerrar formulario"
+              >
+                ×
+              </button>
             </div>
             <div className="admin-link-dialog-grid">
               <label>
                 Tipo de material
                 <select
                   value={borradorEnlace.tipo}
-                  onChange={event => setBorradorEnlace(current => ({ ...current, tipo: event.target.value as TipoEnlace }))}
+                  onChange={event =>
+                    setBorradorEnlace(current => ({
+                      ...current,
+                      tipo: event.target.value as TipoEnlace,
+                    }))
+                  }
                 >
                   <option value="VIDEO">Video de YouTube, Vimeo o Loom</option>
                   <option value="ENLACE">Enlace web</option>
@@ -1257,7 +1411,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                 Nombre del material
                 <input
                   value={borradorEnlace.titulo}
-                  onChange={event => setBorradorEnlace(current => ({ ...current, titulo: event.target.value }))}
+                  onChange={event =>
+                    setBorradorEnlace(current => ({ ...current, titulo: event.target.value }))
+                  }
                   placeholder="Ej. Introducción a las etiquetas HTML"
                 />
               </label>
@@ -1266,7 +1422,9 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                 <input
                   type="url"
                   value={borradorEnlace.url}
-                  onChange={event => setBorradorEnlace(current => ({ ...current, url: event.target.value }))}
+                  onChange={event =>
+                    setBorradorEnlace(current => ({ ...current, url: event.target.value }))
+                  }
                   placeholder={borradorEnlace.tipo === 'VIDEO' ? 'https://youtu.be/…' : 'https://…'}
                 />
               </label>
@@ -1275,15 +1433,29 @@ export const EditorCurso = ({ curso, contenido, mazosPorTomo = [] }: Props): JSX
                 <textarea
                   rows={4}
                   value={borradorEnlace.descripcion}
-                  onChange={event => setBorradorEnlace(current => ({ ...current, descripcion: event.target.value }))}
+                  onChange={event =>
+                    setBorradorEnlace(current => ({ ...current, descripcion: event.target.value }))
+                  }
                   placeholder="Escribe ideas clave del material; se usarán para preparar los tests y flashcards."
                 />
               </label>
             </div>
-            {errorEnlace && <p className="admin-form-error" role="alert">{errorEnlace}</p>}
+            {errorEnlace && (
+              <p className="admin-form-error" role="alert">
+                {errorEnlace}
+              </p>
+            )}
             <div className="admin-link-dialog-actions">
-              <button type="button" className="boton-secundario" onClick={() => setEnlaceAbierto(false)}>Cancelar</button>
-              <button type="button" className="boton-primario" onClick={agregarEnlace}>Agregar a la semana</button>
+              <button
+                type="button"
+                className="boton-secundario"
+                onClick={() => setEnlaceAbierto(false)}
+              >
+                Cancelar
+              </button>
+              <button type="button" className="boton-primario" onClick={agregarEnlace}>
+                Agregar a la semana
+              </button>
             </div>
           </section>
         </div>

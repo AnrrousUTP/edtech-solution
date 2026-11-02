@@ -1,10 +1,11 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { NextResponse } from 'next/server'
 import { config } from '@/lib/config'
+import { createMediaS3Client } from '@/lib/media-storage'
 
 export const runtime = 'nodejs'
 
-const s3 = new S3Client({ region: config.cognito.region })
+const s3 = createMediaS3Client()
 
 export async function GET(
   _request: Request,
