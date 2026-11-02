@@ -49,7 +49,12 @@ import {
 } from '../infrastructure/out/persistencia/repositorios.dynamodb'
 
 type ExpressLambda = (event: object, context: object) => Promise<unknown>
-type Runtime = { expressHandler: ExpressLambda; dynamodb: DynamoDBClient }
+type InternalTask = { task?: unknown; bancoId?: unknown }
+type Runtime = {
+  expressHandler: ExpressLambda
+  dynamodb: DynamoDBClient
+  handleInternalTask: (event: InternalTask) => Promise<unknown>
+}
 
 let runtime: Promise<Runtime> | undefined
 
@@ -138,11 +143,41 @@ const createRuntime = async (): Promise<Runtime> => {
   )
   app.use(noEncontradoMiddleware)
   app.use(errorMiddleware)
-  return { expressHandler: serverlessExpress({ app }) as unknown as ExpressLambda, dynamodb }
+  const handleInternalTask: Runtime['handleInternalTask'] = async event => {
+    if (event.task === 'bank-answers') {
+      if (typeof event.bancoId !== 'string' || !event.bancoId.trim())
+        return { error: { message: 'Falta un identificador válido para el banco de preguntas' } }
+      const respuestas = await store.respuestasDeBanco(event.bancoId)
+      return respuestas
+        ? { data: respuestas }
+        : { error: { message: 'No se encontró el banco de preguntas solicitado' } }
+    }
+    if (event.task === 'published-careers') {
+      const carreras = await store.listarCarreras(false)
+      return {
+        data: {
+          carreras: carreras.map(carrera => ({
+            carreraId: carrera.id,
+            titulo: carrera.titulo,
+            cursoIds: carrera.cursos.map(curso => curso.cursoId),
+          })),
+        },
+      }
+    }
+    return { error: { message: `Tarea interna de catálogo no soportada: ${String(event.task)}` } }
+  }
+
+  return {
+    expressHandler: serverlessExpress({ app }) as unknown as ExpressLambda,
+    dynamodb,
+    handleInternalTask,
+  }
 }
 
 export const handler: ExpressLambda = async (event, context) => {
   runtime ??= createRuntime()
   const services = await runtime
+  const task = (event as InternalTask).task
+  if (typeof task === 'string') return services.handleInternalTask(event as InternalTask)
   return services.expressHandler(event, context)
 }
