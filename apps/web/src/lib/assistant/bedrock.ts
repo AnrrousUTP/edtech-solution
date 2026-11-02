@@ -1,6 +1,7 @@
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
 import { z } from 'zod'
 import { config } from '@/lib/config'
+import { logError } from '@/lib/logger'
 import { instruccionesParaRol } from './prompt'
 
 export type AssistantMessage = {
@@ -30,16 +31,14 @@ const registrarFalloBedrock = (operation: string, error: unknown): void => {
     name?: string
     $metadata?: { httpStatusCode?: number; requestId?: string }
   }
-  console.error(
-    JSON.stringify({
-      event: 'bedrock-inference-failed',
-      operation,
-      modelId,
-      errorName: providerError?.name ?? 'UnknownError',
-      httpStatusCode: providerError?.$metadata?.httpStatusCode,
-      requestId: providerError?.$metadata?.requestId,
-    }),
-  )
+  logError({
+    event: 'bedrock-inference-failed',
+    operation,
+    modelId,
+    errorName: providerError?.name ?? 'UnknownError',
+    httpStatusCode: providerError?.$metadata?.httpStatusCode,
+    requestId: providerError?.$metadata?.requestId,
+  })
 }
 
 export const generateAssistantReply = async (
@@ -102,11 +101,7 @@ const evaluacionBorradorSchema = z.object({
 export type PreguntaEvaluacionBorrador = z.infer<typeof preguntaEvaluacionSchema>
 
 export const generarPreguntasEvaluacion = async (input: {
-  uso:
-    | 'EVALUACION_INICIAL'
-    | 'EVALUACION_TOMO'
-    | 'CONOCIMIENTO_PREVIO_TOMO'
-    | 'REFUERZO'
+  uso: 'EVALUACION_INICIAL' | 'EVALUACION_TOMO' | 'CONOCIMIENTO_PREVIO_TOMO' | 'REFUERZO'
   curso: string
   semana?: string
   nivel: string
@@ -168,7 +163,7 @@ export const generarPreguntasEvaluacion = async (input: {
   }
 }
 
-export const extraerResumenPdf = async (bytes: Uint8Array, nombre: string): Promise<string> => {
+export const extraerResumenPdf = async (bytes: Uint8Array): Promise<string> => {
   if (!config.assistant.enabled) throw new AssistantProviderError('not-configured')
   try {
     const result = await client.send(
@@ -183,7 +178,7 @@ export const extraerResumenPdf = async (bytes: Uint8Array, nombre: string): Prom
           {
             role: 'user',
             content: [
-              { document: { format: 'pdf', name: nombre.slice(0, 100), source: { bytes } } },
+              { document: { format: 'pdf', name: 'documento', source: { bytes } } },
               {
                 text: 'Extrae la información útil para preparar repaso, flashcards y una evaluación semanal.',
               },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { config as appConfig } from '@/lib/config'
 
 // The access token lasts one hour; Cognito's refresh token lasts 30 days.
 // Refresh just before expiry so Server Components can verify a live token on
@@ -83,8 +84,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const now = Math.floor(Date.now() / 1000)
   if (expiration !== null && expiration - now > REFRESH_EARLY_SECONDS) return continuar()
 
-  const domain = process.env.COGNITO_DOMINIO?.replace(/\/+$/, '')
-  const clientId = process.env.COGNITO_CLIENT_ID
+  const domain = appConfig.cognito.dominio.replace(/\/+$/, '')
+  const clientId = appConfig.cognito.clientId
   if (!domain || !clientId) return continuar()
 
   try {

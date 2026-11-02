@@ -173,7 +173,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       stage = 'summarize-pdf'
       try {
         await reserveAssistantChatQuota()
-        textoExtraido = await extraerResumenPdf(bytes, file.nombre)
+        textoExtraido = await extraerResumenPdf(bytes)
       } catch (error) {
         const code = error instanceof AssistantProviderError ? error.code : 'unavailable'
         logError({
