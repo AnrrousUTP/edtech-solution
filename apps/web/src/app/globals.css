@@ -1520,6 +1520,35 @@
   }
 }
 
+@layer components {
+  .tech-path-step.is-available.is-material .tech-path-orb-link {
+    background: #e8f0fe;
+    box-shadow: 0 7px 0 #c9d6ea, 0 12px 18px rgb(66 133 244 / 0.14);
+    color: #1a73e8;
+  }
+  .tech-path-step.is-available.is-material .tech-path-orb {
+    background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+  }
+  .course-coach-card-centered {
+    align-items: center;
+    flex-direction: column;
+    max-width: 760px;
+    margin: 28px auto 0;
+    text-align: center;
+  }
+  .course-coach-card-centered .course-coach-copy {
+    align-items: center;
+    flex-direction: column;
+  }
+  .course-coach-card-centered .course-coach-copy > div > p:last-child {
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .course-coach-card-centered > .boton-primario {
+    justify-content: center;
+  }
+}
+
 /* Final polish for discovery, catalog, routes and assistant controls. */
 @layer components {
   .gs-route-card .gs-route-icon-wrap {

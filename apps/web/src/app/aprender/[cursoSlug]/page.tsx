@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { catalogApi } from '@/api/catalog'
-import { flashcardsApi, gamificationApi } from '@/api/resto'
+import { gamificationApi } from '@/api/resto'
 import { enrollmentApi } from '@/api/enrollment'
 import { BarraProgreso, ErrorConAccion } from '@/componentes/base'
 import { perfilSesion } from '@/lib/sesion'
@@ -58,7 +58,7 @@ const PathIcon = ({
 const TechPathIcon = ({
   tipo,
 }: {
-  tipo: 'test' | 'lesson' | 'review' | 'challenge'
+  tipo: 'test' | 'lesson' | 'review' | 'challenge' | 'material'
 }): JSX.Element => {
   const paths = {
     test: (
@@ -83,6 +83,12 @@ const TechPathIcon = ({
         <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
       </>
     ),
+    material: (
+      <>
+        <path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+        <path d="M14 3v5h5M8 12h8M8 16h8" />
+      </>
+    ),
   }
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -97,9 +103,10 @@ type TechPathNode = {
   subtitulo: string
   etiqueta: string
   estado: 'complete' | 'available' | 'locked'
-  tipo: 'test' | 'lesson' | 'review' | 'challenge'
+  tipo: 'test' | 'lesson' | 'review' | 'challenge' | 'material'
   href?: string
   nivel?: number
+  external?: boolean
 }
 
 const MascotaRuta = (): JSX.Element => (
@@ -163,18 +170,16 @@ const MapaCurso = async ({
     gamificationApi.miPerfil(),
     Promise.all(
       curso.tomos.map(async tomo => {
-        const [estado, banco, repaso, tarjetas] = await Promise.all([
+        const [estado, banco, repaso] = await Promise.all([
           enrollmentApi.conocimientoPrevio(curso.id, tomo.id),
           catalogApi.conocimientoPrevioDeTomo(tomo.id),
           catalogApi.refuerzoDeTomo(tomo.id).catch(() => null),
-          flashcardsApi.tarjetasDeTomo(tomo.id).catch(() => null),
         ])
         return {
           tomoId: tomo.id,
           bancoId: banco?.bancoId ?? null,
           completado: estado.completado || banco === null,
           repasoBancoId: repaso?.bancoId ?? null,
-          tieneFlashcards: Boolean(tarjetas?.length),
         }
       }),
     ),
@@ -222,50 +227,66 @@ const MapaCurso = async ({
       .slice(0, tomoIndex)
       .every(semana => semana.lecciones.every(leccion => completadas.has(leccion.id)))
     const previo: TechPathNode[] = prueba?.bancoId
-      ? [{
-          key: `conocimiento-previo-${tomo.id}`,
-          titulo: 'Test de conocimiento previo',
-          subtitulo: tomo.titulo,
-          etiqueta: 'ANTES DE ESTUDIAR',
-          estado: prueba.completado ? 'complete' : semanasAnterioresCompletas ? 'available' : 'locked',
-          tipo: 'test',
-          href: semanasAnterioresCompletas && !prueba.completado
-            ? `/aprender/${cursoSlug}/conocimiento-previo/${tomo.id}`
-            : undefined,
-          nivel: tomo.orden,
-        }]
+      ? [
+          {
+            key: `conocimiento-previo-${tomo.id}`,
+            titulo: 'Test de conocimiento previo',
+            subtitulo: tomo.titulo,
+            etiqueta: 'ANTES DE ESTUDIAR',
+            estado: prueba.completado
+              ? 'complete'
+              : semanasAnterioresCompletas
+                ? 'available'
+                : 'locked',
+            tipo: 'test',
+            href:
+              semanasAnterioresCompletas && !prueba.completado
+                ? `/aprender/${cursoSlug}/conocimiento-previo/${tomo.id}`
+                : undefined,
+            nivel: tomo.orden,
+          },
+        ]
       : []
-    const lecciones: TechPathNode[] = tomo.lecciones.map(leccion => {
-        const hecha = completadas.has(leccion.id)
-        const indiceGlobal = ordenLecciones.indexOf(leccion.id)
-        const previoCompleto = prueba?.completado ?? true
-        const disponible =
-          previoCompleto &&
-          (hecha || primerPendiente < 0 || indiceGlobal <= primerPendiente)
+    const materialesPdf: TechPathNode[] = (tomo.materiales ?? [])
+      .filter(material => material.tipo.toUpperCase() === 'PDF' && material.url.trim())
+      .map((material, materialIndex) => {
+        const disponible = semanasAnterioresCompletas && (!prueba?.bancoId || prueba.completado)
         return {
-          key: leccion.id,
-          titulo: leccion.titulo,
-          subtitulo: `${leccion.duracionMin} min · ${tomo.titulo}`,
-          etiqueta: `NIVEL ${String(tomo.orden).padStart(2, '0')}`,
-          estado: hecha ? 'complete' : disponible ? 'available' : 'locked',
-          tipo: 'lesson',
-          href: disponible ? `/aprender/${cursoSlug}/${leccion.id}` : undefined,
+          key: `material-${material.id}`,
+          titulo: material.titulo || `Material ${materialIndex + 1}`,
+          subtitulo: material.descripcion || `${tomo.titulo} · Documento PDF`,
+          etiqueta: 'MATERIAL DEL DOCENTE · PDF',
+          estado: disponible ? ('available' as const) : ('locked' as const),
+          tipo: 'material',
+          href: disponible ? material.url : undefined,
+          external: true,
           nivel: tomo.orden,
         }
       })
-    const semanaTerminada = tomo.lecciones.length > 0 && tomo.lecciones.every(leccion => completadas.has(leccion.id))
+    // Cursos anteriores pueden no tener materiales PDF cargados; mantenemos
+    // su recorrido de lecciones visible para no dejar la ruta vacía.
+    const pasosContenido: TechPathNode[] = materialesPdf.length
+      ? materialesPdf
+      : tomo.lecciones.map(leccion => {
+          const hecha = completadas.has(leccion.id)
+          const indiceGlobal = ordenLecciones.indexOf(leccion.id)
+          const previoCompleto = prueba?.completado ?? true
+          const disponible =
+            previoCompleto && (hecha || primerPendiente < 0 || indiceGlobal <= primerPendiente)
+          return {
+            key: leccion.id,
+            titulo: leccion.titulo,
+            subtitulo: `${leccion.duracionMin} min · ${tomo.titulo}`,
+            etiqueta: `NIVEL ${String(tomo.orden).padStart(2, '0')}`,
+            estado: hecha ? 'complete' : disponible ? 'available' : 'locked',
+            tipo: 'lesson' as const,
+            href: disponible ? `/aprender/${cursoSlug}/${leccion.id}` : undefined,
+            nivel: tomo.orden,
+          }
+        })
+    const semanaTerminada =
+      tomo.lecciones.length > 0 && tomo.lecciones.every(leccion => completadas.has(leccion.id))
     const recursos: TechPathNode[] = []
-    if (prueba?.tieneFlashcards && semanaTerminada)
-      recursos.push({
-        key: `flashcards-${tomo.id}`,
-        titulo: 'Flashcards de la semana',
-        subtitulo: 'Repasa conceptos clave',
-        etiqueta: 'TARJETAS',
-        estado: 'available',
-        tipo: 'review',
-        href: `/repasar/${tomo.id}`,
-        nivel: tomo.orden,
-      })
     if (prueba?.repasoBancoId)
       recursos.push({
         key: `repaso-${tomo.id}`,
@@ -277,7 +298,7 @@ const MapaCurso = async ({
         href: semanaTerminada ? `/aprender/${cursoSlug}/refuerzo/${tomo.id}` : undefined,
         nivel: tomo.orden,
       })
-    return [...previo, ...lecciones, ...recursos]
+    return [...previo, ...pasosContenido, ...recursos]
   })
 
   return (
@@ -395,10 +416,7 @@ const MapaCurso = async ({
           <div>
             <p className="course-map-kicker">RUTA DEL CURSO</p>
             <h2 id="course-path-title">Tu camino de aprendizaje</h2>
-            <p>
-              Completa una misión para revelar la siguiente. Cada nodo guarda una habilidad
-              práctica.
-            </p>
+            <p>Revisa los materiales que preparó tu docente y completa los tests de cada semana.</p>
           </div>
           <div className="tech-path-legend" aria-label="Estados de la ruta">
             <span>
@@ -442,9 +460,9 @@ const MapaCurso = async ({
           {nodosRuta.map((nodo, index) => {
             const esInicioNivel =
               nodo.nivel !== undefined &&
-              (index === 1 || nodosRuta[index - 1]?.nivel !== nodo.nivel)
+              (index === 0 || nodosRuta[index - 1]?.nivel !== nodo.nivel)
             const lado = index % 2 === 0 ? 'is-left' : 'is-right'
-            const nodeClass = `tech-path-step ${lado} is-${nodo.estado} ${nodo.tipo === 'test' ? 'is-start' : ''}`
+            const nodeClass = `tech-path-step ${lado} is-${nodo.estado} ${nodo.tipo === 'test' ? 'is-start' : ''} ${nodo.tipo === 'material' ? 'is-material' : ''}`
             const contenido = (
               <span className="tech-path-orb" aria-hidden="true">
                 <TechPathIcon tipo={nodo.tipo} />
@@ -457,8 +475,8 @@ const MapaCurso = async ({
                     <span>NIVEL {String(nodo.nivel).padStart(2, '0')}</span>
                     <strong>{curso.tomos.find(tomo => tomo.orden === nodo.nivel)?.titulo}</strong>
                     <small>
-                      {curso.tomos.find(tomo => tomo.orden === nodo.nivel)?.materiales.length ?? 0}
-                      /4 materiales · repaso · evaluación
+                      {curso.tomos.find(tomo => tomo.orden === nodo.nivel)?.materiales.length ?? 0}{' '}
+                      materiales · conocimiento previo y repaso
                     </small>
                   </div>
                 )}
@@ -466,7 +484,17 @@ const MapaCurso = async ({
                   className={nodeClass}
                   aria-current={nodo.estado === 'available' ? 'step' : undefined}
                 >
-                  {nodo.href ? (
+                  {nodo.href && nodo.external ? (
+                    <a
+                      href={nodo.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tech-path-orb-link"
+                      aria-label={`Abrir PDF: ${nodo.titulo}`}
+                    >
+                      {contenido}
+                    </a>
+                  ) : nodo.href ? (
                     <Link
                       href={nodo.href}
                       className="tech-path-orb-link"
@@ -484,11 +512,13 @@ const MapaCurso = async ({
                     <strong>{nodo.titulo}</strong>
                     <small>{nodo.subtitulo}</small>
                     <span className="tech-path-step-state">
-                      {nodo.estado === 'complete'
-                        ? 'Completado'
-                        : nodo.estado === 'available'
-                          ? 'Empezar misión'
-                          : 'Completa la misión anterior'}
+                      {nodo.external && nodo.estado === 'available'
+                        ? 'Abrir documento PDF'
+                        : nodo.estado === 'complete'
+                          ? 'Completado'
+                          : nodo.estado === 'available'
+                            ? 'Empezar misión'
+                            : 'Completa la misión anterior'}
                     </span>
                   </div>
                 </div>
@@ -498,7 +528,11 @@ const MapaCurso = async ({
         </ol>
       </section>
 
-      <section className="course-coach-card" id="asesoria" aria-labelledby="coach-title">
+      <section
+        className="course-coach-card course-coach-card-centered"
+        id="asesoria"
+        aria-labelledby="coach-title"
+      >
         <div className="course-coach-copy">
           <span className="course-coach-icon" aria-hidden="true">
             <PathIcon tipo="certificado" />
